@@ -24,6 +24,8 @@ int main()
         cout << "| 5. Rotation                | 5_rotation.cpp             |" << endl;
         cout << "| 6. Serialization           | 6_serialization.cpp        |" << endl;
         cout << "| 7. Performance Test        | 7_performance.cpp          |" << endl;
+        cout << "| 8. Example: kazuma        | 8_kazumaexample.cpp          |" << endl;
+        cout << "+----------------------------+----------------------------+" << endl;
         cout << "+----------------------------+----------------------------+" << endl;
 
         /*
@@ -38,14 +40,15 @@ int main()
 
         int selection = 0;
         bool invalid = true;
+        int selection_limit = 8;
         do
         {
-            cout << endl << "> Run example (1 ~ 7) or exit (0): ";
+            cout << endl << "> Run example (1 ~ " << selection_limit << ") or exit (0): ";
             if (!(cin >> selection))
             {
                 invalid = false;
             }
-            else if (selection < 0 || selection > 7)
+            else if (selection < 0 || selection > selection_limit)
             {
                 invalid = false;
             }
@@ -89,6 +92,10 @@ int main()
 
         case 7:
             example_performance_test();
+            break;
+
+        case 8:
+            example_kazuma();
             break;
 
         case 0:
