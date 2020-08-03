@@ -11,4 +11,5 @@ target_sources(sealexamples
         ${CMAKE_CURRENT_LIST_DIR}/5_rotation.cpp
         ${CMAKE_CURRENT_LIST_DIR}/6_serialization.cpp
         ${CMAKE_CURRENT_LIST_DIR}/7_performance.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/8_kazumaexample.cpp
 )
