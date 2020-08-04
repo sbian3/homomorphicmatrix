@@ -19,21 +19,21 @@ void convert(Plaintext& src, Plaintext& dst, vector<vector<uint64_t>>& matrix, u
     }
 }
 
-void convert(Ciphertext& src, Ciphertext& dst, vector<vector<uint64_t>>& matrix, uint64_t poly_degree,uint64_t mod_cipher){
+void convert(Ciphertext& src, Ciphertext& dst, vector<vector<uint64_t>>& matrix, uint64_t poly_degree,vector<Modulus> mod_chain){
     assert(matrix.size() == poly_degree);
     assert(matrix[0].size() == poly_degree);
     uint64_t sum;
     for(auto size = 0U;size < src.size();size++){
-        //for(auto coeff_m = 0U; coeff_m < src.coeff_modulus_size();coeff_m++){
+        for(auto coeff_m = 0U; coeff_m < src.coeff_modulus_size();coeff_m++){
             for(auto i = 0U;i < poly_degree;i++){
                 sum = 0;
                 for(auto j = 0U;j < poly_degree;j++){
-                    sum += (src[size * poly_degree + j] * (matrix.at(i).at(j) % mod_cipher));
+                    sum += (src[(size * src.coeff_modulus_size() + coeff_m ) * poly_degree + j] * (matrix.at(i).at(j) % mod_chain[coeff_m].value()));
                 }
-                dst[size *  poly_degree + i] = sum % mod_cipher;
+                dst[(size * src.coeff_modulus_size() + coeff_m ) * poly_degree + i] = sum % mod_chain[coeff_m].value();
             }
 
-        //}
+        }
     }
 }
 
@@ -110,10 +110,10 @@ void matrix_conversion(){
     parms.set_poly_modulus_degree(poly_modulus_degree);
 
     //uint64_t modulo_cipher = 0xfffffffd8001;
-    uint64_t modulo_cipher = 0xfffffffd8001;
+    //uint64_t modulo_cipher = 0xfffffffd8001;
     //0x3ffffffff040001
-    vector<Modulus> mod_chain = {Modulus(modulo_cipher)};
-    //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
+    //vector<Modulus> mod_chain = {Modulus(modulo_cipher)};
+    vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 16;
     parms.set_plain_modulus(plaintext_modulus);
@@ -183,7 +183,7 @@ void matrix_conversion(){
     // convert ciphertext by matrix
     cout << "----convert ciphertext by matrix---" << endl;
     Ciphertext x_enc_copied = Ciphertext(x_encrypted);
-    convert(x_encrypted, x_enc_copied, matrix, poly_modulus_degree, modulo_cipher);
+    convert(x_encrypted, x_enc_copied, matrix, poly_modulus_degree, mod_chain);
     cout << "size of converted x: " << x_enc_copied.size() << endl;
     cout << "noise budget in converted ciphertext: " << decryptor.invariant_noise_budget(x_enc_copied) << " bits" << endl;
     print_cipher(x_enc_copied, 5);
@@ -195,9 +195,6 @@ void matrix_conversion(){
     evaluator.multiply_plain(x_encrypted, constant, x_constant);
     print_cipher(x_constant, 5);
     cout << "noise budget: " << decryptor.invariant_noise_budget(x_constant) << endl;
-
-    // 4096-th x
-    cout << "x[4096]" << x_encrypted[4096] << endl;
 
     // compare cipher
     cout << "Compare: " << compare_cipher(x_enc_copied, x_constant, poly_modulus_degree) << endl;
