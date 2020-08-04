@@ -24,16 +24,16 @@ void convert(Ciphertext& src, Ciphertext& dst, vector<vector<uint64_t>>& matrix,
     assert(matrix[0].size() == poly_degree);
     uint64_t sum;
     for(auto size = 0U;size < src.size();size++){
-        for(auto coeff_m = 0U; coeff_m < src.coeff_modulus_size();coeff_m++){
+        //for(auto coeff_m = 0U; coeff_m < src.coeff_modulus_size();coeff_m++){
             for(auto i = 0U;i < poly_degree;i++){
                 sum = 0;
                 for(auto j = 0U;j < poly_degree;j++){
-                    sum += (src[size * coeff_m * poly_degree + j] * (matrix.at(i).at(j) % mod_cipher));
+                    sum += (src[size * poly_degree + j] * (matrix.at(i).at(j) % mod_cipher));
                 }
-                dst[size * coeff_m *  poly_degree + i] = sum % mod_cipher;
+                dst[size *  poly_degree + i] = sum % mod_cipher;
             }
 
-        }
+        //}
     }
 }
 
@@ -84,6 +84,23 @@ void print_matrix(vector<vector<uint64_t>>& matrix){
     } 
 }
 
+bool compare_cipher(Ciphertext cipher1, Ciphertext cipher2, uint64_t poly_modulus){
+    uint64_t cipher1_count = cipher1.coeff_modulus_size() * cipher1.size() * poly_modulus;
+    uint64_t cipher2_count = cipher2.coeff_modulus_size() * cipher2.size() * poly_modulus;
+    if(cipher1_count != cipher2_count){
+        cout << "coefficient number does not match: " << cipher1_count << " " << cipher2_count << endl;
+        return false;
+    }
+    for(auto i = 0U;i < cipher1_count;i++){
+        if(cipher1[i] != cipher2[i]){
+            cout << i << "-th coefficient does not match!" << endl;
+            cout << "cipher1: " << cipher1[i] << " cipher2: " << cipher2[i] << endl;
+            return false;
+        }
+    }
+    return true;
+}
+
 void matrix_conversion(){
     print_example_banner("matrix_conversion");
 
@@ -92,12 +109,13 @@ void matrix_conversion(){
     size_t poly_modulus_degree = 4096;
     parms.set_poly_modulus_degree(poly_modulus_degree);
 
+    //uint64_t modulo_cipher = 0xfffffffd8001;
     uint64_t modulo_cipher = 0xfffffffd8001;
     //0x3ffffffff040001
     vector<Modulus> mod_chain = {Modulus(modulo_cipher)};
     //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
     parms.set_coeff_modulus(mod_chain);
-    uint64_t plaintext_modulus = 10;
+    uint64_t plaintext_modulus = 16;
     parms.set_plain_modulus(plaintext_modulus);
     auto context = SEALContext::Create(parms);
     print_line(__LINE__);
@@ -119,11 +137,12 @@ void matrix_conversion(){
 
     // generate plaintext x
     print_line(__LINE__);
-    string x = "5x^2 + 1x^1 + 2";
+    string x = "6x^2 + 1x^1 + 2";
     cout << "Input plaintext: ";
     Plaintext x_plain(x);
     cout << "Express x = " + x + " as a plaintext polynomial " + x_plain.to_string() + "." << endl;
     cout << "Coeff count: " << x_plain.coeff_count() << endl;
+    cout << "is NTT form? " << x_plain.is_ntt_form() << endl;
     print_plain(x_plain, 10);
 
     // generate transform matrix
@@ -135,7 +154,7 @@ void matrix_conversion(){
             //if(matrix[i][j] == 4 || matrix[i][j] == 3)
             //    matrix[i][j] = 0;
             if(i == j)
-                matrix[i][j] = 2;
+                matrix[i][j] = 3;
             else
                 matrix[i][j] = 0;
         }
@@ -150,14 +169,15 @@ void matrix_conversion(){
     //print_plain_coefficients(copied_plain);
     print_line(__LINE__);
 
-    // encryption normal x
+    // encrypt x
     Ciphertext x_encrypted;
-    cout << "Encrypt x_plain to x_encrypted." << endl;
+    cout << "----Encrypt x_plain to x_encrypted.----" << endl;
     encryptor.encrypt(x_plain, x_encrypted);
     cout << "Coeff modulus size: " << x_encrypted.coeff_modulus_size() << endl;
     uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
     cout << "Coeff size: " << cipher_coeffsize << endl;
-    cout << "    + noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+    cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+    cout << "is NTT form? " << x_encrypted.is_ntt_form() << endl;
     print_cipher(x_encrypted, 5);
 
     // convert ciphertext by matrix
@@ -171,10 +191,16 @@ void matrix_conversion(){
     // multiply ciphertext by constant using seal function
     cout << "generate constant multiplied ciphertext by using seal" << endl;
     Ciphertext x_constant;
-    Plaintext constant("2");
+    Plaintext constant("3");
     evaluator.multiply_plain(x_encrypted, constant, x_constant);
     print_cipher(x_constant, 5);
     cout << "noise budget: " << decryptor.invariant_noise_budget(x_constant) << endl;
+
+    // 4096-th x
+    cout << "x[4096]" << x_encrypted[4096] << endl;
+
+    // compare cipher
+    cout << "Compare: " << compare_cipher(x_enc_copied, x_constant, poly_modulus_degree) << endl;
 
     // decryption normal x
     print_line(__LINE__);
@@ -190,11 +216,11 @@ void matrix_conversion(){
     print_plain(x_constant_dec, 10);
 
     // decryption converted copy of x
-    print_line(__LINE__);
     Plaintext x_copied_decrypted;
-    cout << "    + decryption of x_copied: ";
+    cout << "    + decryption of x_copied: " << endl;;
     decryptor.decrypt(x_enc_copied, x_copied_decrypted);
 
+    cout << "Converted plain: " << endl;
     print_plain(copied_plain, 10);
     cout << "    + decryption of x_tranformed: ";
     print_plain(x_copied_decrypted, 10);
