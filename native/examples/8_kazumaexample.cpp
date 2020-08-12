@@ -5,7 +5,7 @@
 using namespace std;
 using namespace seal;
 
-void convert(Plaintext& src, Plaintext& dst, vector<vector<uint64_t>>& matrix, uint64_t poly_degree, uint64_t mod_plain){
+void convert(Plaintext& src, Plaintext& dst, vector<vector<int64_t>>& matrix, uint64_t poly_degree, uint64_t mod_plain){
     assert(matrix.size() == poly_degree);
     assert(matrix[0].size() == poly_degree);
     assert(dst.coeff_count() == poly_degree);
@@ -19,7 +19,7 @@ void convert(Plaintext& src, Plaintext& dst, vector<vector<uint64_t>>& matrix, u
     }
 }
 
-void convert(Ciphertext& src, Ciphertext& dst, vector<vector<uint64_t>>& matrix, uint64_t poly_degree,vector<Modulus> mod_chain){
+void convert(Ciphertext& src, Ciphertext& dst, vector<vector<int64_t>>& matrix, uint64_t poly_degree,vector<Modulus> mod_chain){
     assert(matrix.size() == poly_degree);
     assert(matrix[0].size() == poly_degree);
     uint64_t sum;
@@ -28,7 +28,7 @@ void convert(Ciphertext& src, Ciphertext& dst, vector<vector<uint64_t>>& matrix,
             for(auto i = 0U;i < poly_degree;i++){
                 sum = 0;
                 for(auto j = 0U;j < poly_degree;j++){
-                    sum += (src[(size * src.coeff_modulus_size() + coeff_m ) * poly_degree + j] * (matrix.at(i).at(j) % mod_chain[coeff_m].value()));
+                    sum += (src[(size * src.coeff_modulus_size() + coeff_m ) * poly_degree + j] * matrix.at(i).at(j)) % mod_chain[coeff_m].value();
                 }
                 dst[(size * src.coeff_modulus_size() + coeff_m ) * poly_degree + i] = sum % mod_chain[coeff_m].value();
             }
@@ -74,7 +74,7 @@ void print_cipher(Ciphertext cipher, uint64_t num){
     cout << "]" << endl;
 }
 
-void print_matrix(vector<vector<uint64_t>>& matrix){
+void print_matrix(vector<vector<int64_t>>& matrix){
     for(auto i = 0U;i < matrix.size();i++){
         auto row = matrix[i];
         for( auto j = 0U;j < row.size();j++ ){
@@ -101,6 +101,92 @@ bool compare_cipher(Ciphertext cipher1, Ciphertext cipher2, uint64_t poly_modulu
     return true;
 }
 
+bool compare_cipher_all(Ciphertext cipher1, Ciphertext cipher2, uint64_t poly_modulus){
+    uint64_t cipher1_count = cipher1.coeff_modulus_size() * cipher1.size() * poly_modulus;
+    uint64_t cipher2_count = cipher2.coeff_modulus_size() * cipher2.size() * poly_modulus;
+    if(cipher1_count != cipher2_count){
+        cout << "coefficient number does not match: " << cipher1_count << " " << cipher2_count << endl;
+        return false;
+    }
+    bool flag = true;
+    for(auto i = 0U;i < cipher1_count;i++){
+        if(cipher1[i] != cipher2[i]){
+            cout << i << "-th coefficient does not match: " << "(" << cipher1[i] << ", " << cipher2[i] << ")" <<endl;
+            flag = false;
+        }
+    }
+    return flag;
+}
+
+void print_cipher_info(Ciphertext& c, Decryptor& decryptor){
+    cout << "Size: " << c.size() << endl;
+    cout << "Coeff modulus size: " << c.coeff_modulus_size() << endl;
+    uint64_t cipher_coeffsize = c.size() * c.poly_modulus_degree() * c.coeff_modulus_size();
+    cout << "Coeff size: " << cipher_coeffsize << endl;
+    cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(c) << " bits" << endl;
+    cout << "is NTT form? " << c.is_ntt_form() << endl;
+}
+
+void init_matrix_identity(vector<vector<int64_t>>& matrix, uint64_t poly_modulus_degree){
+    int64_t scale = 2;
+    for(auto i = 0U;i < poly_modulus_degree;i++){
+        for(auto j = 0U;j < poly_modulus_degree;j++){
+            //matrix[i][j] = rnd() % 5;
+            //if(matrix[i][j] == 4 || matrix[i][j] == 3 || matrix[i][j] == 2)
+            //    matrix[i][j] = 0;
+            if(i == j)
+                matrix[i][j] = scale;
+            else
+                matrix[i][j] = 0;
+        }
+    }
+    //matrix[0][1] = 1;
+}
+
+void init_matrix_rotate(vector<vector<int64_t>>& matrix, uint64_t size, int64_t left_rotate, int64_t scale){
+    for(auto i = 0U;i < size;i++){
+        for(auto j = 0U;j < size;j++){
+            int64_t ii = i + left_rotate;
+            bool reverse = false;
+            if(ii < 0){
+                ii+= size;
+                reverse = true;
+            }
+            if(ii >= size){
+                reverse = true;
+            }
+            if(j == ii% size){
+                if(reverse)
+                    matrix[i][j] = scale * -1;
+                else
+                    matrix[i][j] = scale;
+            }else{
+                matrix[i][j] = 0;
+            }
+        }
+    }
+}
+
+void init_matrix_rand(vector<vector<uint64_t>>& matrix, uint64_t size, uint64_t mod){
+    std::random_device rnd;
+    for(auto i = 0U;i < size;i++){
+        for(auto j = 0U;j < size;j++){
+            matrix[i][j] = rnd() % mod;
+        }
+    }
+}
+
+void test_conversion(){
+    uint64_t size=3;
+    vector<vector<int64_t>> matrix(size, vector<int64_t>(size));
+    init_matrix_rotate(matrix, size, 1, 1);
+    print_matrix(matrix);
+    init_matrix_rotate(matrix, size, -1, 1);
+    print_matrix(matrix);
+    init_matrix_identity(matrix, size);
+    print_matrix(matrix);
+}
+
 void matrix_conversion(){
     print_example_banner("matrix_conversion");
 
@@ -115,7 +201,7 @@ void matrix_conversion(){
     //vector<Modulus> mod_chain = {Modulus(modulo_cipher)};
     vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
     parms.set_coeff_modulus(mod_chain);
-    uint64_t plaintext_modulus = 16;
+    uint64_t plaintext_modulus = 7;
     parms.set_plain_modulus(plaintext_modulus);
     auto context = SEALContext::Create(parms);
     print_line(__LINE__);
@@ -146,19 +232,8 @@ void matrix_conversion(){
     print_plain(x_plain, 10);
 
     // generate transform matrix
-    vector<vector<uint64_t>> matrix(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
-    std::random_device rnd;
-    for(auto i = 0U;i < poly_modulus_degree;i++){
-        for(auto j = 0U;j < poly_modulus_degree;j++){
-            //matrix[i][j] = rnd() % 5;
-            //if(matrix[i][j] == 4 || matrix[i][j] == 3)
-            //    matrix[i][j] = 0;
-            if(i == j)
-                matrix[i][j] = 3;
-            else
-                matrix[i][j] = 0;
-        }
-    }
+    vector<vector<int64_t>> matrix(poly_modulus_degree, vector<int64_t>(poly_modulus_degree));
+    init_matrix_rotate(matrix, poly_modulus_degree, -1, 2);
     //print_matrix(matrix);
 
     // convert plaintext by matrix
@@ -167,7 +242,6 @@ void matrix_conversion(){
     convert(x_plain, copied_plain, matrix, poly_modulus_degree, plaintext_modulus);
     cout << "Copied and converted plaintext" << endl;
     //print_plain_coefficients(copied_plain);
-    print_line(__LINE__);
 
     // encrypt x
     Ciphertext x_encrypted;
@@ -179,25 +253,33 @@ void matrix_conversion(){
     cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
     cout << "is NTT form? " << x_encrypted.is_ntt_form() << endl;
     print_cipher(x_encrypted, 5);
+    cout << "4095-th coeff is " << x_encrypted[4095] << endl;
 
     // convert ciphertext by matrix
     cout << "----convert ciphertext by matrix---" << endl;
-    Ciphertext x_enc_copied = Ciphertext(x_encrypted);
-    convert(x_encrypted, x_enc_copied, matrix, poly_modulus_degree, mod_chain);
-    cout << "size of converted x: " << x_enc_copied.size() << endl;
-    cout << "noise budget in converted ciphertext: " << decryptor.invariant_noise_budget(x_enc_copied) << " bits" << endl;
-    print_cipher(x_enc_copied, 5);
+    Ciphertext x_enc_converted = Ciphertext(x_encrypted);
+    convert(x_encrypted, x_enc_converted, matrix, poly_modulus_degree, mod_chain);
+    print_cipher(x_enc_converted, 5);
+    cout << "ciphertext info---->" << endl;
+    print_cipher_info(x_enc_converted, decryptor);
 
     // multiply ciphertext by constant using seal function
     cout << "generate constant multiplied ciphertext by using seal" << endl;
     Ciphertext x_constant;
-    Plaintext constant("3");
+    Plaintext constant("2");
     evaluator.multiply_plain(x_encrypted, constant, x_constant);
+    // constant addition
+    cout << "add const 1" << endl;
+    Plaintext addconst("1");
+    Ciphertext addconst_enc;
+    encryptor.encrypt(addconst, addconst_enc);
+    print_cipher(addconst_enc, 5);
+    evaluator.add_plain_inplace(x_constant, addconst);
     print_cipher(x_constant, 5);
-    cout << "noise budget: " << decryptor.invariant_noise_budget(x_constant) << endl;
+    print_cipher_info(x_constant, decryptor);
 
     // compare cipher
-    cout << "Compare: " << compare_cipher(x_enc_copied, x_constant, poly_modulus_degree) << endl;
+    //cout << "Compare: " << compare_cipher_all(x_enc_converted, x_constant, poly_modulus_degree) << endl;
 
     // decryption normal x
     print_line(__LINE__);
@@ -212,203 +294,22 @@ void matrix_conversion(){
     decryptor.decrypt(x_constant, x_constant_dec);
     print_plain(x_constant_dec, 10);
 
-    // decryption converted copy of x
-    Plaintext x_copied_decrypted;
-    cout << "    + decryption of x_copied: " << endl;;
-    decryptor.decrypt(x_enc_copied, x_copied_decrypted);
+    // decryption converted x
+    Plaintext x_converted_decrypted;
+    cout << "decryption of x_copied: " << endl;;
+    decryptor.decrypt(x_enc_converted, x_converted_decrypted);
 
+    // compare converted plain and decryption of x_converted
     cout << "Converted plain: " << endl;
     print_plain(copied_plain, 10);
-    cout << "    + decryption of x_tranformed: ";
-    print_plain(x_copied_decrypted, 10);
+    cout << "decryption of x_tranformed: " << endl;
+    print_plain(x_converted_decrypted, 20);
 
-
-    //cout << "Coefficients that not match" << endl;
-    //
-    // Result validation
-    //for(auto i = 0U ; i < poly_modulus_degree;i++){
-    //    if(copied_plain[i] != x_copied_decrypted[i]){
-    //        cout << "does not match!" << endl;
-    //        cout << i << "(" << copied_plain[i] << ", " << x_copied_decrypted[i] << ")" << endl;
-    //        break;
-    //    }
-    //}
-}
-
-void integer_encoder(){
-    print_example_banner("Kazuma example: integer encoder");
-    EncryptionParameters parms(scheme_type::BFV);
-    size_t poly_modulus_degree = 4096;
-    parms.set_poly_modulus_degree(poly_modulus_degree);
-
-    //parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
-    vector<Modulus> mod_chain = {Modulus(1073153)};
-    parms.set_coeff_modulus(mod_chain);
-    uint64_t plaintext_modulus = 1024;
-    parms.set_plain_modulus(plaintext_modulus);
-    auto context = SEALContext::Create(parms);
-    print_line(__LINE__);
-    cout << "Set encryption parameters and print" << endl;
-    print_parameters(context);
-    cout << "Parameter validation (success): " << context->parameter_error_message() << endl;
-
-    cout << endl;
-
-    // setup environment
-    cout << "keygen step" << endl;
-    KeyGenerator keygen(context);
-    cout << "pubkey " << endl;
-    PublicKey public_key = keygen.public_key();
-    SecretKey secret_key = keygen.secret_key();
-    Encryptor encryptor(context, public_key);
-    Evaluator evaluator(context);
-    Decryptor decryptor(context, secret_key);
-    IntegerEncoder encoder_int(context);
-    print_line(__LINE__);
-    // just encrypt and decrypt
-    cout << "Input plain value: ";
-    int plainvalue;
-    cin >> plainvalue;
-    Plaintext x_plain("5x^1 + 1");
-    //Plaintext x_plain = encoder_int.encode(plainvalue);
-    cout << "Express x = " << plainvalue <<" as a plaintext polynomial " << x_plain.to_string() + "." << endl;
-    cout << "Coeff count: " << x_plain.coeff_count() << endl;
-    // print all coefficients
-    for(int i = 0;i < x_plain.coeff_count();i++){
-        cout << "Plain[" << i << "]: " << x_plain[i] << endl;
-    }
-    print_line(__LINE__);
-    Ciphertext x_encrypted;
-    cout << "Encrypt x_plain to x_encrypted." << endl;
-    encryptor.encrypt(x_plain, x_encrypted);
-    cout << "Coeff modulus size: " << x_encrypted.coeff_modulus_size() << endl;
-    uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
-    cout << "Coeff size: " << cipher_coeffsize << endl;
-    // print ciphertext coefficients
-    for(uint64_t i = 0;i < 10;i++){
-        cout << "Cipher[" << i << "]: " << x_encrypted[i] << endl;
-    }
-    cout << "    + size of freshly encrypted x: " << x_encrypted.size() << endl;
-    Plaintext x_decrypted;
-    cout << "    + decryption of x_encrypted: ";
-    decryptor.decrypt(x_encrypted, x_decrypted);
-    //cout << encoder_int.decode_int32(x_decrypted) << endl;
-    cout << "Decrypted as a plaintext polynomial " << x_decrypted.to_string() + "." << endl;
-
-    /* compute (3x^2 + 1) and decrypt*/
-    print_line(__LINE__);
-    cout << "Compute x_sq_plus_one (3x^2+1)." << endl;
-    Ciphertext x_sq_plus_one;
-    evaluator.square(x_encrypted, x_sq_plus_one);
-    Plaintext three("3");
-    evaluator.multiply_plain_inplace(x_sq_plus_one, three);
-    Plaintext plain_one("1");
-    evaluator.add_plain_inplace(x_sq_plus_one, plain_one);
-    cout << "Coeff modulus size: " << x_sq_plus_one.coeff_modulus_size() << endl;
-    cout << "    + size of x_sq_plus_one: " << x_sq_plus_one.size() << endl;
-    cout << "    + noise budget in x_sq_plus_one: " << decryptor.invariant_noise_budget(x_sq_plus_one) << " bits"
-        << endl;
-    Plaintext decrypted_result;
-    cout << "    + decryption of x_sq_plus_one: ";
-    decryptor.decrypt(x_sq_plus_one, decrypted_result);
-    cout << "0x" << decrypted_result.to_string() << " ...... Correct." << endl;
-
-}
-
-void seal_training(){
-    print_example_banner("Kazuma example");
-    EncryptionParameters parms(scheme_type::BFV);
-    size_t poly_modulus_degree = 4096;
-    parms.set_poly_modulus_degree(poly_modulus_degree);
-
-    //vector<Modulus> mod_chain = {Modulus(0x7e00001)};
-    //    //vector<Modulus> mod_chain = {Modulus(0x3ffffac001)};
-    vector<Modulus> mod_chain = {Modulus(0x3ffffffdf0001)};
-    //vector<Modulus> mod_chain1 = CoeffModulus::BFVDefault(poly_modulus_degree);
-    parms.set_coeff_modulus(mod_chain);
-    uint64_t plaintext_modulus = 1009;
-    parms.set_plain_modulus(plaintext_modulus);
-    auto context = SEALContext::Create(parms);
-    print_line(__LINE__);
-    cout << "Set encryption parameters and print" << endl;
-    print_parameters(context);
-    cout << "Parameter validation (success): " << context->parameter_error_message() << endl;
-
-    cout << endl;
-
-    cout << "keygen step" << endl;
-    KeyGenerator keygen(context);
-    cout << "pubkey " << endl;
-    PublicKey public_key = keygen.public_key();
-    SecretKey secret_key = keygen.secret_key();
-    Encryptor encryptor(context, public_key);
-    Evaluator evaluator(context);
-    Decryptor decryptor(context, secret_key);
-    print_line(__LINE__);
-    /* just encrypt and decrypt */
-    string x = "5x^2 + 2";
-    cout << "Input plaintext: ";
-    Plaintext x_plain(x);
-    cout << "Express x = " + x + " as a plaintext polynomial " + x_plain.to_string() + "." << endl;
-    cout << "Coeff count: " << x_plain.coeff_count() << endl;
-    // print all coefficients
-    for(int i = 0;i < x_plain.coeff_count();i++){
-        cout << "Plain[" << i << "]: " << x_plain[i] << endl;
-    }
-    print_line(__LINE__);
-    // encryption
-    Ciphertext x_encrypted;
-    cout << "Encrypt x_plain to x_encrypted." << endl;
-    encryptor.encrypt(x_plain, x_encrypted);
-    cout << "Coeff modulus size: " << x_encrypted.coeff_modulus_size() << endl;
-    uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
-    cout << "Coeff size: " << cipher_coeffsize << endl;
-    // print ciphertext coefficients
-    for(uint64_t i = 0;i < 10;i++){
-        cout << "Cipher[" << i << "]: " << x_encrypted[i] << endl;
-    }
-    cout << "    + size of freshly encrypted x: " << x_encrypted.size() << endl;
-    cout << "    + noise budget in x_sq_plus_one: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
-    // decryption
-    Plaintext x_decrypted;
-    cout << "    + decryption of x_encrypted: ";
-    decryptor.decrypt(x_encrypted, x_decrypted);
-    cout << x_decrypted.to_string() << " ...... Correct?" << endl;
-
-    /* compute (3x^2 + 1) and decrypt*/
-    print_line(__LINE__);
-    cout << "Compute x_sq_plus_one (3x^2+1)." << endl;
-    Ciphertext x_sq_plus_one;
-    evaluator.square(x_encrypted, x_sq_plus_one);
-    Plaintext three("3");
-    evaluator.multiply_plain_inplace(x_sq_plus_one, three);
-    Plaintext plain_one("1");
-    evaluator.add_plain_inplace(x_sq_plus_one, plain_one);
-    cout << "Coeff modulus size: " << x_sq_plus_one.coeff_modulus_size() << endl;
-    cout << "    + size of x_sq_plus_one: " << x_sq_plus_one.size() << endl;
-    cout << "    + noise budget in x_sq_plus_one: " << decryptor.invariant_noise_budget(x_sq_plus_one) << " bits" << endl;
-    Plaintext decrypted_result;
-    cout << "    + decryption of x_sq_plus_one: ";
-    decryptor.decrypt(x_sq_plus_one, decrypted_result);
-    cout << "0x" << decrypted_result.to_string() << " ...... Correct." << endl;
-
-    /* compute x^3 */
-    //cout << "Computer x^3" << endl;
-    //Ciphertext x_squared;
-    //evaluator.square(x_encrypted, x_squared);
-    //Ciphertext x_boxed;
-    //evaluator.multiply(x_squared, x_encrypted, x_boxed);
-    //cout << "Coeff modulus size: " << x_boxed.coeff_modulus_size() << endl;
-    //cout << " + size of x^3: " << x_boxed.size() << endl;
-    //cout << " + noise budget in x^3 :" << decryptor.invariant_noise_budget(x_boxed) << endl;
-    //cout << " + decrypt x^3: ";
-    //Plaintext box_decrypted;
-    //decryptor.decrypt(x_boxed, box_decrypted);
-    //cout << "0x" << box_decrypted.to_string() <<  endl;
 }
 
 void example_kazuma(){
     //integer_encoder();
     //simple_encryption();
     matrix_conversion();
+    //test_conversion();
 }
