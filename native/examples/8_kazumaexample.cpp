@@ -143,10 +143,23 @@ void init_matrix_identity(vector<vector<int64_t>>& matrix, uint64_t poly_modulus
     //matrix[0][1] = 1;
 }
 
-void init_matrix_rotate(vector<vector<int64_t>>& matrix, uint64_t size, int64_t left_rotate, int64_t scale){
+void init_matrix_identity_rnd(vector<vector<int64_t>>& matrix, uint64_t poly_modulus_degree){
+    int64_t scale = 2;
+    for(auto i = 0U;i < poly_modulus_degree;i++){
+        for(auto j = 0U;j < poly_modulus_degree;j++){
+            if(i == j)
+                matrix[i][j] = scale;
+            else
+                matrix[i][j] = 0;
+        }
+    }
+    matrix[0][0] = 1;
+}
+
+void init_matrix_rotate(vector<vector<int64_t>>& matrix, uint64_t size, int64_t right_rotate, int64_t scale){
     for(auto i = 0U;i < size;i++){
         for(auto j = 0U;j < size;j++){
-            int64_t ii = i + left_rotate;
+            int64_t ii = i + right_rotate;
             bool reverse = false;
             if(ii < 0){
                 ii+= size;
@@ -160,8 +173,6 @@ void init_matrix_rotate(vector<vector<int64_t>>& matrix, uint64_t size, int64_t 
                     matrix[i][j] = scale * -1;
                 else
                     matrix[i][j] = scale;
-            }else{
-                matrix[i][j] = 0;
             }
         }
     }
@@ -184,6 +195,17 @@ void test_conversion(){
     init_matrix_rotate(matrix, size, -1, 1);
     print_matrix(matrix);
     init_matrix_identity(matrix, size);
+    print_matrix(matrix);
+    init_matrix_identity_rnd(matrix, size);
+    print_matrix(matrix);
+}
+
+void test_matconv(){
+    uint64_t size=3;
+    vector<vector<int64_t>> matrix(size, vector<int64_t>(size));
+    init_matrix_rotate(matrix, size, 0, 1);
+    init_matrix_rotate(matrix, size, -1, 2);
+    init_matrix_rotate(matrix, size, -2, 3);
     print_matrix(matrix);
 }
 
@@ -233,7 +255,7 @@ void matrix_conversion(){
 
     // generate transform matrix
     vector<vector<int64_t>> matrix(poly_modulus_degree, vector<int64_t>(poly_modulus_degree));
-    init_matrix_rotate(matrix, poly_modulus_degree, -1, 2);
+    init_matrix_identity_rnd(matrix, poly_modulus_degree);
     //print_matrix(matrix);
 
     // convert plaintext by matrix
@@ -304,12 +326,12 @@ void matrix_conversion(){
     print_plain(copied_plain, 10);
     cout << "decryption of x_tranformed: " << endl;
     print_plain(x_converted_decrypted, 20);
-
 }
 
 void example_kazuma(){
     //integer_encoder();
     //simple_encryption();
-    matrix_conversion();
+    //matrix_conversion();
     //test_conversion();
+    test_matconv();
 }
