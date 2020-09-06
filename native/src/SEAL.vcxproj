@@ -96,6 +96,7 @@
     <ClCompile Include="seal\plaintext.cpp" />
     <ClCompile Include="seal\randomgen.cpp" />
     <ClCompile Include="seal\serialization.cpp" />
+    <ClCompile Include="seal\util\common.cpp" />
     <ClCompile Include="seal\util\rns.cpp" />
     <ClCompile Include="seal\util\ztools.cpp" />
     <ClCompile Include="seal\valcheck.cpp" />
@@ -109,8 +110,6 @@
     <ClCompile Include="seal\util\iterator.cpp" />
     <ClCompile Include="seal\util\mempool.cpp" />
     <ClCompile Include="seal\util\numth.cpp" />
-    <ClCompile Include="seal\util\polyarith.cpp" />
-    <ClCompile Include="seal\util\polyarithmod.cpp" />
     <ClCompile Include="seal\util\polyarithsmallmod.cpp" />
     <ClCompile Include="seal\util\rlwe.cpp" />
     <ClCompile Include="seal\util\scalingvariant.cpp" />
@@ -126,8 +125,6 @@
     <Text Include="seal\util\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="cmake\FindMSGSL.cmake" />
-    <None Include="cmake\SEALConfig.cmake.in" />
     <None Include="seal\util\config.h.in" />
     <None Include="CMakeConfig.cmd" />
   </ItemGroup>

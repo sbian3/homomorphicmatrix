@@ -4,7 +4,6 @@
 #include "seal/decryptor.h"
 #include "seal/valcheck.h"
 #include "seal/util/common.h"
-#include "seal/util/polyarithmod.h"
 #include "seal/util/polyarithsmallmod.h"
 #include "seal/util/polycore.h"
 #include "seal/util/scalingvariant.h"
@@ -20,6 +19,40 @@ using namespace seal::util;
 
 namespace seal
 {
+    namespace
+    {
+        void poly_infty_norm_coeffmod(
+            StrideIter<const uint64_t *> poly, size_t coeff_count, const uint64_t *modulus, uint64_t *result,
+            MemoryPool &pool)
+        {
+            size_t coeff_uint64_count = poly.stride();
+
+            // Construct negative threshold: (modulus + 1) / 2
+            auto modulus_neg_threshold(allocate_uint(coeff_uint64_count, pool));
+            half_round_up_uint(modulus, coeff_uint64_count, modulus_neg_threshold.get());
+
+            // Mod out the poly coefficients and choose a symmetric representative from [-modulus,modulus)
+            set_zero_uint(coeff_uint64_count, result);
+            auto coeff_abs_value(allocate_uint(coeff_uint64_count, pool));
+            SEAL_ITERATE(poly, coeff_count, [&](auto I) {
+                if (is_greater_than_or_equal_uint(I, modulus_neg_threshold.get(), coeff_uint64_count))
+                {
+                    sub_uint(modulus, I, coeff_uint64_count, coeff_abs_value.get());
+                }
+                else
+                {
+                    set_uint(I, coeff_uint64_count, coeff_abs_value.get());
+                }
+
+                if (is_greater_than_uint(coeff_abs_value.get(), result, coeff_uint64_count))
+                {
+                    // Store the new max
+                    set_uint(coeff_abs_value.get(), coeff_uint64_count, result);
+                }
+            });
+        }
+    } // namespace
+
     Decryptor::Decryptor(shared_ptr<SEALContext> context, const SecretKey &secret_key) : context_(move(context))
     {
         // Verify parameters
@@ -54,6 +87,12 @@ namespace seal
         if (!is_valid_for(encrypted, context_))
         {
             throw invalid_argument("encrypted is not valid for encryption parameters");
+        }
+
+        // Additionally check that ciphertext doesn't have trivial size
+        if (encrypted.size() < SEAL_CIPHERTEXT_SIZE_MIN)
+        {
+            throw invalid_argument("encrypted is empty");
         }
 
         auto &context_data = *context_->first_context_data();
@@ -101,6 +140,7 @@ namespace seal
         dot_product_ct_sk_array(encrypted, tmp_dest_modq, pool_);
 
         // Allocate a full size destination to write to
+        destination.parms_id() = parms_id_zero;
         destination.resize(coeff_count);
 
         // Divide scaling variant using BEHZ FullRNS techniques
@@ -111,7 +151,6 @@ namespace seal
 
         // Resize destination to appropriate size
         destination.resize(max(plain_coeff_count, size_t(1)));
-        destination.parms_id() = parms_id_zero;
     }
 
     void Decryptor::ckks_decrypt(const Ciphertext &encrypted, Plaintext &destination, MemoryPoolHandle pool)
@@ -274,6 +313,12 @@ namespace seal
             throw invalid_argument("encrypted is not valid for encryption parameters");
         }
 
+        // Additionally check that ciphertext doesn't have trivial size
+        if (encrypted.size() < SEAL_CIPHERTEXT_SIZE_MIN)
+        {
+            throw invalid_argument("encrypted is empty");
+        }
+
         if (context_->key_context_data()->parms().scheme() != scheme_type::BFV)
         {
             throw logic_error("unsupported scheme");
@@ -313,8 +358,8 @@ namespace seal
         context_data.rns_tool()->base_q()->compose_array(noise_poly, coeff_count, pool_);
 
         // Next we compute the infinity norm mod parms.coeff_modulus()
-        poly_infty_norm_coeffmod(
-            noise_poly, coeff_count, coeff_modulus_size, context_data.total_coeff_modulus(), norm.get(), pool_);
+        StrideIter<const uint64_t *> wide_noise_poly((*noise_poly).ptr(), coeff_modulus_size);
+        poly_infty_norm_coeffmod(wide_noise_poly, coeff_count, context_data.total_coeff_modulus(), norm.get(), pool_);
 
         // The -1 accounts for scaling the invariant noise by 2;
         // note that we already took plain_modulus into account in compose

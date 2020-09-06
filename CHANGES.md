@@ -1,5 +1,60 @@
 # List of Changes
 
+## Version 3.5.8
+
+### Other
+
+- The bug fixed in [(PR 209)](https://github.com/microsoft/SEAL/pull/209) also affects Android. Changed version to 3.5.8 where this is fixed.
+
+## Version 3.5.7
+
+### Hotfix - 8/28/2020
+
+- Merged [(PR 209)](https://github.com/microsoft/SEAL/pull/209). Thanks [s0l0ist](https://github.com/s0l0ist)!
+
+### Bug fixes
+
+- Fixed an omission in input validation in decryption: the size of the ciphertext was not checked to be non-zero.
+
+### Other
+
+- In Windows switch to using `RtlGenRandom` if the BCrypt API fails.
+- Improved performance in serialization: data clearing memory pools were always used before, but now are only used for the secret key.
+- Use native APIs for memory clearing, when available, instead of for-loop.
+
+## Version 3.5.6
+
+### Bug fixes
+
+- Fixed a bug where setting a PRNG factory to use a constant seed did not result in deterministic ciphertexts or public keys.
+The problem was that the specified PRNG factory was not used to sample the uniform part of the RLWE sample(s), but instead a fresh (secure) PRNG was always created and used.
+- Fixed a bug where the `parms_id` of a `Plaintext` was not cleared correctly before resizing in `Decryptor::bfv_decrypt`.
+As a result, a plaintext in NTT form could not be used as the destination for decrypting a BFV ciphertext.
+
+### Other
+
+- Merged pull request [(Issue 190)](https://github.com/microsoft/SEAL/pull/190) to replace global statics with function-local statics to avoid creating these objects unless they are actually used.
+
+## Version 3.5.5
+
+### Hotfix - 7/6/2020
+
+- Fixed [(Issue 188)](https://github.com/microsoft/SEAL/issues/188).
+
+### New features
+
+- Added a struct `seal::util::MultiplyUIntModOperand` in [native/src/seal/util/uintarithsmallmod.h](native/src/seal/util/uintarithsmallmod.h).
+This struct handles precomputation data for Barrett style modular multiplication.
+- Added new overloads for modular arithmetic in [native/src/seal/util/uintarithsmallmod.h](native/src/seal/util/uintarithsmallmod.h) where one operand is replaced by a `MultiplyUIntModOperand` instance for improved performance when the same operand is used repeatedly.
+- Changed the name of `seal::util::barrett_reduce_63` to `seal::util::barrett_reduce_64`; the name was misleading and only referred to the size of the modulus.
+- Added `seal::util::StrideIter` in [native/src/seal/util/iterator.h](native/src/seal/util/iterator.h).
+- Added macros `SEAL_ALLOCATE_GET_PTR_ITER` and `SEAL_ALLOCATE_GET_STRIDE_ITER` in [native/src/seal/util/defines.h](native/src/seal/util/defines.h).
+
+### Other
+
+- Significant performance improvements from merging pull request [(PR 185)](https://github.com/microsoft/SEAL/pull/185) and implementing other improvements of the same style (see above).
+- Removed a lot of old and unused code.
+
 ## Version 3.5.4
 
 ### Bug fixes

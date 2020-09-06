@@ -131,7 +131,6 @@ namespace SEALNetExamples
             /*
             As a simple example, we compute (-encrypted1 + encrypted2) * encrypted2.
             */
-            encryptor.Encrypt(plain2, encrypted2);
             using Ciphertext encryptedResult = new Ciphertext();
             Utilities.PrintLine();
             Console.WriteLine("Compute encrypted_result = (-encrypted1 + encrypted2) * encrypted2.");
@@ -284,7 +283,7 @@ namespace SEALNetExamples
             ulong[] podMatrix2 = new ulong[slotCount];
             for (ulong i = 0; i < slotCount; i++)
             {
-                podMatrix2[i] = (i % 2) + 1;
+                podMatrix2[i] = (i & 1) + 1;
             }
             using Plaintext plainMatrix2 = new Plaintext();
             batchEncoder.Encode(podMatrix2, plainMatrix2);

@@ -39,30 +39,30 @@ int main()
              << "Total allocation from the memory pool" << endl;
 
         int selection = 0;
-        bool invalid = true;
         int selection_limit = 8;
+        bool valid = true;
         do
         {
             cout << endl << "> Run example (1 ~ " << selection_limit << ") or exit (0): ";
             if (!(cin >> selection))
             {
-                invalid = false;
+                valid = false;
             }
             else if (selection < 0 || selection > selection_limit)
             {
-                invalid = false;
+                valid = false;
             }
             else
             {
-                invalid = true;
+                valid = true;
             }
-            if (!invalid)
+            if (!valid)
             {
-                cout << "  [Beep~~] Invalid option: type 0 ~ 7" << endl;
+                cout << "  [Beep~~] valid option: type 0 ~ 7" << endl;
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
             }
-        } while (!invalid);
+        } while (!valid);
 
         switch (selection)
         {
