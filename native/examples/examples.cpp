@@ -24,7 +24,7 @@ int main()
         cout << "| 5. Rotation                | 5_rotation.cpp             |" << endl;
         cout << "| 6. Serialization           | 6_serialization.cpp        |" << endl;
         cout << "| 7. Performance Test        | 7_performance.cpp          |" << endl;
-        cout << "| 8. Example: kazuma        | 8_kazumaexample.cpp          |" << endl;
+        cout << "| 8. Example: kazuma         | 8_kazumaexample.cpp          |" << endl;
         cout << "+----------------------------+----------------------------+" << endl;
         cout << "+----------------------------+----------------------------+" << endl;
 
