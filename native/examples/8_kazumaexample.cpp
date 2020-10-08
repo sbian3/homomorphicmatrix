@@ -177,7 +177,14 @@ void init_matrix_rotate(vector<vector<int64_t>>& matrix, uint64_t size, int64_t 
     }
 }
 
-void init_matrix_rand(vector<vector<uint64_t>>& matrix, uint64_t size, uint64_t mod){
+
+void init_matrix_with_coeff(vector<vector<int64_t>>& matrix, uint64_t size, util::ConstCoeffIter iter){
+    for(uint64_t i = 0;i < size;i++){
+        init_matrix_rotate(matrix, size, -1 * i, iter[i]);
+    }
+}
+
+void init_matrix_rand_mod(vector<vector<int64_t>>& matrix, uint64_t size, uint64_t mod){
     std::random_device rnd;
     for(auto i = 0U;i < size;i++){
         for(auto j = 0U;j < size;j++){
@@ -206,6 +213,20 @@ void test_matconv(){
     init_matrix_rotate(matrix, size, -1, 2);
     init_matrix_rotate(matrix, size, -2, 3);
     print_matrix(matrix);
+}
+
+void matrix_dot_product_mod(vector<vector<int64_t>> matrixL, vector<vector<int64_t>> matrixR, vector<vector<int64_t>>& result, uint64_t mod){
+    assert(matrixL[0].size() == matrixR.size());
+    for(auto i = 0U;i < matrixL.size();i++){
+        for(auto j = 0U;j < matrixR[0].size();j++){
+            int64_t tmp_sum = 0;
+            for(auto k = 0U;k < matrixR.size();k++){
+                tmp_sum += matrixL[i][k] * matrixR[k][j]; 
+                tmp_sum %= mod;
+            }
+            result[i][j] = tmp_sum;
+        }
+    }
 }
 
 void print_iter(util::CoeffIter operand1, uint64_t coeff_count){
@@ -300,6 +321,23 @@ void test_innerprod_vector(){
     uint64_t result = inner_product_coeffmod(arr, iter2, coeff_degree, modulus);
     cout << "innerprod result: " << result << endl;
     cout << "expected result: " << expected_result << endl;
+}
+
+void test_init_matrix(){
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    uint64_t array_size = 10;
+    // polynomial degree
+    uint64_t coeff_degree = array_size;
+    vector<std::uint64_t> arr(array_size);
+    vector<vector<int64_t>> matrix(coeff_degree, vector<int64_t>(coeff_degree));
+
+    for(size_t i = 0;i < array_size;i++){
+        arr[i] = i+1;
+    }
+    SEAL_ALLOCATE_GET_COEFF_ITER(coeff_iter, coeff_degree, pool_);
+    util::set_poly(arr.data(), coeff_degree, 1, coeff_iter);
+    init_matrix_with_coeff(matrix, coeff_degree, coeff_iter);
+    print_matrix(matrix);
 }
 
 
@@ -445,6 +483,22 @@ void test_matrix_conversion_with_rnsiter(){
     print_iter(result, coeff_mod_size, coeff_degree);
 }
 
+void test_matrix_dot_product(){
+    uint64_t coeff_degree = 3;
+    uint64_t modulus = 10;
+    vector<vector<int64_t>> matrix(coeff_degree, vector<int64_t>(coeff_degree));
+    vector<vector<int64_t>> matrix2(coeff_degree, vector<int64_t>(coeff_degree));
+    vector<vector<int64_t>> result(coeff_degree, vector<int64_t>(coeff_degree));
+    init_matrix_rand_mod(matrix, coeff_degree, modulus);
+    cout << "first matrix: " << endl;
+    print_matrix(matrix);
+    init_matrix_identity(matrix2, coeff_degree, 2);
+    cout << "second matrix: " << endl;
+    print_matrix(matrix2);
+    matrix_dot_product_mod(matrix, matrix2, result, modulus);
+    print_matrix(result);
+}
+
 void test_matrix_conversion(){
     print_example_banner("matrix_conversion");
 
@@ -570,5 +624,7 @@ void example_kazuma(){
     //test_matconv();
     //iterator_toy();
     //test_innerprod_vector();
-    test_matrix_conversion_with_rnsiter();
+    //test_matrix_conversion_with_rnsiter();
+    //test_init_matrix();
+    test_matrix_dot_product();
 }
