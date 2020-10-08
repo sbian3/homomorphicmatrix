@@ -75,6 +75,8 @@ namespace seal
         */
         void decrypt(const Ciphertext &encrypted, Plaintext &destination);
 
+        void decrypt_bfv_with_matrix(Ciphertext &encrypted, Plaintext &destination);
+
         /*
         Computes the invariant noise budget (in bits) of a ciphertext. The
         invariant noise budget measures the amount of room there is for the noise
@@ -120,6 +122,8 @@ namespace seal
         // Store result in destination in RNS form.
         // destination has the size of an RNS polynomial.
         void dot_product_ct_sk_array(const Ciphertext &encrypted, util::RNSIter destination, MemoryPoolHandle pool);
+
+        void dot_product_with_matrix(Ciphertext &encrypted, util::RNSIter destination, MemoryPoolHandle pool);
 
         // We use a fresh memory pool with `clear_on_destruction' enabled.
         MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
