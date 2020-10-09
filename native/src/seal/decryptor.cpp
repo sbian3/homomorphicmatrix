@@ -154,9 +154,12 @@ namespace seal
     }
 
     //
+    //
     // add original decrypt function
     //
-    void Decryptor::decrypt_bfv_with_matrix(Ciphertext &encrypted, Plaintext &destination){
+    //
+    
+    void Decryptor::decrypt_bfv_with_matrix(Ciphertext &encrypted, Plaintext &destination, std::vector<std::vector<int64_t>> matrix){
         // Verify that encrypted is valid.
         if (!is_valid_for(encrypted, context_))
         {
@@ -192,7 +195,7 @@ namespace seal
         SEAL_ALLOCATE_ZERO_GET_RNS_ITER(tmp_dest_modq, coeff_count, coeff_modulus_size, pool_);
 
         // original dot_product function.
-        dot_product_with_matrix(encrypted, tmp_dest_modq, pool_);
+        dot_product_with_matrix(encrypted, tmp_dest_modq, matrix, pool_);
 
         // Allocate a full size destination to write to
         destination.parms_id() = parms_id_zero;
@@ -209,7 +212,7 @@ namespace seal
 
     }
 
-    void Decryptor::dot_product_with_matrix(Ciphertext &encrypted, util::RNSIter destination, MemoryPoolHandle pool){
+    void Decryptor::dot_product_with_matrix(Ciphertext &encrypted, util::RNSIter destination, std::vector<std::vector<int64_t>> matrix,  MemoryPoolHandle pool){
         auto &context_data = *context_->get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
@@ -233,7 +236,9 @@ namespace seal
     }
 
     //
+    //
     // end of added function
+    //
     //
 
     void Decryptor::ckks_decrypt(const Ciphertext &encrypted, Plaintext &destination, MemoryPoolHandle pool)

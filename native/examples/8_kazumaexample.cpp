@@ -181,7 +181,7 @@ void test_print_iter(){
     SEAL_ALLOCATE_GET_POLY_ITER(poly_iter, poly_count, mod_degree, coeff_mod_size, pool_);
     util::set_poly_array(arr.data(), poly_count, mod_degree, coeff_mod_size, poly_iter);
     SEAL_ITERATE(poly_iter, poly_count, [&](auto I){
-            util::print_iter(I, coeff_mod_size, mod_degree);
+            util::print_iter(I, mod_degree);
               cout << "end of c ...." << endl;
             });
 }
@@ -305,11 +305,11 @@ void test_matrix_conversion_with_rnsiter(){
     SEAL_ALLOCATE_GET_RNS_ITER(rns_iter, coeff_degree, coeff_mod_size, pool_);
     util::set_poly(arr.data(),  coeff_degree, coeff_mod_size, rns_iter);
     cout << "print rns iter first" << endl;
-    print_iter(rns_iter, coeff_mod_size, coeff_degree);
+    print_iter(rns_iter, coeff_mod_size);
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(result, coeff_degree, coeff_mod_size, pool_);
-    util::matrix_dot_vector(matrix, coeff_mod_size, coeff_degree, rns_iter, mod_chain, result);
+    util::matrix_dot_vector(matrix, coeff_mod_size,  rns_iter, mod_chain, result);
     cout << "print converted rns iter " << endl;
-    print_iter(result, coeff_mod_size, coeff_degree);
+    print_iter(result, coeff_mod_size);
 }
 
 void test_matrix_dot_product(){
@@ -455,6 +455,6 @@ void example_kazuma(){
     //test_innerprod_vector();
     //test_matrix_conversion_with_rnsiter();
     //test_init_matrix();
-    //test_matrix_dot_product();
-    test_print_iter();
+    test_matrix_dot_product();
+    //test_print_iter();
 }

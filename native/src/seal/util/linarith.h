@@ -41,20 +41,20 @@ namespace seal
         // linear arithmetic
         //
 
-        std::uint64_t inner_product_coeffmod(vector<int64_t> operand1, seal::util::ConstCoeffIter operand2, std::size_t coeff_count, const Modulus &modulus);
+        std::uint64_t inner_product_coeffmod(vector<int64_t> operand1, ConstCoeffIter operand2, std::size_t coeff_count, const Modulus &modulus);
 
-        std::uint64_t inner_product_coeffmod(seal::util::ConstCoeffIter operand1, seal::util::ConstCoeffIter operand2, std::size_t coeff_count, const Modulus &modulus);
+        std::uint64_t inner_product_coeffmod(ConstCoeffIter operand1, ConstCoeffIter operand2, std::size_t coeff_count, const Modulus &modulus);
 
         void matrix_dot_product_mod(vector<vector<int64_t>> matrixL, vector<vector<int64_t>> matrixR, vector<vector<int64_t>>& result, uint64_t mod);
 
-        void matrix_dot_vector(seal::util::ConstRNSIter matrix, seal::util::ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, seal::util::CoeffIter result);
+        void matrix_dot_vector(ConstRNSIter matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result);
 
-        void matrix_dot_vector(vector<vector<int64_t>> matrix, seal::util::ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, seal::util::CoeffIter result);
+        void matrix_dot_vector(vector<vector<int64_t>> matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result);
 
-        void matrix_dot_vector(seal::util::ConstRNSIter matrix, uint64_t coeff_modulus_size, uint64_t coeff_count, seal::util::ConstRNSIter poly_rns, util::ConstModulusIter mod_chain, seal::util::RNSIter result);
+        void matrix_dot_vector(ConstRNSIter matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns,ConstModulusIter mod_chain, RNSIter result);
 
 
-        void matrix_dot_vector(vector<vector<int64_t>> matrix, uint64_t coeff_modulus_size, uint64_t coeff_count, seal::util::ConstRNSIter poly_rns, util::ConstModulusIter mod_chain, seal::util::RNSIter result);
+        void matrix_dot_vector(vector<vector<int64_t>> matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result);
 
         //
         // print function
@@ -62,9 +62,10 @@ namespace seal
 
         void print_matrix(vector<vector<int64_t>>& matrix);
 
-        void print_iter(util::CoeffIter operand1, uint64_t coeff_count);
+        void print_iter(CoeffIter operand1, uint64_t coeff_count);
 
-        inline void print_iter(util::RNSIter operand1, uint64_t rns_count, uint64_t coeff_count){
+        inline void print_iter(RNSIter operand1, uint64_t rns_count){
+            uint64_t coeff_count = operand1.poly_modulus_degree();
             SEAL_ITERATE(operand1, rns_count, [&](auto I){
                     print_iter(I, coeff_count);
                     cout << "end of RNS...." << endl;

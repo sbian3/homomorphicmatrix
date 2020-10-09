@@ -128,7 +128,7 @@ namespace seal
         }
 
 
-        void matrix_dot_vector(seal::util::ConstRNSIter matrix, seal::util::ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, seal::util::CoeffIter result){
+        void matrix_dot_vector(ConstRNSIter matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
             // TODO: parameter validation
 
             SEAL_ITERATE(iter(matrix, result), coeff_count, [&](auto I){
@@ -136,7 +136,7 @@ namespace seal
                     });
         }
 
-        void matrix_dot_vector(vector<vector<int64_t>> matrix, seal::util::ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, seal::util::CoeffIter result){
+        void matrix_dot_vector(vector<vector<int64_t>> matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
             // TODO: parameter validation
 
             SEAL_ITERATE(iter(matrix, result), coeff_count, [&](auto I){
@@ -144,23 +144,25 @@ namespace seal
                     });
         }
 
-        void matrix_dot_vector(seal::util::ConstRNSIter matrix, uint64_t coeff_modulus_size, uint64_t coeff_count, seal::util::ConstRNSIter poly_rns, ConstModulusIter mod_chain, seal::util::RNSIter result){
+        void matrix_dot_vector(ConstRNSIter matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
             // parameter validation
             // TODO: size check
+            uint64_t coeff_count = poly_rns.poly_modulus_degree();
             SEAL_ITERATE(iter(poly_rns, mod_chain, result), coeff_modulus_size, [&](auto I){
                     matrix_dot_vector(matrix, get<0>(I), get<1>(I), coeff_count, get<2>(I));
                     });
         }
 
-        void matrix_dot_vector(vector<vector<int64_t>> matrix, uint64_t coeff_modulus_size, uint64_t coeff_count, seal::util::ConstRNSIter poly_rns, util::ConstModulusIter mod_chain, seal::util::RNSIter result){
+        void matrix_dot_vector(vector<vector<int64_t>> matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
             // parameter validation
             // TODO: size check
+            uint64_t coeff_count = poly_rns.poly_modulus_degree();
             SEAL_ITERATE(iter(poly_rns, mod_chain, result), coeff_modulus_size, [&](auto I){
                     matrix_dot_vector(matrix, get<0>(I), get<1>(I), coeff_count, get<2>(I));
                     });
         }
 
-        void print_iter(util::CoeffIter operand1, uint64_t coeff_count){
+        void print_iter(CoeffIter operand1, uint64_t coeff_count){
             SEAL_ITERATE(operand1, coeff_count, [&](auto I){
                     cout << I << " ";
                     });
