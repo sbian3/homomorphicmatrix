@@ -11,6 +11,7 @@
 #include "seal/util/uintarithmod.h"
 #include "seal/util/uintarithsmallmod.h"
 #include "seal/util/uintcore.h"
+#include "seal/util/linarith.h"
 #include <algorithm>
 #include <stdexcept>
 
@@ -138,6 +139,8 @@ namespace seal
         // Now do the dot product of encrypted_copy and the secret key array using NTT.
         // The secret key powers are already NTT transformed.
         dot_product_ct_sk_array(encrypted, tmp_dest_modq, pool_);
+        //cout << "tmp rns.." << endl;
+        //print_iter(tmp_dest_modq, coeff_modulus_size);
 
         // Allocate a full size destination to write to
         destination.parms_id() = parms_id_zero;
@@ -153,12 +156,14 @@ namespace seal
         destination.resize(max(plain_coeff_count, size_t(1)));
     }
 
+
     //
     //
     // add original decrypt function
     //
     //
     
+
     void Decryptor::decrypt_bfv_with_matrix(Ciphertext &encrypted, Plaintext &destination, std::vector<std::vector<int64_t>> matrix){
         // Verify that encrypted is valid.
         if (!is_valid_for(encrypted, context_))
@@ -196,6 +201,8 @@ namespace seal
 
         // original dot_product function.
         dot_product_with_matrix(encrypted, tmp_dest_modq, matrix, pool_);
+        //cout << "tmp rns..." << endl;
+        //print_iter(tmp_dest_modq, coeff_modulus_size);
 
         // Allocate a full size destination to write to
         destination.parms_id() = parms_id_zero;
@@ -220,7 +227,7 @@ namespace seal
         size_t coeff_modulus_size = coeff_modulus.size();
         size_t key_coeff_modulus_size = context_->key_context_data()->parms().coeff_modulus().size();
         size_t encrypted_size = encrypted.size();
-        auto is_ntt_form = encrypted.is_ntt_form();
+        //auto is_ntt_form = encrypted.is_ntt_form();
 
         auto ntt_tables = context_data.small_ntt_tables();
 
@@ -229,11 +236,29 @@ namespace seal
         }
 
         compute_secret_key_array(encrypted_size - 1);
-        auto secret_key_array = PolyIter(secret_key_array_.get(), coeff_count, key_coeff_modulus_size);
-        // transform secret key array into non NTT form
-        inverse_ntt_negacyclic_harvey(secret_key_array, encrypted_size-1, ntt_tables);
+        //auto secret_key_array = RNSIter(secret_key_array_.get(), coeff_count, key_coeff_modulus_size);
+        SEAL_ALLOCATE_GET_RNS_ITER(secret_key_array, coeff_count, coeff_modulus_size, pool);
+        set_poly(secret_key_array_.get(), coeff_count, coeff_modulus_size, secret_key_array);
+        // transform secret key array into non-NTT form
+        inverse_ntt_negacyclic_harvey(secret_key_array, coeff_modulus_size, ntt_tables);
+        //cout << "secret key(decrypt)" << endl;
+        //util::print_iter(secret_key_array, coeff_modulus_size);
+
         PolyIter cipher_polyiter(encrypted);
+        //cout << "polyiter(before)" << endl;
+        //print_iter(cipher_polyiter, 1);
+        util::matrix_dot_vector(matrix, coeff_modulus_size, *cipher_polyiter, coeff_modulus, destination);
+        //cout << "polyiter(after)" << endl;
+        //print_iter(destination, coeff_modulus_size);
+        cipher_polyiter++;
+        SEAL_ALLOCATE_ZERO_GET_RNS_ITER(c1_result, coeff_count,coeff_modulus_size, pool);
+        cout << "convert c_1" << endl;
+        secret_product_with_matrix_rns(matrix, coeff_modulus_size, *cipher_polyiter, secret_key_array, coeff_modulus, c1_result);
+        add_poly_coeffmod(destination, c1_result, coeff_modulus_size, coeff_modulus, destination);
     }
+
+
+
 
     //
     //
@@ -241,6 +266,8 @@ namespace seal
     //
     //
 
+
+    
     void Decryptor::ckks_decrypt(const Ciphertext &encrypted, Plaintext &destination, MemoryPoolHandle pool)
     {
         if (!encrypted.is_ntt_form())

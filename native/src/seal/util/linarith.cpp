@@ -60,10 +60,13 @@ namespace seal
             int64_t result = 0;
             for(size_t i = 0;i < coeff_count;i++){
                 result += operand1[i] * static_cast<int64_t>(operand2[i]); 
-                result %= modulus_value;
+                result = result % static_cast<int64_t>(modulus_value);
             }
             if(result < 0){
                 result += modulus_value;
+            }
+            if(result >= static_cast<int64_t>(modulus_value)){
+                result = result % static_cast<int64_t>(modulus_value);
             }
             return static_cast<uint64_t>(result);
         }
@@ -120,7 +123,7 @@ namespace seal
                     int64_t tmp_sum = 0;
                     for(auto k = 0U;k < matrixR.size();k++){
                         tmp_sum += matrixL[i][k] * matrixR[k][j]; 
-                        tmp_sum %= mod;
+                        if(tmp_sum >= static_cast<int64_t>(mod))tmp_sum = tmp_sum % static_cast<int64_t>(mod);
                     }
                     result[i][j] = tmp_sum;
                 }
@@ -139,9 +142,9 @@ namespace seal
         void matrix_dot_vector(vector<vector<int64_t>> matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
             // TODO: parameter validation
 
-            SEAL_ITERATE(iter(matrix, result), coeff_count, [&](auto I){
-                    get<1>(I) = inner_product_coeffmod(get<0>(I), poly_vector, coeff_count, modulus);
-                    });
+            for(uint64_t i = 0;i < coeff_count;i++){
+                result[i] = inner_product_coeffmod(matrix[i], poly_vector, coeff_count, modulus);
+            }
         }
 
         void matrix_dot_vector(ConstRNSIter matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
@@ -161,6 +164,27 @@ namespace seal
                     matrix_dot_vector(matrix, get<0>(I), get<1>(I), coeff_count, get<2>(I));
                     });
         }
+
+        void secret_product_with_matrix(vector<vector<int64_t>> matrix,uint64_t coeff_degree, CoeffIter c, CoeffIter s, const Modulus& modulus, CoeffIter result){
+
+            uint64_t mod_value = modulus.value();
+            vector<vector<int64_t>> A(coeff_degree, vector<int64_t>(coeff_degree));
+            vector<vector<int64_t>> B(coeff_degree, vector<int64_t>(coeff_degree));
+            init_matrix_with_coeff(A, coeff_degree, c);
+            matrix_dot_product_mod(matrix, A, B, mod_value);
+            matrix_dot_vector(B, s, modulus, coeff_degree,result );
+        }
+
+        void secret_product_with_matrix_rns(vector<vector<int64_t>> matrix, uint64_t rns_count, RNSIter c, RNSIter s, ConstModulusIter mod_chain, RNSIter result){
+            uint64_t coeff_degree = c.poly_modulus_degree();
+            SEAL_ITERATE(iter(c, s, mod_chain, result), rns_count, [&](auto I){
+                    secret_product_with_matrix(matrix, coeff_degree, get<0>(I), get<1>(I), get<2>(I), get<3>(I));
+                    });
+        }
+
+        //
+        // print functions
+        //
 
         void print_iter(CoeffIter operand1, uint64_t coeff_count){
             SEAL_ITERATE(operand1, coeff_count, [&](auto I){

@@ -45,7 +45,6 @@ namespace seal
 
         std::uint64_t inner_product_coeffmod(ConstCoeffIter operand1, ConstCoeffIter operand2, std::size_t coeff_count, const Modulus &modulus);
 
-        void matrix_dot_product_mod(vector<vector<int64_t>> matrixL, vector<vector<int64_t>> matrixR, vector<vector<int64_t>>& result, uint64_t mod);
 
         void matrix_dot_vector(ConstRNSIter matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result);
 
@@ -53,8 +52,13 @@ namespace seal
 
         void matrix_dot_vector(ConstRNSIter matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns,ConstModulusIter mod_chain, RNSIter result);
 
-
         void matrix_dot_vector(vector<vector<int64_t>> matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result);
+
+        void matrix_dot_product_mod(vector<vector<int64_t>> matrixL, vector<vector<int64_t>> matrixR, vector<vector<int64_t>>& result, uint64_t mod);
+
+        void secret_product_with_matrix(vector<vector<int64_t>> matrix,uint64_t coeff_degree, CoeffIter c, CoeffIter s, const Modulus& modulus, CoeffIter result);
+
+        void secret_product_with_matrix_rns(vector<vector<int64_t>> matrix, uint64_t rns_count, RNSIter c, RNSIter s, ConstModulusIter mod_chain, RNSIter result);
 
         //
         // print function
@@ -69,6 +73,13 @@ namespace seal
             SEAL_ITERATE(operand1, rns_count, [&](auto I){
                     print_iter(I, coeff_count);
                     cout << "end of RNS...." << endl;
+                    });
+        }
+
+        inline void print_iter(PolyIter operand1, uint64_t poly_count){
+            uint64_t rns_count = operand1.coeff_modulus_size();
+            SEAL_ITERATE(operand1, poly_count, [&](auto I){
+                    print_iter(I, rns_count);
                     });
         }
     } // namespace util

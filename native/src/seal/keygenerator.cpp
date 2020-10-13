@@ -13,6 +13,7 @@
 #include "seal/util/uintarith.h"
 #include "seal/util/uintarithsmallmod.h"
 #include "seal/util/uintcore.h"
+#include "seal/util/linarith.h"
 #include <algorithm>
 
 using namespace std;
