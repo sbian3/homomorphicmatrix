@@ -139,9 +139,9 @@ void init_matrix_identity_rnd(vector<vector<int64_t>>& matrix, uint64_t poly_mod
 void test_conversion(){
     uint64_t size=3;
     vector<vector<int64_t>> matrix(size, vector<int64_t>(size));
-    util::init_matrix_rotate(matrix, size, 1, 1);
+    //util::init_matrix_rotate(matrix, size, 1, 1);
     util::print_matrix(matrix);
-    util::init_matrix_rotate(matrix, size, -1, 1);
+    //util::init_matrix_rotate(matrix, size, -1, 1);
     util::print_matrix(matrix);
     util::init_matrix_identity(matrix, size, 2);
     util::print_matrix(matrix);
@@ -152,13 +152,14 @@ void test_conversion(){
 void test_matconv(){
     uint64_t size=3;
     vector<vector<int64_t>> matrix(size, vector<int64_t>(size));
-    util::init_matrix_rotate(matrix, size, 0, 1);
-    util::init_matrix_rotate(matrix, size, -1, 2);
-    util::init_matrix_rotate(matrix, size, -2, 3);
+    uint64_t rotate = 0;
+    util::init_matrix_rotate(matrix, size, rotate, 1);
+    rotate++;
+    util::init_matrix_rotate(matrix, size, rotate, 2);
+    rotate++;
+    util::init_matrix_rotate(matrix, size, rotate, 3);
     util::print_matrix(matrix);
 }
-
-
 
 
 

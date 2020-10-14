@@ -18,31 +18,21 @@ namespace seal
             }
         }
 
-        void init_matrix_rotate(vector<vector<int64_t>>& matrix, uint64_t size, int64_t right_rotate, int64_t scale){
+        void init_matrix_rotate(vector<vector<int64_t>>& matrix, uint64_t size, uint64_t left_rotate, int64_t scale){
             for(auto i = 0U;i < size;i++){
-                for(auto j = 0U;j < size;j++){
-                    int64_t ii = i + right_rotate;
-                    bool reverse = false;
-                    if(ii < 0){
-                        ii+= size;
-                        reverse = true;
-                    }
-                    if(ii >= size){
-                        reverse = true;
-                    }
-                    if(j == ii% size){
-                        if(reverse)
-                            matrix[i][j] = scale * -1;
-                        else
-                            matrix[i][j] = scale;
-                    }
+                int64_t tmp_scale = scale;
+                uint64_t col_index = i + left_rotate;
+                if(col_index >= size){
+                    col_index = col_index % size;
+                    tmp_scale = -tmp_scale;
                 }
+                matrix[col_index][i] = tmp_scale;
             }
         }
 
         void init_matrix_with_coeff(vector<vector<int64_t>>& matrix, uint64_t size, ConstCoeffIter iter){
             for(uint64_t i = 0;i < size;i++){
-                init_matrix_rotate(matrix, size, -1 * i, iter[i]);
+                init_matrix_rotate(matrix, size, i, (int64_t)iter[i]);
             }
         }
 
@@ -64,9 +54,6 @@ namespace seal
             }
             if(result < 0){
                 result += modulus_value;
-            }
-            if(result >= static_cast<int64_t>(modulus_value)){
-                result = result % static_cast<int64_t>(modulus_value);
             }
             return static_cast<uint64_t>(result);
         }
@@ -123,7 +110,7 @@ namespace seal
                     int64_t tmp_sum = 0;
                     for(auto k = 0U;k < matrixR.size();k++){
                         tmp_sum += matrixL[i][k] * matrixR[k][j]; 
-                        if(tmp_sum >= static_cast<int64_t>(mod))tmp_sum = tmp_sum % static_cast<int64_t>(mod);
+                        tmp_sum = tmp_sum % static_cast<int64_t>(mod);
                     }
                     result[i][j] = tmp_sum;
                 }
