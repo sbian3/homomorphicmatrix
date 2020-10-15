@@ -334,19 +334,20 @@ void test_matrix_conversion_with_rnsiter(){
 }
 
 void test_matrix_dot_product(){
-    uint64_t coeff_degree = 3;
-    uint64_t modulus = 10;
+    uint64_t coeff_degree = 1000;
+    uint64_t modulus = 10000;
     vector<vector<int64_t>> matrix(coeff_degree, vector<int64_t>(coeff_degree));
     vector<vector<int64_t>> matrix2(coeff_degree, vector<int64_t>(coeff_degree));
     vector<vector<int64_t>> result(coeff_degree, vector<int64_t>(coeff_degree));
     util::init_matrix_rand_mod(matrix, coeff_degree, modulus);
     cout << "first matrix: " << endl;
-    util::print_matrix(matrix);
-    util::init_matrix_identity(matrix2, coeff_degree, 2);
+    //util::print_matrix(matrix);
+    util::init_matrix_rand_mod(matrix2, coeff_degree, modulus);
     cout << "second matrix: " << endl;
-    util::print_matrix(matrix2);
+    //util::print_matrix(matrix2);
+    cout << "calculating matrix dot product..." << endl;
     util::matrix_dot_product_mod(matrix, matrix2, result, modulus);
-    util::print_matrix(result);
+    //util::print_matrix(result);
 }
 
 void test_matrix_conversion(){
@@ -471,7 +472,7 @@ void test_bfv_matrix(){
 
     // parameter setting
     EncryptionParameters parms(scheme_type::BFV);
-    size_t poly_modulus_degree = 1024;
+    size_t poly_modulus_degree = 2048;
     parms.set_poly_modulus_degree(poly_modulus_degree);
 
     //uint64_t modulo_cipher = 0xfffffffd8001;
@@ -559,8 +560,8 @@ void example_kazuma(){
     //test_innerprod_vector();
     //test_matrix_conversion_with_rnsiter();
     //test_init_matrix();
-    //test_matrix_dot_product();
+    test_matrix_dot_product();
     //test_print_iter();
-    test_bfv_matrix();
+    //test_bfv_matrix();
     //test_secret_product();
 }

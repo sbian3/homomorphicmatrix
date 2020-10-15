@@ -1,5 +1,6 @@
 
 #include "seal/util/linarith.h"
+#include <chrono>
 
 
 namespace seal
@@ -103,11 +104,17 @@ namespace seal
             });
             return result;
         }
+
         void matrix_dot_product_mod(vector<vector<int64_t>> matrixL, vector<vector<int64_t>> matrixR, vector<vector<int64_t>>& result, uint64_t mod){
+            auto time_start = chrono::high_resolution_clock::now();
             assert(matrixL[0].size() == matrixR.size());
             for(auto i = 0U;i < matrixL.size();i++){
                 for(auto j = 0U;j < matrixR[0].size();j++){
                     int64_t tmp_sum = 0;
+                    if(matrixL[i].size() != matrixR.size()){
+                        cout << "Error: Left and Right matrix size does not match!!" << endl;
+                        return;
+                    }
                     for(auto k = 0U;k < matrixR.size();k++){
                         tmp_sum += matrixL[i][k] * matrixR[k][j]; 
                         tmp_sum = tmp_sum % static_cast<int64_t>(mod);
@@ -115,6 +122,9 @@ namespace seal
                     result[i][j] = tmp_sum;
                 }
             }
+            auto time_end = chrono::high_resolution_clock::now();
+            auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
+            cout << "matrix dot product: " << time_diff.count() << "milliseconds" << endl;
         }
 
 
