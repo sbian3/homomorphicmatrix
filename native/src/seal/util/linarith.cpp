@@ -8,7 +8,22 @@ namespace seal
     namespace util
     {
 
+        // 
+        // matrix initialization
+        //
+
         void init_matrix_identity(vector<vector<int64_t>>& matrix, uint64_t poly_modulus_degree, int64_t scale){
+            for(auto i = 0U;i < poly_modulus_degree;i++){
+                for(auto j = 0U;j < poly_modulus_degree;j++){
+                    if(i == j)
+                        matrix[i][j] = scale;
+                    else
+                        matrix[i][j] = 0;
+                }
+            }
+        }
+
+        void init_matrix_identity(vector<vector<uint64_t>>& matrix, uint64_t poly_modulus_degree, uint64_t scale){
             for(auto i = 0U;i < poly_modulus_degree;i++){
                 for(auto j = 0U;j < poly_modulus_degree;j++){
                     if(i == j)
@@ -31,13 +46,40 @@ namespace seal
             }
         }
 
+        void init_matrix_rotate(vector<vector<uint64_t>>& matrix, uint64_t size, uint64_t left_rotate, uint64_t scale,const Modulus &modulus){
+            for(auto i = 0U;i < size;i++){
+                uint64_t tmp_scale = scale;
+                uint64_t col_index = i + left_rotate;
+                if(col_index >= size){
+                    col_index = col_index % size;
+                    tmp_scale = negate_uint_mod(tmp_scale, modulus);
+                }
+                matrix[col_index][i] = tmp_scale;
+            }
+        }
+
         void init_matrix_with_coeff(vector<vector<int64_t>>& matrix, uint64_t size, ConstCoeffIter iter){
             for(uint64_t i = 0;i < size;i++){
                 init_matrix_rotate(matrix, size, i, (int64_t)iter[i]);
             }
         }
 
+        void init_matrix_with_coeff(vector<vector<uint64_t>>& matrix, uint64_t size, ConstCoeffIter iter, const Modulus &modulus){
+            for(uint64_t i = 0;i < size;i++){
+                init_matrix_rotate(matrix, size, i, iter[i], modulus);
+            }
+        }
+
         void init_matrix_rand_mod(vector<vector<int64_t>>& matrix, uint64_t size, uint64_t mod){
+            random_device rnd;
+            for(auto i = 0U;i < size;i++){
+                for(auto j = 0U;j < size;j++){
+                    matrix[i][j] = rnd() % mod;
+                }
+            }
+        }
+
+        void init_matrix_rand_mod(vector<vector<uint64_t>>& matrix, uint64_t size, uint64_t mod){
             random_device rnd;
             for(auto i = 0U;i < size;i++){
                 for(auto j = 0U;j < size;j++){
@@ -127,8 +169,53 @@ namespace seal
             cout << "matrix dot product: " << time_diff.count() << "milliseconds" << endl;
         }
 
+        void matrix_dot_product_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus){
+            auto time_start = chrono::high_resolution_clock::now();
+            assert(matrixL[0].size() == matrixR.size());
+            for(auto i = 0U;i < matrixL.size();i++){
+                for(auto j = 0U;j < matrixR[0].size();j++){
+                    uint64_t tmp_sum = 0;
+                    if(matrixL[i].size() != matrixR.size()){
+                        cout << "Error: Left and Right matrix size does not match!!" << endl;
+                        return;
+                    }
+                    for(auto k = 0U;k < matrixR.size();k++){
+                        tmp_sum = multiply_add_uint_mod(matrixL[i][k], matrixR[k][j], tmp_sum, modulus);
+                    }
+                    result[i][j] = tmp_sum;
+                }
+            }
+            auto time_end = chrono::high_resolution_clock::now();
+            auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
+            cout << "matrix dot product: " << time_diff.count() << "milliseconds" << endl;
+        }
+
+        void matrix_dot_product_mod_t(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus){
+            auto time_start = chrono::high_resolution_clock::now();
+            assert(matrixL[0].size() == matrixtR.size());
+            for(auto i = 0U;i < matrixL.size();i++){
+                for(auto j = 0U;j < matrixtR.size();j++){
+                    uint64_t tmp_sum = 0;
+                    for(auto k = 0U;k < matrixtR[j].size();k++){
+                       tmp_sum = multiply_add_uint_mod(matrixL[i][k], matrixtR[j][k], tmp_sum, modulus);
+                    }
+                    result[i][j] = tmp_sum;
+                }
+            }
+            auto time_end = chrono::high_resolution_clock::now();
+            auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
+            cout << "matrix dot product: " << time_diff.count() << "milliseconds" << endl;
+        }
 
         void matrix_dot_vector(ConstRNSIter matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
+            // TODO: parameter validation
+
+            SEAL_ITERATE(iter(matrix, result), coeff_count, [&](auto I){
+                    get<1>(I) = inner_product_coeffmod(get<0>(I), poly_vector, coeff_count, modulus);
+                    });
+        }
+
+        void matrix_dot_vector(vector<vector<uint64_t>> matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
             // TODO: parameter validation
 
             SEAL_ITERATE(iter(matrix, result), coeff_count, [&](auto I){
@@ -144,23 +231,9 @@ namespace seal
             }
         }
 
-        void matrix_dot_vector(ConstRNSIter matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
-            // parameter validation
-            // TODO: size check
-            uint64_t coeff_count = poly_rns.poly_modulus_degree();
-            SEAL_ITERATE(iter(poly_rns, mod_chain, result), coeff_modulus_size, [&](auto I){
-                    matrix_dot_vector(matrix, get<0>(I), get<1>(I), coeff_count, get<2>(I));
-                    });
-        }
-
-        void matrix_dot_vector(vector<vector<int64_t>> matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
-            // parameter validation
-            // TODO: size check
-            uint64_t coeff_count = poly_rns.poly_modulus_degree();
-            SEAL_ITERATE(iter(poly_rns, mod_chain, result), coeff_modulus_size, [&](auto I){
-                    matrix_dot_vector(matrix, get<0>(I), get<1>(I), coeff_count, get<2>(I));
-                    });
-        }
+        //
+        // functions for decryptor
+        //
 
         void secret_product_with_matrix(vector<vector<int64_t>> matrix,uint64_t coeff_degree, CoeffIter c, CoeffIter s, const Modulus& modulus, CoeffIter result){
 
@@ -172,11 +245,12 @@ namespace seal
             matrix_dot_vector(B, s, modulus, coeff_degree,result );
         }
 
-        void secret_product_with_matrix_rns(vector<vector<int64_t>> matrix, uint64_t rns_count, RNSIter c, RNSIter s, ConstModulusIter mod_chain, RNSIter result){
-            uint64_t coeff_degree = c.poly_modulus_degree();
-            SEAL_ITERATE(iter(c, s, mod_chain, result), rns_count, [&](auto I){
-                    secret_product_with_matrix(matrix, coeff_degree, get<0>(I), get<1>(I), get<2>(I), get<3>(I));
-                    });
+        void secret_product_with_matrix(vector<vector<uint64_t>> matrix,uint64_t coeff_degree, CoeffIter c, CoeffIter s,const Modulus& modulus, CoeffIter result){
+            vector<vector<uint64_t>> A(coeff_degree, vector<uint64_t>(coeff_degree));
+            vector<vector<uint64_t>> B(coeff_degree, vector<uint64_t>(coeff_degree));
+            init_matrix_with_coeff(A, coeff_degree, c, modulus);
+            matrix_dot_product_mod(matrix, A, B, modulus);
+            matrix_dot_vector(B, s, modulus, coeff_degree,result );
         }
 
         //
@@ -192,6 +266,16 @@ namespace seal
 
 
         void print_matrix(vector<vector<int64_t>>& matrix){
+            for(auto i = 0U;i < matrix.size();i++){
+                auto row = matrix[i];
+                for( auto j = 0U;j < row.size();j++ ){
+                    cout << row.at(j) << " ";
+                }
+                cout << endl;
+            } 
+        }
+
+        void print_matrix(vector<vector<uint64_t>>& matrix){
             for(auto i = 0U;i < matrix.size();i++){
                 auto row = matrix[i];
                 for( auto j = 0U;j < row.size();j++ ){

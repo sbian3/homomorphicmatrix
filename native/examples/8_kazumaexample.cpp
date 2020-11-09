@@ -1,5 +1,6 @@
 #include "seal/util/defines.h"
 #include "seal/util/linarith.h"
+#include "seal/util/uintarithmod.h"
 #include "examples.h"
 #include <cassert>
 
@@ -260,6 +261,23 @@ void test_init_matrix(){
     util::print_matrix(matrix);
 }
 
+void test_init_matrix_uint(){
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    uint64_t array_size = 10;
+    Modulus modulus(15);
+    // polynomial degree
+    uint64_t coeff_degree = array_size;
+    vector<std::uint64_t> arr(array_size);
+    vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
+
+    for(size_t i = 0;i < array_size;i++){
+        arr[i] = i+1;
+    }
+    SEAL_ALLOCATE_GET_COEFF_ITER(coeff_iter, coeff_degree, pool_);
+    util::set_poly(arr.data(), coeff_degree, 1, coeff_iter);
+    util::init_matrix_with_coeff(matrix, coeff_degree, coeff_iter, modulus);
+    util::print_matrix(matrix);
+}
 
 
 
@@ -347,6 +365,38 @@ void test_matrix_dot_product(){
     //util::print_matrix(matrix2);
     cout << "calculating matrix dot product..." << endl;
     util::matrix_dot_product_mod(matrix, matrix2, result, modulus);
+    //util::print_matrix(result);
+}
+
+void test_matrix_dot_product_uint(uint64_t coeff_degree){
+    Modulus modulus = 10000;
+    vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
+    vector<vector<uint64_t>> matrix2(coeff_degree, vector<uint64_t>(coeff_degree));
+    vector<vector<uint64_t>> result(coeff_degree, vector<uint64_t>(coeff_degree));
+    util::init_matrix_rand_mod(matrix, coeff_degree, modulus.value());
+    cout << "first matrix: " << endl;
+    //util::print_matrix(matrix);
+    util::init_matrix_rand_mod(matrix2, coeff_degree, modulus.value());
+    cout << "second matrix: " << endl;
+    //util::print_matrix(matrix2);
+    cout << "calculating matrix dot product..." << endl;
+    util::matrix_dot_product_mod(matrix, matrix2, result, modulus);
+    //util::print_matrix(result);
+}
+
+void test_matrix_dot_product_uint_t(uint64_t coeff_degree){
+    Modulus modulus = 10000;
+    vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
+    vector<vector<uint64_t>> matrix2(coeff_degree, vector<uint64_t>(coeff_degree));
+    vector<vector<uint64_t>> result(coeff_degree, vector<uint64_t>(coeff_degree));
+    util::init_matrix_rand_mod(matrix, coeff_degree, modulus.value());
+    cout << "first matrix: " << endl;
+    //util::print_matrix(matrix);
+    util::init_matrix_rand_mod(matrix2, coeff_degree, modulus.value());
+    cout << "second matrix: " << endl;
+    //util::print_matrix(matrix2);
+    cout << "calculating matrix dot product..." << endl;
+    util::matrix_dot_product_mod_t(matrix, matrix2, result, modulus);
     //util::print_matrix(result);
 }
 
@@ -552,6 +602,71 @@ void test_bfv_matrix(){
     print_plain(x_decrypted, 20);
 }
 
+void matrix_product_benchmark(){
+    uint64_t coeff_degree = 100;
+    cout << "coeff degree: " << coeff_degree << endl;
+    test_matrix_dot_product_uint_t(coeff_degree);
+    coeff_degree *= 2;
+    cout << "coeff degree: " << coeff_degree << endl;
+    test_matrix_dot_product_uint_t(coeff_degree);
+    coeff_degree *= 2;
+    cout << "coeff degree: " << coeff_degree << endl;
+    test_matrix_dot_product_uint_t(coeff_degree);
+    coeff_degree *= 2;
+    cout << "coeff degree: " << coeff_degree << endl;
+    test_matrix_dot_product_uint_t(coeff_degree);
+}
+
+void test_inverse(){
+    uint64_t operand = 5;
+    uint64_t mod = 11;
+    uint64_t result =  util::negate_uint_mod(operand, mod);
+    cout << "-" << operand << "mod" << mod <<  "= " << result;
+}
+
+void test_util_dot_product_mod(){
+    uint64_t count = 101;
+    uint64_t arr1[count];
+    uint64_t arr2[count];
+    uint64_t expected = 0;
+    Modulus modulus(22);
+    for(auto i = 0U;i < count;i++){
+        arr1[i] = i+1;
+        arr2[i] = i+2;
+        expected += (i+1) * (i+2);
+        expected = expected % modulus.value();
+    }
+    uint64_t result = util::dot_product_mod(arr1, arr2, count, modulus);
+    cout << "expected result: " << expected << endl;
+    cout << "result: " << result << endl;
+}
+
+void benchmark_singlefunction(){
+    uint64_t count;
+    cout << "input count: ";
+    cin >> count;
+    vector<uint64_t> arr1(count);
+    vector<uint64_t> arr2(count);
+    uint64_t expected = 0;
+    uint64_t result = 0;
+    Modulus modulus(22);
+    for(auto i = 0U;i < count;i++){
+        arr1[i] = i+1;
+        arr2[i] = i+2;
+        expected += (i+1) * (i+2);
+        expected = expected % modulus.value();
+    }
+    auto time_start = chrono::high_resolution_clock::now();
+    for(auto i = 0U;i < count;i++){
+        result = util::multiply_add_uint_mod(arr1[i], arr2[i], result, modulus);
+    }
+    auto time_end = chrono::high_resolution_clock::now();
+    auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
+    cout << "expect: " << expected << endl;
+    cout << "result: " << result << endl;
+    cout << "time: " << time_diff.count() << "ms" << endl;
+}
+
 void example_kazuma(){
     //matrix_conversion();
     //test_conversion();
@@ -560,8 +675,12 @@ void example_kazuma(){
     //test_innerprod_vector();
     //test_matrix_conversion_with_rnsiter();
     //test_init_matrix();
-    test_matrix_dot_product();
+    test_init_matrix_uint();
+    //test_matrix_dot_product();
     //test_print_iter();
     //test_bfv_matrix();
     //test_secret_product();
+    //test_inverse();
+    //test_util_dot_product_mod(); 
+    //benchmark_singlefunction();
 }
