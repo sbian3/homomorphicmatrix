@@ -1,5 +1,6 @@
 #include "seal/util/defines.h"
 #include "seal/util/linarith.h"
+#include "seal/util/uintlinarith.h"
 #include "seal/util/uintarithmod.h"
 #include "examples.h"
 #include <cassert>

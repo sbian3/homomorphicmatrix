@@ -26,6 +26,7 @@ target_sources(seal_obj PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/uintcore.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ztools.cpp
     ${CMAKE_CURRENT_LIST_DIR}/linarith.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/uintlinarith.cpp
 )
 
 # Create the config file
@@ -66,6 +67,7 @@ install(
         ${CMAKE_CURRENT_LIST_DIR}/uintcore.h
         ${CMAKE_CURRENT_LIST_DIR}/ztools.h
         ${CMAKE_CURRENT_LIST_DIR}/linarith.h
+        ${CMAKE_CURRENT_LIST_DIR}/uintlinarith.h
     DESTINATION
         ${SEAL_INCLUDES_INSTALL_DIR}/seal/util
 )
