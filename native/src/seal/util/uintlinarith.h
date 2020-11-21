@@ -79,19 +79,6 @@ namespace seal
                     });
         }
 
-        // 
-        // for decryptor
-        //
-
-        void secret_product_with_matrix(vector<vector<uint64_t>> matrix,uint64_t coeff_degree, CoeffIter c, CoeffIter s, const Modulus& modulus, CoeffIter result);
-
-        inline void secret_product_with_matrix_rns(vector<vector<uint64_t>> matrix, uint64_t rns_count, RNSIter c, RNSIter s, ConstModulusIter mod_chain, RNSIter result){
-            uint64_t coeff_degree = c.poly_modulus_degree();
-            SEAL_ITERATE(iter(c, s, mod_chain, result), rns_count, [&](auto I){
-                    secret_product_with_matrix(matrix, coeff_degree, get<0>(I), get<1>(I), get<2>(I), get<3>(I));
-                    });
-        }
-
         //
         // matrix and matrix arithmetic
         //
@@ -100,6 +87,25 @@ namespace seal
         void matrix_dot_product_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus);
 
         void matrix_dot_product_mod_t(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus);
+
+        // 
+        // for decryptor
+        //
+
+        inline void secret_product_with_matrix(vector<vector<uint64_t>> matrix,uint64_t coeff_degree, CoeffIter c, CoeffIter s,const Modulus& modulus, CoeffIter result){
+            vector<vector<uint64_t>> A(coeff_degree, vector<uint64_t>(coeff_degree));
+            vector<vector<uint64_t>> B(coeff_degree, vector<uint64_t>(coeff_degree));
+            init_matrix_with_coeff(A, coeff_degree, c, modulus);
+            matrix_dot_product_mod(matrix, A, B, modulus);
+            matrix_dot_vector(B, s, modulus, coeff_degree,result );
+        }
+
+        inline void secret_product_with_matrix_rns(vector<vector<uint64_t>> matrix, uint64_t rns_count, RNSIter c, RNSIter s, ConstModulusIter mod_chain, RNSIter result){
+            uint64_t coeff_degree = c.poly_modulus_degree();
+            SEAL_ITERATE(iter(c, s, mod_chain, result), rns_count, [&](auto I){
+                    secret_product_with_matrix(matrix, coeff_degree, get<0>(I), get<1>(I), get<2>(I), get<3>(I));
+                    });
+        }
 
         //
         // print function

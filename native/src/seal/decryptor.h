@@ -77,6 +77,7 @@ namespace seal
         void decrypt(const Ciphertext &encrypted, Plaintext &destination);
 
         void decrypt_bfv_with_matrix(Ciphertext &encrypted, Plaintext &destination, std::vector<std::vector<int64_t>> matrix);
+        void decrypt_bfv_with_matrix(Ciphertext &encrypted, Plaintext &destination, std::vector<std::vector<uint64_t>> matrix);
 
         /*
         Computes the invariant noise budget (in bits) of a ciphertext. The
@@ -125,6 +126,7 @@ namespace seal
         void dot_product_ct_sk_array(const Ciphertext &encrypted, util::RNSIter destination, MemoryPoolHandle pool);
 
         void dot_product_with_matrix(Ciphertext &encrypted, util::RNSIter destination, std::vector<std::vector<int64_t>> matrix, MemoryPoolHandle pool);
+        void dot_product_with_matrix(Ciphertext &encrypted, util::RNSIter destination, std::vector<std::vector<uint64_t>> matrix, MemoryPoolHandle pool);
 
 
         // We use a fresh memory pool with `clear_on_destruction' enabled.

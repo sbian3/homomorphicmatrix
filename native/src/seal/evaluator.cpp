@@ -2240,4 +2240,53 @@ namespace seal
             });
         });
     }
+
+    
+    void Evaluator::convolution(const Ciphertext &encrypted, const std::vector<uint64_t> kernel, const GaloisKeys &galois_keys, Ciphertext &destination){
+        std::stringstream ss;
+        ss << std::hex << kernel[0];
+        std::cout << "first kernel:" <<  ss.str() << endl;
+        Plaintext plain_scalar(ss.str());
+        multiply_plain(encrypted, plain_scalar, destination);
+        Ciphertext tmp_scalarmult;
+        Ciphertext tmp_rotate(encrypted);
+        for(auto i = 1U;i < kernel.size();i++){
+            ss.str("");
+            ss.clear(stringstream::goodbit);
+            ss << std::hex << kernel[i];
+            std::cout << "kernel: " << i << ": " << ss.str() << endl;
+            Plaintext scalar(ss.str());
+            rotate_rows_inplace(tmp_rotate, -1, galois_keys);
+            multiply_plain(tmp_rotate, scalar, tmp_scalarmult);
+            add_inplace(destination, tmp_scalarmult);
+        }
+    }
+
+        void Evaluator::lineartrans(const Ciphertext &encrypted, const std::vector<std::vector<uint64_t>> &matrix, BatchEncoder batch_encoder, const GaloisKeys &galois_keys, Ciphertext destination){
+            Plaintext batched_vector;
+            uint64_t poly_count = matrix.size();
+            std::vector<uint64_t> diagonal_vector(poly_count);
+            std::vector<uint64_t> diagonal_vector_mult(poly_count*2);
+            Ciphertext enc_rotated(encrypted);
+            Ciphertext tmp_mult;
+            poly_count = 1;
+            for(auto i = 0ULL;i < poly_count ; i++){
+                diagonal_vector.clear();
+
+                for(auto j = 0ULL;j < poly_count;j++){
+                    diagonal_vector.push_back(matrix[j][(j+i) % poly_count]);
+                }
+                diagonal_vector_mult = diagonal_vector;
+                diagonal_vector_mult.insert(diagonal_vector_mult.end(), diagonal_vector.begin(), diagonal_vector.end());
+                batch_encoder.encode(diagonal_vector_mult, batched_vector);
+                if(i == 0){
+                    multiply_plain(enc_rotated, batched_vector, destination);
+                }else{
+                    rotate_rows_inplace(enc_rotated, 1, galois_keys);
+                    multiply_plain(enc_rotated, batched_vector, tmp_mult);
+                    add_inplace(destination, tmp_mult);
+                }
+            }
+        }
+
 } // namespace seal

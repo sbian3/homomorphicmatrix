@@ -143,19 +143,6 @@ namespace seal
         }
 
         // 
-        // for decryptor
-        //
-
-        void secret_product_with_matrix(vector<vector<uint64_t>> matrix,uint64_t coeff_degree, CoeffIter c, CoeffIter s,const Modulus& modulus, CoeffIter result){
-            vector<vector<uint64_t>> A(coeff_degree, vector<uint64_t>(coeff_degree));
-            vector<vector<uint64_t>> B(coeff_degree, vector<uint64_t>(coeff_degree));
-            init_matrix_with_coeff(A, coeff_degree, c, modulus);
-            matrix_dot_product_mod(matrix, A, B, modulus);
-            matrix_dot_vector(B, s, modulus, coeff_degree,result );
-        }
-
-
-        // 
         // print function
         //
 

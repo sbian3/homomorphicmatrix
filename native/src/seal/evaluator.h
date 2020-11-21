@@ -17,6 +17,7 @@
 #include "seal/util/iterator.h"
 #include "seal/util/pointer.h"
 #include "seal/util/uintarithsmallmod.h"
+#include "seal/batchencoder.h"
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -1171,6 +1172,20 @@ namespace seal
             destination = encrypted;
             rotate_columns_inplace(destination, galois_keys, std::move(pool));
         }
+
+        /**
+         * convolve ciphertext with given kernel Plaintext
+         * 
+         * 
+         * 
+        */
+        void convolution(const Ciphertext &encrypted, const std::vector<uint64_t> kernel, const GaloisKeys &galois_keys, Ciphertext &destination);
+
+        /**
+         * apply linear transformation to ciphertext
+         */
+
+        void lineartrans(const Ciphertext &encrypted, const std::vector<std::vector<uint64_t>> &matrix,BatchEncoder batch_encoder, const GaloisKeys &galois_keys, Ciphertext destination);
 
         /**
         Rotates plaintext vector cyclically. When using the CKKS scheme, this function
