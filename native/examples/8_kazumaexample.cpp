@@ -138,7 +138,7 @@ void init_matrix_identity_rnd(vector<vector<int64_t>>& matrix, uint64_t poly_mod
 
 
 
-void test_conversion(){
+void test_matrix_initialization(){
     uint64_t size=3;
     vector<vector<int64_t>> matrix(size, vector<int64_t>(size));
     //util::init_matrix_rotate(matrix, size, 1, 1);
@@ -217,6 +217,32 @@ void test_innerprod(){
     uint64_t result = inner_product_coeffmod(iter1, iter2, coeff_degree, modulus);
     cout << "innerprod result: " << result << endl;
     cout << "expected result: " << expected_result << endl;
+}
+
+void test_conviter(){
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    uint64_t array_size = 10;
+    // polynomial degree
+    uint64_t coeff_degree = array_size;
+    Modulus modulus(100);
+
+    vector<std::uint64_t> arr(array_size);
+    vector<std::uint64_t> arr2(array_size);
+
+    uint64_t expected_result = 0;
+    for(uint64_t i = 0;i < array_size;i++){
+        arr[i] = i+1;
+        arr2[i] = i+2;
+        expected_result += arr[i] * arr2[i] % modulus.value();
+    }
+    expected_result %= modulus.value();
+
+    SEAL_ALLOCATE_GET_COEFF_ITER(iter1, coeff_degree, pool_);
+    SEAL_ALLOCATE_GET_COEFF_ITER(iter2, coeff_degree, pool_);
+    util::set_poly(arr2.data(), coeff_degree, 1, iter2);
+    util::print_iter(iter2, coeff_degree);
+    util::conv_negacyclic(arr, iter2, coeff_degree, modulus, iter1);
+    util::print_iter(iter1, coeff_degree);
 }
 
 void test_innerprod_vector(){
@@ -1118,6 +1144,103 @@ void test_batch_matrix(){
     print_matrix(pod_result, row_size);
 }
 
+void conv_negacyclic(vector<uint64_t> &kernel, vector<uint64_t> &input, const Modulus &modulus, vector<uint64_t> &result){
+    uint64_t size_poly = input.size();
+    for(uint64_t i = 0U;i < kernel.size();i++){
+        for(uint64_t j = 0U;j < size_poly;j++){
+            uint64_t tmp_prod = util::multiply_uint_mod(kernel[i], input[j], modulus);
+            uint64_t index = i+j;
+            if((index) >= size_poly){
+                tmp_prod = util::negate_uint_mod(tmp_prod, modulus);
+                index -= size_poly;
+            }
+            result[index] = util::add_uint_mod(result[index], tmp_prod, modulus);
+        }
+    }
+}
+
+void test_conv_nega(){
+    vector<uint64_t> kernel = {1,1,2};
+    vector<uint64_t> input = {1, 2, 3, 4};
+    vector<uint64_t> result(20);
+    conv_negacyclic(kernel, input, 9, result);
+    for(uint64_t i = 0U;i < result.size();i++){
+        cout << result[i];
+        if(i != result.size() -1){
+            cout << " ";
+        }
+    }
+    cout << endl;
+}
+
+void test_conv_cipher(){
+    print_example_banner("matrix_conversion");
+
+    // parameter setting
+    EncryptionParameters parms(scheme_type::BFV);
+    size_t poly_modulus_degree = 1024;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+
+    vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
+    parms.set_coeff_modulus(mod_chain);
+    uint64_t plaintext_modulus = 7;
+    parms.set_plain_modulus(plaintext_modulus);
+    auto context = SEALContext::Create(parms);
+    print_line(__LINE__);
+    cout << "Set encryption parameters and print" << endl;
+    print_parameters(context);
+    cout << "Parameter validation: " << context->parameter_error_message() << endl;
+
+    cout << endl;
+
+    // generate encryption helper
+    cout << "keygen step" << endl;
+    KeyGenerator keygen(context);
+    cout << "pubkey " << endl;
+    PublicKey public_key = keygen.public_key();
+    SecretKey secret_key = keygen.secret_key();
+    Encryptor encryptor(context, public_key);
+    Evaluator evaluator(context);
+    Decryptor decryptor(context, secret_key);
+
+    // generate plaintext x
+    print_line(__LINE__);
+    string x = "6x^2 + 1x^1 + 2";
+    cout << "Input plaintext: ";
+    Plaintext x_plain(x);
+    cout << "Express x = " + x + " as a plaintext polynomial " + x_plain.to_string() + "." << endl;
+    cout << "Coeff count: " << x_plain.coeff_count() << endl;
+    print_plain(x_plain, 10);
+
+    // convert plaintext by matrix
+    Plaintext copied_plain = Plaintext(x_plain);
+    copied_plain.resize(poly_modulus_degree);
+    cout << "Copied and converted plaintext" << endl;
+
+    // encrypt x
+    Ciphertext x_encrypted;
+    cout << "----Encrypt x_plain to x_encrypted.----" << endl;
+    encryptor.encrypt(x_plain, x_encrypted);
+    cout << "Coeff modulus size: " << x_encrypted.coeff_modulus_size() << endl;
+    uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
+    cout << "Coeff size: " << cipher_coeffsize << endl;
+    cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+
+    // convolve encrypted x
+    vector<uint64_t> kernel = {1,1,2};
+    Ciphertext conved_x(x_encrypted);
+    for(uint64_t i = 0;i < cipher_coeffsize;i++){
+        conved_x[i] = 0;
+    }
+    util::conv_negacyclic(kernel, x_encrypted, mod_chain, conved_x);
+
+
+    cout << "decryption of x_tranformed: " << endl;
+    Plaintext x_conved_decrypted;
+    decryptor.decrypt(conved_x, x_conved_decrypted);
+    print_plain(x_conved_decrypted, 20);
+}
+
 void example_kazuma(){
     //matrix_conversion();
     //test_conversion();
@@ -1136,5 +1259,8 @@ void example_kazuma(){
     //benchmark_singlefunction();
     //test_batch_encoder();
     //test_batch_convolution();
-    test_batch_matrix();
+    //test_batch_matrix();
+    //test_conv_nega();
+    test_conv_cipher();
+    //test_conviter();
 }

@@ -141,6 +141,25 @@ namespace seal
             auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
             cout << "matrix dot product: " << time_diff.count() << "milliseconds" << endl;
         }
+        
+        //
+        // Convolution
+        //
+
+        void conv_negacyclic(vector<uint64_t> &kernel, CoeffIter &encrypted, uint64_t poly_degree, const Modulus &modulus, CoeffIter result){
+            uint64_t size_poly = poly_degree;
+            for(uint64_t i = 0U;i < kernel.size();i++){
+                for(uint64_t j = 0U;j < size_poly;j++){
+                    uint64_t tmp_prod = util::multiply_uint_mod(kernel[i], encrypted[j], modulus);
+                    uint64_t index = i+j;
+                    if((index) >= size_poly){
+                        tmp_prod = util::negate_uint_mod(tmp_prod, modulus);
+                        index -= size_poly;
+                    }
+                    result[index] = util::add_uint_mod(result[index], tmp_prod, modulus);
+                }
+            }
+        }
 
         // 
         // print function

@@ -190,7 +190,7 @@ inline void print_matrix(std::vector<T> matrix, std::size_t row_size)
     We're not going to print every column of the matrix (there are 2048). Instead
     print this many slots from beginning and end of the matrix.
     */
-    std::size_t print_size = 5;
+    std::size_t print_size = 8;
 
     std::cout << std::endl;
     std::cout << "    [";
