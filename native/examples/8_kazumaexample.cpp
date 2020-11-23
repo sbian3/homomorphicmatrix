@@ -549,12 +549,11 @@ void test_bfv_matrix(){
 
     // parameter setting
     EncryptionParameters parms(scheme_type::BFV);
-    size_t poly_modulus_degree = 1024;
+    size_t poly_modulus_degree;
+    cout << "poly_modulus_degree: ";
+    cin >> poly_modulus_degree;
     parms.set_poly_modulus_degree(poly_modulus_degree);
 
-    //uint64_t modulo_cipher = 0xfffffffd8001;
-    //uint64_t modulo_cipher = 0xfffffffd8001;
-    //vector<Modulus> mod_chain = {Modulus(modulo_cipher)};
     vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 7;
@@ -589,7 +588,7 @@ void test_bfv_matrix(){
     // generate transform matrix
     vector<vector<uint64_t>> matrix(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
     util::init_matrix_identity(matrix, poly_modulus_degree, 2);
-    matrix[0][0] = 1;
+    matrix[0][1] = 1;
     //print_matrix(matrix);
 
     // convert plaintext by matrix
@@ -620,7 +619,10 @@ void test_bfv_matrix(){
     print_line(__LINE__);
     Plaintext x_decrypted;
     cout << "decryption of x_encrypted: ";
+    auto time_start = chrono::high_resolution_clock::now();
     decryptor.decrypt_bfv_with_matrix(x_encrypted, x_decrypted, matrix);
+    auto time_end = chrono::high_resolution_clock::now();
+    auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
 
     // compare converted plain and decryption of x_converted
     //cout << "Converted plain: " << endl;
@@ -1001,7 +1003,7 @@ void test_batch_matrix(){
     anything done with the IntegerEncoder.
     */
     EncryptionParameters parms(scheme_type::BFV);
-    size_t poly_modulus_degree = 4096;
+    size_t poly_modulus_degree = 8192;
     parms.set_poly_modulus_degree(poly_modulus_degree);
     parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
 
@@ -1101,40 +1103,46 @@ void test_batch_matrix(){
     vector<vector<uint64_t>> matrix(matrix_size, vector<uint64_t>(matrix_size));
     util::init_matrix_identity(matrix, matrix_size, 2);
     matrix[0][1] = 1;
+
+    auto time_start = chrono::high_resolution_clock::now();
     Ciphertext trans_cipher;
     //evaluator.lineartrans(encrypted_matrix, matrix, batch_encoder, gal_keys, trans_cipher);
-            Plaintext batched_vector;
-            uint64_t poly_count = matrix.size();
-            std::vector<uint64_t> diagonal_vector(poly_count);
-            std::vector<uint64_t> diagonal_vector_mult(poly_count*2);
-            Ciphertext enc_rotated(encrypted_matrix);
-            Ciphertext tmp_mult;
-            for(auto i = 0ULL;i < poly_count ; i++){
-                diagonal_vector.clear();
+    Plaintext batched_vector;
+    uint64_t poly_count = matrix.size();
+    std::vector<uint64_t> diagonal_vector(poly_count);
+    std::vector<uint64_t> diagonal_vector_mult(poly_count*2);
+    Ciphertext enc_rotated(encrypted_matrix);
+    Ciphertext tmp_mult;
+    for(auto i = 0ULL;i < poly_count ; i++){
+        diagonal_vector.clear();
 
-                for(auto j = 0ULL;j < poly_count;j++){
-                    diagonal_vector.push_back(matrix[j][(j+i) % poly_count]);
-                }
-                diagonal_vector_mult = diagonal_vector;
-                diagonal_vector_mult.insert(diagonal_vector_mult.end(), diagonal_vector.begin(), diagonal_vector.end());
-                batch_encoder.encode(diagonal_vector_mult, batched_vector);
-                if(i == 0){
-                    evaluator.multiply_plain(enc_rotated, batched_vector, trans_cipher);
-                }else{
-                    evaluator.rotate_rows_inplace(enc_rotated, 1, gal_keys);
-                    evaluator.multiply_plain(enc_rotated, batched_vector, tmp_mult);
-                    evaluator.add_inplace(trans_cipher, tmp_mult);
-                }
-            }
+        for(auto j = 0ULL;j < poly_count;j++){
+            diagonal_vector.push_back(matrix[j][(j+i) % poly_count]);
+        }
+        diagonal_vector_mult = diagonal_vector;
+        diagonal_vector_mult.insert(diagonal_vector_mult.end(), diagonal_vector.begin(), diagonal_vector.end());
+        batch_encoder.encode(diagonal_vector_mult, batched_vector);
+        if(i == 0){
+            evaluator.multiply_plain(enc_rotated, batched_vector, trans_cipher);
+        }else{
+            evaluator.rotate_rows_inplace(enc_rotated, 1, gal_keys);
+            evaluator.multiply_plain(enc_rotated, batched_vector, tmp_mult);
+            evaluator.add_inplace(trans_cipher, tmp_mult);
+        }
+    }
+    auto time_end = chrono::high_resolution_clock::now();
+    auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
+    cout << "poly degree: " << poly_modulus_degree << endl;
+    cout << "SIMD linear transformation time: " << time_diff.count() << "ms" << endl;
 
     /*
-    How much noise budget do we have left?
-    */
+       How much noise budget do we have left?
+       */
     //cout << "    + Noise budget in result: " << decryptor.invariant_noise_budget(trans_cipher) << " bits" << endl;
 
     /*
-    We decrypt and decompose the plaintext to recover the result as a matrix.
-    */
+       We decrypt and decompose the plaintext to recover the result as a matrix.
+       */
     Plaintext plain_result;
     print_line(__LINE__);
     cout << "Decrypt and decode result." << endl;
@@ -1232,8 +1240,11 @@ void test_conv_cipher(){
     for(uint64_t i = 0;i < cipher_coeffsize;i++){
         conved_x[i] = 0;
     }
+    auto time_start = chrono::high_resolution_clock::now();
     util::conv_negacyclic(kernel, x_encrypted, mod_chain, conved_x);
-
+    auto time_end = chrono::high_resolution_clock::now();
+    auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
+    cout << "straight convolution: " << time_diff.count() << "ms" << endl;
 
     cout << "decryption of x_tranformed: " << endl;
     Plaintext x_conved_decrypted;
@@ -1252,7 +1263,7 @@ void example_kazuma(){
     //test_init_matrix_uint();
     //test_matrix_dot_product();
     //test_print_iter();
-    //test_bfv_matrix();
+    test_bfv_matrix();
     //test_secret_product();
     //test_inverse();
     //test_util_dot_product_mod(); 
@@ -1261,6 +1272,6 @@ void example_kazuma(){
     //test_batch_convolution();
     //test_batch_matrix();
     //test_conv_nega();
-    test_conv_cipher();
+    //test_conv_cipher();
     //test_conviter();
 }

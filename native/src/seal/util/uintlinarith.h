@@ -19,6 +19,7 @@
 #include <vector>
 #include <iostream>
 #include <cassert>
+#include <chrono>
 
 using namespace std;
 
@@ -92,18 +93,26 @@ namespace seal
         // for decryptor
         //
 
-        inline void secret_product_with_matrix(vector<vector<uint64_t>> matrix,uint64_t coeff_degree, CoeffIter c, CoeffIter s,const Modulus& modulus, CoeffIter result){
+        inline void generate_c1(vector<vector<uint64_t>> matrix, uint64_t coeff_degree, CoeffIter c, const Modulus &modulus, vector<vector<uint64_t>> &new_c1){
             vector<vector<uint64_t>> A(coeff_degree, vector<uint64_t>(coeff_degree));
-            vector<vector<uint64_t>> B(coeff_degree, vector<uint64_t>(coeff_degree));
             init_matrix_with_coeff(A, coeff_degree, c, modulus);
-            matrix_dot_product_mod(matrix, A, B, modulus);
-            matrix_dot_vector(B, s, modulus, coeff_degree,result );
+            matrix_dot_product_mod(matrix, A, new_c1, modulus);
+        }
+
+        inline void secret_product_with_matrix(vector<vector<uint64_t>> matrix,uint64_t coeff_degree, CoeffIter c, CoeffIter s,const Modulus& modulus, CoeffIter result){
+            //matrix_dot_vector(B, s, modulus, coeff_degree,result );
         }
 
         inline void secret_product_with_matrix_rns(vector<vector<uint64_t>> matrix, uint64_t rns_count, RNSIter c, RNSIter s, ConstModulusIter mod_chain, RNSIter result){
             uint64_t coeff_degree = c.poly_modulus_degree();
             SEAL_ITERATE(iter(c, s, mod_chain, result), rns_count, [&](auto I){
-                    secret_product_with_matrix(matrix, coeff_degree, get<0>(I), get<1>(I), get<2>(I), get<3>(I));
+                    auto time_start = chrono::high_resolution_clock::now();
+                    vector<vector<uint64_t>> new_c1(coeff_degree, vector<uint64_t>(coeff_degree));
+                    generate_c1(matrix, coeff_degree, get<0>(I), get<2>(I), new_c1);
+                    auto time_c1 = chrono::high_resolution_clock::now();
+                    auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_c1 - time_start);
+                    cout << "c1 generation: " << time_diff.count() << "ms" << endl;
+                    matrix_dot_vector(new_c1, get<1>(I), get<2>(I), coeff_degree, get<3>(I));
                     });
         }
 

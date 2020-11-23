@@ -76,8 +76,16 @@ namespace seal
         */
         void decrypt(const Ciphertext &encrypted, Plaintext &destination);
 
+        // 
+        // added function
+        //
         void decrypt_bfv_with_matrix(Ciphertext &encrypted, Plaintext &destination, std::vector<std::vector<int64_t>> matrix);
         void decrypt_bfv_with_matrix(Ciphertext &encrypted, Plaintext &destination, std::vector<std::vector<uint64_t>> matrix);
+
+        void dot_product_with_kernel(Ciphertext &encrypted, util::RNSIter destination, std::vector<uint64_t> kernel,  MemoryPoolHandle pool);
+        // 
+        // end of added function
+        //
 
         /*
         Computes the invariant noise budget (in bits) of a ciphertext. The
@@ -125,9 +133,16 @@ namespace seal
         // destination has the size of an RNS polynomial.
         void dot_product_ct_sk_array(const Ciphertext &encrypted, util::RNSIter destination, MemoryPoolHandle pool);
 
+        //
+        // added function
+        //
+
         void dot_product_with_matrix(Ciphertext &encrypted, util::RNSIter destination, std::vector<std::vector<int64_t>> matrix, MemoryPoolHandle pool);
         void dot_product_with_matrix(Ciphertext &encrypted, util::RNSIter destination, std::vector<std::vector<uint64_t>> matrix, MemoryPoolHandle pool);
 
+        // 
+        // end of added function
+        //
 
         // We use a fresh memory pool with `clear_on_destruction' enabled.
         MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
