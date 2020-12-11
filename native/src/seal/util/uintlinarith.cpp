@@ -35,9 +35,37 @@ namespace seal
             }
         }
 
+        void init_matrix_rotate_partial(vector<vector<uint64_t>> &matrix, uint64_t size_kernel, uint64_t left_rotate, uint64_t start_col, uint64_t start_row, uint64_t scale, const Modulus &modulus){
+            // assert
+            // 1.start_row + size_kernel <= matrix.row.size
+            // 2.start_col + size_kernel <= matrix.col.size
+            for(auto i = 0U;i < size_kernel;i++){
+                uint64_t tmp_scale = scale;
+                uint64_t col_index = start_col + i + left_rotate;
+                if(col_index >= start_col + size_kernel){
+                    col_index = col_index - size_kernel;
+                    tmp_scale = negate_uint_mod(tmp_scale, modulus);
+                }
+                matrix[col_index][start_row + i] = tmp_scale;
+            }
+        }
+
+        void init_matrix_rotate_partial(vector<vector<uint64_t>> &matrix, vector<uint64_t> kernel, uint64_t start_col, uint64_t start_row, const Modulus &modulus){
+            uint64_t kernel_size = kernel.size();
+            for(auto i = 0U;i < kernel_size;i++){
+                init_matrix_rotate_partial(matrix, kernel_size, i, start_col, start_row, kernel[i], modulus);
+            }
+        }
+
         void init_matrix_with_coeff(vector<vector<uint64_t>>& matrix, uint64_t size, ConstCoeffIter iter, const Modulus &modulus){
             for(uint64_t i = 0;i < size;i++){
                 init_matrix_rotate(matrix, size, i, iter[i], modulus);
+            }
+        }
+
+        void init_matrix_with_coeff(vector<vector<uint64_t>>& matrix, uint64_t size_matrix, ConstCoeffIter iter, uint64_t size_kernel, const Modulus &modulus){
+            for(uint64_t i = 0;i < size_kernel;i++){
+                init_matrix_rotate(matrix, size_matrix, i, iter[i], modulus);
             }
         }
 
@@ -146,7 +174,7 @@ namespace seal
         // Convolution
         //
 
-        void conv_negacyclic(vector<uint64_t> &kernel, CoeffIter &encrypted, uint64_t poly_degree, const Modulus &modulus, CoeffIter result){
+        void conv_negacyclic(vector<uint64_t> &kernel, CoeffIter encrypted, uint64_t poly_degree, const Modulus &modulus, CoeffIter result){
             uint64_t size_poly = poly_degree;
             for(uint64_t i = 0U;i < kernel.size();i++){
                 for(uint64_t j = 0U;j < size_poly;j++){

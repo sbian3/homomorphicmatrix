@@ -160,7 +160,7 @@ namespace seal
 
     //
     //
-    // add original decrypt function
+    // add propose decrypt function
     //
     //
     
@@ -275,6 +275,60 @@ namespace seal
 
     }
 
+    void Decryptor::decrypt_bfv_with_kernel(Ciphertext &encrypted, Plaintext &destination, std::vector<uint64_t> kernel){
+        // Verify that encrypted is valid.
+        if (!is_valid_for(encrypted, context_))
+        {
+            throw invalid_argument("encrypted is not valid for encryption parameters");
+        }
+
+        // Additionally check that ciphertext doesn't have trivial size
+        if (encrypted.size() < SEAL_CIPHERTEXT_SIZE_MIN)
+        {
+            throw invalid_argument("encrypted is empty");
+        }
+
+        //
+        // copied from bfv_decrypt
+        // 
+        if (encrypted.is_ntt_form())
+        {
+            throw invalid_argument("encrypted cannot be in NTT form");
+        }
+
+        auto &context_data = *context_->get_context_data(encrypted.parms_id());
+        auto &parms = context_data.parms();
+        auto &coeff_modulus = parms.coeff_modulus();
+        size_t coeff_count = parms.poly_modulus_degree();
+        size_t coeff_modulus_size = coeff_modulus.size();
+
+        // Firstly find c_0 + c_1 *s + ... + c_{count-1} * s^{count-1} mod q
+        // This is equal to Delta m + v where ||v|| < Delta/2.
+        // Add Delta / 2 and now we have something which is Delta * (m + epsilon) where epsilon < 1
+        // Therefore, we can (integer) divide by Delta and the answer will round down to m.
+
+        // Make a temp destination for all the arithmetic mod qi before calling FastBConverse
+        SEAL_ALLOCATE_ZERO_GET_RNS_ITER(tmp_dest_modq, coeff_count, coeff_modulus_size, pool_);
+
+        // original dot_product function.
+        dot_product_with_kernel(encrypted, tmp_dest_modq, kernel, pool_);
+        //cout << "tmp rns..." << endl;
+        //print_iter(tmp_dest_modq, coeff_modulus_size);
+
+        // Allocate a full size destination to write to
+        destination.parms_id() = parms_id_zero;
+        destination.resize(coeff_count);
+
+        // Divide scaling variant using BEHZ FullRNS techniques
+        context_data.rns_tool()->decrypt_scale_and_round(tmp_dest_modq, destination.data(), pool_);
+
+        // How many non-zero coefficients do we really have in the result?
+        size_t plain_coeff_count = get_significant_uint64_count_uint(destination.data(), coeff_count);
+
+        // Resize destination to appropriate size
+        destination.resize(max(plain_coeff_count, size_t(1)));
+
+    }
     void Decryptor::dot_product_with_matrix(Ciphertext &encrypted, util::RNSIter destination, std::vector<std::vector<int64_t>> matrix,  MemoryPoolHandle pool){
         auto &context_data = *context_->get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
@@ -382,15 +436,13 @@ namespace seal
         //util::print_iter(secret_key_array, coeff_modulus_size);
 
         PolyIter cipher_polyiter(encrypted);
-        //cout << "polyiter(before)" << endl;
-        //print_iter(cipher_polyiter, 1);
+        util::conv_negacyclic(kernel, *cipher_polyiter, coeff_modulus_size, coeff_modulus, destination);
         //util::matrix_dot_vector(matrix, coeff_modulus_size, *cipher_polyiter, coeff_modulus, destination);
-        //cout << "polyiter(after)" << endl;
-        //print_iter(destination, coeff_modulus_size);
         cipher_polyiter++;
         SEAL_ALLOCATE_ZERO_GET_RNS_ITER(c1_result, coeff_count,coeff_modulus_size, pool);
         cout << "convert c_1" << endl;
         //secret_product_with_matrix_rns(matrix, coeff_modulus_size, *cipher_polyiter, secret_key_array, coeff_modulus, c1_result);
+        util::secret_pruduct_with_kernel(kernel, coeff_modulus_size, *cipher_polyiter, secret_key_array, coeff_modulus, c1_result);
         add_poly_coeffmod(destination, c1_result, coeff_modulus_size, coeff_modulus, destination);
     }
 

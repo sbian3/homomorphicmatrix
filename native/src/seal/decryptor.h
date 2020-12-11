@@ -82,6 +82,8 @@ namespace seal
         void decrypt_bfv_with_matrix(Ciphertext &encrypted, Plaintext &destination, std::vector<std::vector<int64_t>> matrix);
         void decrypt_bfv_with_matrix(Ciphertext &encrypted, Plaintext &destination, std::vector<std::vector<uint64_t>> matrix);
 
+        void decrypt_bfv_with_kernel(Ciphertext &encrypted, Plaintext &destination, std::vector<uint64_t> kernel);
+
         void dot_product_with_kernel(Ciphertext &encrypted, util::RNSIter destination, std::vector<uint64_t> kernel,  MemoryPoolHandle pool);
         // 
         // end of added function

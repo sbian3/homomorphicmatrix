@@ -19,6 +19,11 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include "seal/util/defines.h"
+#include "seal/util/linarith.h"
+#include "seal/util/uintlinarith.h"
+#include "seal/util/uintarithmod.h"
+#include "simd.h"
 
 void example_bfv_basics();
 

@@ -12,4 +12,11 @@ target_sources(sealexamples
         ${CMAKE_CURRENT_LIST_DIR}/6_serialization.cpp
         ${CMAKE_CURRENT_LIST_DIR}/7_performance.cpp
         ${CMAKE_CURRENT_LIST_DIR}/8_kazumaexample.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/simd.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/testutil.cpp
+)
+
+target_sources(kazumaexamples
+    PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}/8_kazumaexample.cpp
 )
