@@ -1,6 +1,7 @@
 #include "examples.h"
 #include <cassert>
 #include "simd.h"
+#include "testutil.h"
 
 using namespace std;
 using namespace seal;
@@ -501,6 +502,101 @@ void test_conv_cipher_direct(){
     print_plain(x_conved_decrypted, 20);
 }
 
+void test_dianonal_kernel(){
+    vector<uint64_t> kernel = {1, 2, 3};
+    uint64_t matrix_size = 28;
+    uint64_t dest_size = matrix_size - kernel.size() + 1;
+    vector<vector<uint64_t>> block(dest_size, vector<uint64_t>(matrix_size));
+    for(auto i = 0U; i < kernel.size();i++){
+        util::init_matrix_diagonal(block, dest_size, kernel[i], i);
+    }
+    util::print_matrix(block);
+}
+
+void test_init_matrix_2dconv(){
+    //vector<vector<uint64_t>> kernel = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+    vector<vector<uint64_t>> kernel = {{1, 2}, {4, 5}};
+    uint64_t input_size = 3;
+    uint64_t matrix_size = input_size * input_size;
+    uint64_t dest_size = input_size - kernel.size() + 1;
+    uint64_t matrix_colsize = dest_size * dest_size;
+    vector<vector<uint64_t>> matrix(matrix_colsize, vector<uint64_t>(matrix_size));
+    util::init_matrix_2dconv(matrix, input_size, kernel);
+    util::print_matrix(matrix);
+}
+
+void test_lin_2dconv(){
+    print_example_banner("matrix_conversion");
+
+    // parameter setting
+    EncryptionParameters parms(scheme_type::BFV);
+    size_t poly_modulus_degree;
+    cout << "poly_modulus_degree: ";
+    cin >> poly_modulus_degree;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+
+    vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
+    parms.set_coeff_modulus(mod_chain);
+    uint64_t plaintext_modulus = 7;
+    parms.set_plain_modulus(plaintext_modulus);
+    auto context = SEALContext::Create(parms);
+    print_line(__LINE__);
+    cout << "Set encryption parameters and print" << endl;
+    print_parameters(context);
+    cout << "Parameter validation: " << context->parameter_error_message() << endl;
+
+    cout << endl;
+
+    // generate encryption helper
+    cout << "keygen step" << endl;
+    KeyGenerator keygen(context);
+    cout << "pubkey " << endl;
+    PublicKey public_key = keygen.public_key();
+    SecretKey secret_key = keygen.secret_key();
+    Encryptor encryptor(context, public_key);
+    Evaluator evaluator(context);
+    Decryptor decryptor(context, secret_key);
+
+    // generate plaintext x
+    print_line(__LINE__);
+    // represent 3 * 3 matrix as vector of 9 elements
+    string x = "9x^8 + 8x^7 + 7x^6 + 6x^5 + 5x^4 + 4x^3 + 3x^2 + 2x^1 + 1";
+    cout << "Input plaintext: ";
+    Plaintext x_plain(x);
+    cout << "Express x = " + x + " as a plaintext polynomial " + x_plain.to_string() + "." << endl;
+    cout << "Coeff count: " << x_plain.coeff_count() << endl;
+    print_plain(x_plain, 10);
+
+    // generate transform matrix
+    uint64_t input_size = 3;
+    vector<vector<uint64_t>> matrix(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
+    vector<vector<uint64_t>> kernel = {{1, 2}, {3, 4}};
+    util::init_matrix_2dconv(matrix, input_size, kernel);
+
+    // encrypt x
+    Ciphertext x_encrypted;
+    cout << "----Encrypt x_plain to x_encrypted.----" << endl;
+    encryptor.encrypt(x_plain, x_encrypted);
+    cout << "Coeff modulus size: " << x_encrypted.coeff_modulus_size() << endl;
+    uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
+    cout << "Coeff size: " << cipher_coeffsize << endl;
+    cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+
+    // decryption normal x
+    print_line(__LINE__);
+    Plaintext x_decrypted;
+    cout << "decryption of x_encrypted: ";
+    auto time_start = chrono::high_resolution_clock::now();
+    decryptor.decrypt_bfv_with_matrix(x_encrypted, x_decrypted, matrix);
+    auto time_end = chrono::high_resolution_clock::now();
+    auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
+
+    // compare converted plain and decryption of x_converted
+    //cout << "Converted plain: " << endl;
+    //print_plain(copied_plain, 10);
+    cout << "decryption of x_tranformed: " << endl;
+    print_plain(x_decrypted, 20);
+}
 void example_kazuma(){
     // matrix_conversion();
     //test_conversion();
@@ -527,9 +623,8 @@ void example_kazuma(){
     //test_bfv_conv();
     //test_ntt_conv();
     //test_matrix_init_partial();
-    test_lin_conv_packing();
-}
-
-int main(){
-    cout << "kazuma example!" << endl;
+    //test_lin_conv_packing();
+    //test_dianonal_kernel();
+    //test_init_matrix_2dconv();
+    test_lin_2dconv();
 }

@@ -78,6 +78,42 @@ namespace seal
             }
         }
 
+        void init_matrix_diagonal(vector<vector<uint64_t>> &matrix, uint64_t size, uint64_t scalar, uint64_t right_rotate){
+            // assert that matrix is big enough
+            for(auto i = 0U;i < size;i++){
+                matrix[i][i + right_rotate] = scalar;
+            }
+        }
+
+        void copy_matrix(vector<vector<uint64_t>> &dest, vector<vector<uint64_t>> src, uint64_t start_col, uint64_t start_row){
+            for(auto i = 0U;i < src.size();i++){
+                for(auto j = 0U;j < src[i].size();j++){
+                    dest[start_col + i][start_row + j] = src[i][j];
+                }
+            }
+        }
+
+        void init_matrix_2dconv(vector<vector<uint64_t>> &matrix, uint64_t input_size, vector<vector<uint64_t>> kernel){
+            // assert that....
+            // matrix is square
+            // kernel is square
+            uint64_t matrix_size = input_size;
+            uint64_t kernel_size = kernel.size();
+            uint64_t dest_size = matrix_size - kernel_size + 1;
+            for(auto i = 0U;i < kernel_size;i++){
+               vector<uint64_t> kernel_row = kernel[i]; 
+               // first, generate and init block matrix
+               vector<vector<uint64_t>> block(dest_size, vector<uint64_t>(matrix_size));
+               for(auto j = 0U;j < kernel_size;j++){
+                    init_matrix_diagonal(block, dest_size, kernel_row[j], j);
+               }
+               // copy it in diagonal order
+               for(auto j = 0U;j < dest_size;j++){
+                    copy_matrix(matrix, block, dest_size * j,matrix_size * (j + i));
+               }
+            }
+        }
+
         //
         // linear arithmetic
         //
