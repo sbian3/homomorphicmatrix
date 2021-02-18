@@ -379,6 +379,29 @@ void benchmark_singlefunction(){
     cout << "time: " << time_diff.count() << "ms" << endl;
 }
 
+void test_dianonal_kernel(){
+    vector<uint64_t> kernel = {1, 2, 3};
+    uint64_t matrix_size = 28;
+    uint64_t dest_size = matrix_size - kernel.size() + 1;
+    vector<vector<uint64_t>> block(dest_size, vector<uint64_t>(matrix_size));
+    for(auto i = 0U; i < kernel.size();i++){
+        util::init_matrix_diagonal(block, dest_size, kernel[i], i);
+    }
+    util::print_matrix(block);
+}
+
+void test_init_matrix_2dconv(){
+    //vector<vector<uint64_t>> kernel = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+    vector<vector<uint64_t>> kernel = {{1, 2}, {4, 5}};
+    uint64_t input_size = 3;
+    uint64_t matrix_size = input_size * input_size;
+    uint64_t dest_size = input_size - kernel.size() + 1;
+    uint64_t matrix_colsize = dest_size * dest_size;
+    vector<vector<uint64_t>> matrix(matrix_colsize, vector<uint64_t>(matrix_size));
+    util::init_matrix_2dconv(matrix, input_size, kernel);
+    util::print_matrix(matrix);
+}
+
 //void test_conv_nega(){
 //    vector<uint64_t> kernel = {1,1,2};
 //    vector<uint64_t> input = {1, 2, 3, 4};

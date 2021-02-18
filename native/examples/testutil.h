@@ -21,3 +21,5 @@ void test_matrix_dot_product();
 void test_matrix_dot_product_uint(uint64_t coeff_degree);
 void test_matrix_dot_product_uint_t(uint64_t coeff_degree);
 void test_conv_nega();
+void test_dianonal_kernel();
+void test_init_matrix_2dconv();

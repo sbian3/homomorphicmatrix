@@ -502,28 +502,6 @@ void test_conv_cipher_direct(){
     print_plain(x_conved_decrypted, 20);
 }
 
-void test_dianonal_kernel(){
-    vector<uint64_t> kernel = {1, 2, 3};
-    uint64_t matrix_size = 28;
-    uint64_t dest_size = matrix_size - kernel.size() + 1;
-    vector<vector<uint64_t>> block(dest_size, vector<uint64_t>(matrix_size));
-    for(auto i = 0U; i < kernel.size();i++){
-        util::init_matrix_diagonal(block, dest_size, kernel[i], i);
-    }
-    util::print_matrix(block);
-}
-
-void test_init_matrix_2dconv(){
-    //vector<vector<uint64_t>> kernel = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
-    vector<vector<uint64_t>> kernel = {{1, 2}, {4, 5}};
-    uint64_t input_size = 3;
-    uint64_t matrix_size = input_size * input_size;
-    uint64_t dest_size = input_size - kernel.size() + 1;
-    uint64_t matrix_colsize = dest_size * dest_size;
-    vector<vector<uint64_t>> matrix(matrix_colsize, vector<uint64_t>(matrix_size));
-    util::init_matrix_2dconv(matrix, input_size, kernel);
-    util::print_matrix(matrix);
-}
 
 void test_lin_2dconv(){
     print_example_banner("matrix_conversion");
@@ -597,6 +575,194 @@ void test_lin_2dconv(){
     cout << "decryption of x_tranformed: " << endl;
     print_plain(x_decrypted, 20);
 }
+
+void test_conv_ensei(){
+    print_example_banner("strait convolution of ciphertext");
+
+    // parameter setting
+    EncryptionParameters parms(scheme_type::BFV);
+    size_t poly_modulus_degree;
+    cout << "poly_modulus_degree: ";
+    cin >> poly_modulus_degree;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+
+    vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
+    parms.set_coeff_modulus(mod_chain);
+    uint64_t plaintext_modulus = 1032193;
+    parms.set_plain_modulus(plaintext_modulus);
+    auto context = SEALContext::Create(parms);
+    print_line(__LINE__);
+    cout << "Set encryption parameters and print" << endl;
+    print_parameters(context);
+    cout << "Parameter validation: " << context->parameter_error_message() << endl;
+
+    cout << endl;
+
+    // generate encryption helper
+    cout << "keygen step" << endl;
+    KeyGenerator keygen(context);
+    cout << "pubkey " << endl;
+    PublicKey public_key = keygen.public_key();
+    SecretKey secret_key = keygen.secret_key();
+    Encryptor encryptor(context, public_key);
+    Evaluator evaluator(context);
+    Decryptor decryptor(context, secret_key);
+
+    // generate and ntt plaintext x
+    print_line(__LINE__);
+    string x = "6x^2 + 1x^1 + 2";
+    cout << "Input plaintext: ";
+    Plaintext x_plain(x);
+    cout << "Express x = " + x + " as a plaintext polynomial " + x_plain.to_string() + "." << endl;
+    cout << "Coeff count: " << x_plain.coeff_count() << endl;
+    print_plain(x_plain, 10);
+    evaluator.transform_to_ntt_inplace(x_plain, context->first_parms_id());
+
+    // encrypt x
+    Ciphertext x_encrypted;
+    cout << "----Encrypt x_plain to x_encrypted.----" << endl;
+    encryptor.encrypt(x_plain, x_encrypted);
+    cout << "Coeff modulus size: " << x_encrypted.coeff_modulus_size() << endl;
+    uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
+    cout << "Coeff size: " << cipher_coeffsize << endl;
+    cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+
+    // prepare kernel plaintext and ntt
+    string kernel_str = "1 + 1x^1 + 2x^2 + 3x^3";
+    Plaintext kernel(kernel_str);
+    evaluator.transform_to_ntt_inplace(kernel, context->first_parms_id());
+
+    // convolve encrypted x
+    auto time_start = chrono::high_resolution_clock::now();
+
+    auto time_end = chrono::high_resolution_clock::now();
+    auto time_diff = chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+    cout << "straight convolution: " << time_diff.count() << "us" << endl;
+
+    cout << "decryption of x_tranformed: " << endl;
+    Plaintext x_conved_decrypted;
+    //decryptor.decrypt(conved_x, x_conved_decrypted);
+    print_plain(x_conved_decrypted, 20);
+}
+
+void test_ensei_convolution(){
+    EncryptionParameters parms(scheme_type::BFV);
+    size_t poly_modulus_degree;
+    cout << "poly_modulus_degree: ";
+    cin >> poly_modulus_degree;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+    parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
+
+    parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
+
+    auto context = SEALContext::Create(parms);
+    print_parameters(context);
+    cout << endl;
+
+    auto qualifiers = context->first_context_data()->qualifiers();
+    cout << "Batching enabled: " << boolalpha << qualifiers.using_batching << endl;
+
+    KeyGenerator keygen(context);
+    PublicKey public_key = keygen.public_key();
+    SecretKey secret_key = keygen.secret_key();
+    GaloisKeys gal_keys = keygen.galois_keys_local();
+    RelinKeys relin_keys = keygen.relin_keys_local();
+    Encryptor encryptor(context, public_key);
+    Evaluator evaluator(context);
+    Decryptor decryptor(context, secret_key);
+
+    /*
+    Batching is done through an instance of the BatchEncoder class.
+    */
+    BatchEncoder batch_encoder(context);
+
+    /*
+    The total number of batching `slots' equals the poly_modulus_degree, N, and
+    these slots are organized into 2-by-(N/2) matrices that can be encrypted and
+    computed on. Each slot contains an integer modulo plain_modulus.
+    */
+    size_t slot_count = batch_encoder.slot_count();
+    size_t row_size = slot_count / 2;
+    cout << "Plaintext matrix row size: " << row_size << endl;
+
+    /*
+    The matrix plaintext is simply given to BatchEncoder as a flattened vector
+    of numbers. The first `row_size' many numbers form the first row, and the
+    rest form the second row. Here we create the following matrix:
+
+        [ 0,  1,  2,  3,  0,  0, ...,  0 ]
+        [ 4,  5,  6,  7,  0,  0, ...,  0 ]
+    */
+    vector<uint64_t> pod_matrix(slot_count, 0ULL);
+    pod_matrix[0] = 0ULL;
+    pod_matrix[1] = 1ULL;
+    pod_matrix[2] = 2ULL;
+    pod_matrix[3] = 3ULL;
+    pod_matrix[row_size] = 4ULL;
+    pod_matrix[row_size + 1] = 5ULL;
+    pod_matrix[row_size + 2] = 6ULL;
+    pod_matrix[row_size + 3] = 7ULL;
+
+    cout << "Input plaintext matrix:" << endl;
+    print_matrix(pod_matrix, row_size);
+
+    /*
+    First we use BatchEncoder to encode the matrix into a plaintext polynomial.
+    */
+    Plaintext plain_matrix;
+    print_line(__LINE__);
+    cout << "Encode plaintext matrix:" << endl;
+    batch_encoder.encode(pod_matrix, plain_matrix);
+
+    /*
+    We can instantly decode to verify correctness of the encoding. Note that no
+    encryption or decryption has yet taken place.
+    */
+    vector<uint64_t> pod_result;
+    cout << "    + Decode plaintext matrix ...... Correct." << endl;
+    //batch_encoder.decode(plain_matrix, pod_result);
+    //print_matrix(pod_result, row_size);
+
+    /*
+    Next we encrypt the encoded plaintext.
+    */
+    Ciphertext encrypted_matrix;
+    print_line(__LINE__);
+    cout << "Encrypt plain_matrix to encrypted_matrix." << endl;
+    encryptor.encrypt(plain_matrix, encrypted_matrix);
+    cout << "    + Noise budget in encrypted_matrix: " << decryptor.invariant_noise_budget(encrypted_matrix) << " bits"
+         << endl;
+    evaluator.transform_to_ntt_inplace(encrypted_matrix);
+
+    vector<uint64_t> kernel_v = {1,1,2,3};
+    Plaintext kernel;
+    batch_encoder.encode(kernel_v, kernel);
+    evaluator.transform_to_ntt_inplace(kernel, context->first_parms_id());
+    auto time_start = chrono::high_resolution_clock::now();
+    evaluator.multiply_plain_inplace(encrypted_matrix, kernel);
+    evaluator.transform_from_ntt_inplace(encrypted_matrix);
+    //evaluator.convolution(encrypted_matrix, kernel, gal_keys, conved_cipher);
+    auto time_end = chrono::high_resolution_clock::now();
+    auto time_diff = chrono::duration_cast<chrono::microseconds>(time_end - time_start);
+    cout << "SIMD convolution time: " << time_diff.count() << "us" << endl;
+
+    /*
+    How much noise budget do we have left?
+    */
+    //cout << "    + Noise budget in result: " << decryptor.invariant_noise_budget(conved_cipher) << " bits" << endl;
+
+    /*
+    We decrypt and decompose the plaintext to recover the result as a matrix.
+    */
+    Plaintext plain_result;
+    print_line(__LINE__);
+    cout << "Decrypt and decode result." << endl;
+    decryptor.decrypt(encrypted_matrix, plain_result);
+    batch_encoder.decode(plain_result, pod_result);
+    cout << "    + Result plaintext matrix ...... Correct." << endl;
+    print_matrix(pod_result, row_size);
+}
+
 void example_kazuma(){
     // matrix_conversion();
     //test_conversion();
@@ -626,5 +792,6 @@ void example_kazuma(){
     //test_lin_conv_packing();
     //test_dianonal_kernel();
     //test_init_matrix_2dconv();
-    test_lin_2dconv();
+    //test_lin_2dconv();
+    test_ensei_convolution();
 }
