@@ -30,13 +30,13 @@ namespace sealtest
             auto pool = MemoryManager::GetPool();
             {
                 GaloisTool galois_tool(3, pool);
-                ASSERT_EQ(15, galois_tool.get_elt_from_step(0));
-                ASSERT_EQ(3, galois_tool.get_elt_from_step(1));
-                ASSERT_EQ(3, galois_tool.get_elt_from_step(-3));
-                ASSERT_EQ(9, galois_tool.get_elt_from_step(2));
-                ASSERT_EQ(9, galois_tool.get_elt_from_step(-2));
-                ASSERT_EQ(11, galois_tool.get_elt_from_step(3));
-                ASSERT_EQ(11, galois_tool.get_elt_from_step(-1));
+                ASSERT_EQ(15U, galois_tool.get_elt_from_step(0));
+                ASSERT_EQ(3U, galois_tool.get_elt_from_step(1));
+                ASSERT_EQ(3U, galois_tool.get_elt_from_step(-3));
+                ASSERT_EQ(9U, galois_tool.get_elt_from_step(2));
+                ASSERT_EQ(9U, galois_tool.get_elt_from_step(-2));
+                ASSERT_EQ(11U, galois_tool.get_elt_from_step(3));
+                ASSERT_EQ(11U, galois_tool.get_elt_from_step(-1));
             }
         }
 
@@ -78,11 +78,11 @@ namespace sealtest
 
         TEST(GaloisToolTest, ApplyGalois)
         {
-            EncryptionParameters parms(scheme_type::CKKS);
+            EncryptionParameters parms(scheme_type::ckks);
             parms.set_poly_modulus_degree(8);
             parms.set_coeff_modulus({ 17 });
-            auto context = SEALContext::Create(parms, false, sec_level_type::none);
-            auto context_data = context->key_context_data();
+            SEALContext context(parms, false, sec_level_type::none);
+            auto context_data = context.key_context_data();
             auto galois_tool = context_data->galois_tool();
             uint64_t in[8]{ 0, 1, 2, 3, 4, 5, 6, 7 };
             uint64_t out[8];
@@ -96,11 +96,11 @@ namespace sealtest
 
         TEST(GaloisToolTest, ApplyGaloisNTT)
         {
-            EncryptionParameters parms(scheme_type::CKKS);
+            EncryptionParameters parms(scheme_type::ckks);
             parms.set_poly_modulus_degree(8);
             parms.set_coeff_modulus({ 17 });
-            auto context = SEALContext::Create(parms, false, sec_level_type::none);
-            auto context_data = context->key_context_data();
+            SEALContext context(parms, false, sec_level_type::none);
+            auto context_data = context.key_context_data();
             auto galois_tool = context_data->galois_tool();
             uint64_t in[8]{ 0, 1, 2, 3, 4, 5, 6, 7 };
             uint64_t out[8];

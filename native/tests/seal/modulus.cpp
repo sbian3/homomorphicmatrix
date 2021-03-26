@@ -104,7 +104,8 @@ namespace sealtest
         stringstream stream;
 
         Modulus mod;
-        mod.save(stream);
+        compr_mode_type compr_mode = compr_mode_type::zlib;
+        mod.save(stream, compr_mode);
 
         Modulus mod2;
         mod2.load(stream);
@@ -117,7 +118,7 @@ namespace sealtest
         ASSERT_EQ(mod2.is_prime(), mod.is_prime());
 
         mod = 3;
-        mod.save(stream);
+        mod.save(stream, compr_mode);
         mod2.load(stream);
         ASSERT_EQ(mod2.value(), mod.value());
         ASSERT_EQ(mod2.bit_count(), mod.bit_count());
@@ -128,7 +129,7 @@ namespace sealtest
         ASSERT_EQ(mod2.is_prime(), mod.is_prime());
 
         mod = 0xF00000F00000F;
-        mod.save(stream);
+        mod.save(stream, compr_mode);
         mod2.load(stream);
         ASSERT_EQ(mod2.value(), mod.value());
         ASSERT_EQ(mod2.bit_count(), mod.bit_count());
@@ -139,7 +140,7 @@ namespace sealtest
         ASSERT_EQ(mod2.is_prime(), mod.is_prime());
 
         mod = 0xF00000F000079;
-        mod.save(stream);
+        mod.save(stream, compr_mode);
         mod2.load(stream);
         ASSERT_EQ(mod2.value(), mod.value());
         ASSERT_EQ(mod2.bit_count(), mod.bit_count());
@@ -148,6 +149,29 @@ namespace sealtest
         ASSERT_EQ(mod2.const_ratio()[1], mod.const_ratio()[1]);
         ASSERT_EQ(mod2.const_ratio()[2], mod.const_ratio()[2]);
         ASSERT_EQ(mod2.is_prime(), mod.is_prime());
+    }
+
+    TEST(ModulusTest, Reduce)
+    {
+        Modulus mod;
+        uint64_t res = 0;
+        if (!res)
+        {
+            ASSERT_THROW(res = mod.reduce(10), logic_error);
+        }
+
+        mod = 2;
+        ASSERT_EQ(0, mod.reduce(0));
+        ASSERT_EQ(1, mod.reduce(1));
+        ASSERT_EQ(0, mod.reduce(2));
+        ASSERT_EQ(0, mod.reduce(0xF0F0F0));
+
+        mod = 10;
+        ASSERT_EQ(0, mod.reduce(0));
+        ASSERT_EQ(1, mod.reduce(1));
+        ASSERT_EQ(8, mod.reduce(8));
+        ASSERT_EQ(7, mod.reduce(1234567));
+        ASSERT_EQ(0, mod.reduce(12345670));
     }
 
     TEST(CoeffModTest, CustomExceptionTest)

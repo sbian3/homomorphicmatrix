@@ -6,83 +6,68 @@
 #include "seal/ciphertext.h"
 #include "seal/context.h"
 #include "seal/galoiskeys.h"
-#include "seal/kswitchkeys.h"
 #include "seal/memorymanager.h"
 #include "seal/modulus.h"
 #include "seal/plaintext.h"
 #include "seal/relinkeys.h"
 #include "seal/secretkey.h"
 #include "seal/valcheck.h"
-#include "seal/util/common.h"
 #include "seal/util/iterator.h"
 #include "seal/util/pointer.h"
 #include "seal/util/uintarithsmallmod.h"
 #include "seal/batchencoder.h"
 #include <map>
-#include <memory>
 #include <stdexcept>
 #include <vector>
 
 namespace seal
 {
     /**
-    Provides operations on ciphertexts. Due to the properties of the encryption
-    scheme, the arithmetic operations pass through the encryption layer to the
-    underlying plaintext, changing it according to the type of the operation. Since
-    the plaintext elements are fundamentally polynomials in the polynomial quotient
-    ring Z_T[x]/(X^N+1), where T is the plaintext modulus and X^N+1 is the polynomial
-    modulus, this is the ring where the arithmetic operations will take place.
-    BatchEncoder (batching) provider an alternative possibly more convenient view
-    of the plaintext elements as 2-by-(N2/2) matrices of integers modulo the plaintext
-    modulus. In the batching view the arithmetic operations act on the matrices
-    element-wise. Some of the operations only apply in the batching view, such as
-    matrix row and column rotations. Other operations such as relinearization have
-    no semantic meaning but are necessary for performance reasons.
+    Provides operations on ciphertexts. Due to the properties of the encryption scheme, the arithmetic operations pass
+    through the encryption layer to the underlying plaintext, changing it according to the type of the operation. Since
+    the plaintext elements are fundamentally polynomials in the polynomial quotient ring Z_T[x]/(X^N+1), where T is the
+    plaintext modulus and X^N+1 is the polynomial modulus, this is the ring where the arithmetic operations will take
+    place. BatchEncoder (batching) provider an alternative possibly more convenient view of the plaintext elements as
+    2-by-(N2/2) matrices of integers modulo the plaintext modulus. In the batching view the arithmetic operations act on
+    the matrices element-wise. Some of the operations only apply in the batching view, such as matrix row and column
+    rotations. Other operations such as relinearization have no semantic meaning but are necessary for performance
+    reasons.
 
     @par Arithmetic Operations
-    The core operations are arithmetic operations, in particular multiplication
-    and addition of ciphertexts. In addition to these, we also provide negation,
-    subtraction, squaring, exponentiation, and multiplication and addition of
-    several ciphertexts for convenience. in many cases some of the inputs to a
-    computation are plaintext elements rather than ciphertexts. For this we
-    provide fast "plain" operations: plain addition, plain subtraction, and plain
+    The core operations are arithmetic operations, in particular multiplication and addition of ciphertexts. In addition
+    to these, we also provide negation, subtraction, squaring, exponentiation, and multiplication and addition of
+    several ciphertexts for convenience. in many cases some of the inputs to a computation are plaintext elements rather
+    than ciphertexts. For this we provide fast "plain" operations: plain addition, plain subtraction, and plain
     multiplication.
 
     @par Relinearization
-    One of the most important non-arithmetic operations is relinearization, which
-    takes as input a ciphertext of size K+1 and relinearization keys (at least K-1
-    keys are needed), and changes the size of the ciphertext down to 2 (minimum size).
-    For most use-cases only one relinearization key suffices, in which case
-    relinearization should be performed after every multiplication. Homomorphic
-    multiplication of ciphertexts of size K+1 and L+1 outputs a ciphertext of size
-    K+L+1, and the computational cost of multiplication is proportional to K*L.
-    Plain multiplication and addition operations of any type do not change the
-    size. Relinearization requires relinearization keys to have been generated.
+    One of the most important non-arithmetic operations is relinearization, which takes as input a ciphertext of size
+    K+1 and relinearization keys (at least K-1 keys are needed), and changes the size of the ciphertext down to 2
+    (minimum size). For most use-cases only one relinearization key suffices, in which case relinearization should be
+    performed after every multiplication. Homomorphic multiplication of ciphertexts of size K+1 and L+1 outputs a
+    ciphertext of size K+L+1, and the computational cost of multiplication is proportional to K*L. Plain multiplication
+    and addition operations of any type do not change the size. Relinearization requires relinearization keys to have
+    been generated.
 
     @par Rotations
-    When batching is enabled, we provide operations for rotating the plaintext matrix
-    rows cyclically left or right, and for rotating the columns (swapping the rows).
-    Rotations require Galois keys to have been generated.
+    When batching is enabled, we provide operations for rotating the plaintext matrix rows cyclically left or right, and
+    for rotating the columns (swapping the rows). Rotations require Galois keys to have been generated.
 
     @par Other Operations
-    We also provide operations for transforming ciphertexts to NTT form and back,
-    and for transforming plaintext polynomials to NTT form. These can be used in
-    a very fast plain multiplication variant, that assumes the inputs to be in NTT
-    form. Since the NTT has to be done in any case in plain multiplication, this
-    function can be used when e.g. one plaintext input is used in several plain
-    multiplication, and transforming it several times would not make sense.
+    We also provide operations for transforming ciphertexts to NTT form and back, and for transforming plaintext
+    polynomials to NTT form. These can be used in a very fast plain multiplication variant, that assumes the inputs to
+    be in NTT form. Since the NTT has to be done in any case in plain multiplication, this function can be used when
+    e.g. one plaintext input is used in several plain multiplication, and transforming it several times would not make
+    sense.
 
     @par NTT form
-    When using the BFV scheme (scheme_type::BFV), all plaintexts and ciphertexts
-    should remain by default in the usual coefficient representation, i.e., not
-    in NTT form. When using the CKKS scheme (scheme_type::CKKS), all plaintexts
-    and ciphertexts should remain by default in NTT form. We call these scheme-
-    specific NTT states the "default NTT form". Some functions, such as add, work
-    even if the inputs are not in the default state, but others, such as multiply,
-    will throw an exception. The output of all evaluation functions will be in
-    the same state as the input(s), with the exception of the transform_to_ntt
-    and transform_from_ntt functions, which change the state. Ideally, unless these
-    two functions are called, all other functions should "just work".
+    When using the BFV scheme (scheme_type::bfv), all plaintexts and ciphertexts should remain by default in the usual
+    coefficient representation, i.e., not in NTT form. When using the CKKS scheme (scheme_type::ckks), all plaintexts
+    and ciphertexts should remain by default in NTT form. We call these scheme-specific NTT states the "default NTT
+    form". Some functions, such as add, work even if the inputs are not in the default state, but others, such as
+    multiply, will throw an exception. The output of all evaluation functions will be in the same state as the input(s),
+    with the exception of the transform_to_ntt and transform_from_ntt functions, which change the state. Ideally, unless
+    these two functions are called, all other functions should "just work".
 
     @see EncryptionParameters for more details on encryption parameters.
     @see BatchEncoder for more details on batching
@@ -96,10 +81,9 @@ namespace seal
         Creates an Evaluator instance initialized with the specified SEALContext.
 
         @param[in] context The SEALContext
-        @throws std::invalid_argument if the context is not set or encryption
-        parameters are not valid
+        @throws std::invalid_argument if the encryption parameters are not valid
         */
-        Evaluator(std::shared_ptr<SEALContext> context);
+        Evaluator(const SEALContext &context);
 
         /**
         Negates a ciphertext.
@@ -115,8 +99,7 @@ namespace seal
 
         @param[in] encrypted The ciphertext to negate
         @param[out] destination The ciphertext to overwrite with the negated result
-        @throws std::invalid_argument if encrypted is not valid for the encryption
-        parameters
+        @throws std::invalid_argument if encrypted is not valid for the encryption parameters
         @throws std::logic_error if result ciphertext is transparent
         */
         inline void negate(const Ciphertext &encrypted, Ciphertext &destination)
@@ -126,32 +109,27 @@ namespace seal
         }
 
         /**
-        Adds two ciphertexts. This function adds together encrypted1 and encrypted2
-        and stores the result in encrypted1.
+        Adds two ciphertexts. This function adds together encrypted1 and encrypted2 and stores the result in encrypted1.
 
         @param[in] encrypted1 The first ciphertext to add
         @param[in] encrypted2 The second ciphertext to add
-        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for
-        the encryption parameters
-        @throws std::invalid_argument if encrypted1 and encrypted2 are in different
-        NTT forms
-        @throws std::invalid_argument if encrypted1 and encrypted2 have different scale
+        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for the encryption parameters
+        @throws std::invalid_argument if encrypted1 and encrypted2 are in different NTT forms
+        @throws std::invalid_argument if encrypted1 and encrypted2 are at different level or scale
         @throws std::logic_error if result ciphertext is transparent
         */
         void add_inplace(Ciphertext &encrypted1, const Ciphertext &encrypted2);
 
         /**
-        Adds two ciphertexts. This function adds together encrypted1 and encrypted2
-        and stores the result in the destination parameter.
+        Adds two ciphertexts. This function adds together encrypted1 and encrypted2 and stores the result in the
+        destination parameter.
 
         @param[in] encrypted1 The first ciphertext to add
         @param[in] encrypted2 The second ciphertext to add
         @param[out] destination The ciphertext to overwrite with the addition result
-        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for
-        the encryption parameters
-        @throws std::invalid_argument if encrypted1 and encrypted2 are in different
-        NTT forms
-        @throws std::invalid_argument if encrypted1 and encrypted2 have different scale
+        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for the encryption parameters
+        @throws std::invalid_argument if encrypted1 and encrypted2 are in different NTT forms
+        @throws std::invalid_argument if encrypted1 and encrypted2 are at different level or scale
         @throws std::logic_error if result ciphertext is transparent
         */
         inline void add(const Ciphertext &encrypted1, const Ciphertext &encrypted2, Ciphertext &destination)
@@ -168,48 +146,43 @@ namespace seal
         }
 
         /**
-        Adds together a vector of ciphertexts and stores the result in the destination
-        parameter.
+        Adds together a vector of ciphertexts and stores the result in the destination parameter.
 
         @param[in] encrypteds The ciphertexts to add
         @param[out] destination The ciphertext to overwrite with the addition result
         @throws std::invalid_argument if encrypteds is empty
-        @throws std::invalid_argument if the encrypteds are not valid for the encryption
+        @throws std::invalid_argument if encrypteds are not valid for the encryption
         parameters
         @throws std::invalid_argument if encrypteds are in different NTT forms
-        @throws std::invalid_argument if encrypteds have different scale
+        @throws std::invalid_argument if encrypteds are at different level or scale
         @throws std::invalid_argument if destination is one of encrypteds
         @throws std::logic_error if result ciphertext is transparent
         */
         void add_many(const std::vector<Ciphertext> &encrypteds, Ciphertext &destination);
 
         /**
-        Subtracts two ciphertexts. This function computes the difference of encrypted1
-        and encrypted2, and stores the result in encrypted1.
+        Subtracts two ciphertexts. This function computes the difference of encrypted1 and encrypted2, and stores the
+        result in encrypted1.
 
         @param[in] encrypted1 The ciphertext to subtract from
         @param[in] encrypted2 The ciphertext to subtract
-        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for the
-        encryption parameters
-        @throws std::invalid_argument if encrypted1 and encrypted2 are in different
-        NTT forms
-        @throws std::invalid_argument if encrypted1 and encrypted2 have different scale
+        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for the encryption parameters
+        @throws std::invalid_argument if encrypted1 and encrypted2 are in different NTT forms
+        @throws std::invalid_argument if encrypted1 and encrypted2 are at different level or scale
         @throws std::logic_error if result ciphertext is transparent
         */
         void sub_inplace(Ciphertext &encrypted1, const Ciphertext &encrypted2);
 
         /**
-        Subtracts two ciphertexts. This function computes the difference of encrypted1
-        and encrypted2 and stores the result in the destination parameter.
+        Subtracts two ciphertexts. This function computes the difference of encrypted1 and encrypted2 and stores the
+        result in the destination parameter.
 
         @param[in] encrypted1 The ciphertext to subtract from
         @param[in] encrypted2 The ciphertext to subtract
         @param[out] destination The ciphertext to overwrite with the subtraction result
-        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for the
-        encryption parameters
-        @throws std::invalid_argument if encrypted1 and encrypted2 are in different
-        NTT forms
-        @throws std::invalid_argument if encrypted1 and encrypted2 have different scale
+        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for the encryption parameters
+        @throws std::invalid_argument if encrypted1 and encrypted2 are in different NTT forms
+        @throws std::invalid_argument if encrypted1 and encrypted2 are at different level or scale
         @throws std::logic_error if result ciphertext is transparent
         */
         inline void sub(const Ciphertext &encrypted1, const Ciphertext &encrypted2, Ciphertext &destination)
@@ -227,20 +200,17 @@ namespace seal
         }
 
         /**
-        Multiplies two ciphertexts. This functions computes the product of encrypted1
-        and encrypted2 and stores the result in encrypted1. Dynamic memory allocations
-        in the process are allocated from the memory pool pointed to by the given
-        MemoryPoolHandle.
+        Multiplies two ciphertexts. This functions computes the product of encrypted1 and encrypted2 and stores the
+        result in encrypted1. Dynamic memory allocations in the process are allocated from the memory pool pointed to by
+        the given MemoryPoolHandle.
 
         @param[in] encrypted1 The first ciphertext to multiply
         @param[in] encrypted2 The second ciphertext to multiply
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for the
-        encryption parameters
-        @throws std::invalid_argument if encrypted1 or encrypted2 is not in the default
-        NTT form
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the output scale
-        is too large for the encryption parameters
+        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for the encryption parameters
+        @throws std::invalid_argument if encrypted1 or encrypted2 is not in the default NTT form
+        @throws std::invalid_argument if encrypted1 and encrypted2 are at different level
+        @throws std::invalid_argument if the output scale is too large for the encryption parameters
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
@@ -248,21 +218,18 @@ namespace seal
             Ciphertext &encrypted1, const Ciphertext &encrypted2, MemoryPoolHandle pool = MemoryManager::GetPool());
 
         /**
-        Multiplies two ciphertexts. This functions computes the product of encrypted1
-        and encrypted2 and stores the result in the destination parameter. Dynamic
-        memory allocations in the process are allocated from the memory pool pointed
-        to by the given MemoryPoolHandle.
+        Multiplies two ciphertexts. This functions computes the product of encrypted1 and encrypted2 and stores the
+        result in the destination parameter. Dynamic memory allocations in the process are allocated from the memory
+        pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted1 The first ciphertext to multiply
         @param[in] encrypted2 The second ciphertext to multiply
         @param[out] destination The ciphertext to overwrite with the multiplication result
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for the
-        encryption parameters
-        @throws std::invalid_argument if encrypted1 or encrypted2 is not in the default
-        NTT form
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the output scale
-        is too large for the encryption parameters
+        @throws std::invalid_argument if encrypted1 or encrypted2 is not valid for the encryption parameters
+        @throws std::invalid_argument if encrypted1 and encrypted2 are at different level
+        @throws std::invalid_argument if encrypted1 or encrypted2 is not in the default NTT form
+        @throws std::invalid_argument if the output scale is too large for the encryption parameters
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
@@ -282,36 +249,30 @@ namespace seal
         }
 
         /**
-        Squares a ciphertext. This functions computes the square of encrypted. Dynamic
-        memory allocations in the process are allocated from the memory pool pointed
-        to by the given MemoryPoolHandle.
+        Squares a ciphertext. This functions computes the square of encrypted. Dynamic memory allocations in the process
+        are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to square
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::invalid_argument if encrypted is not valid for the encryption
-        parameters
+        @throws std::invalid_argument if encrypted is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the output scale
-        is too large for the encryption parameters
+        @throws std::invalid_argument if the output scale is too large for the encryption parameters
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
         void square_inplace(Ciphertext &encrypted, MemoryPoolHandle pool = MemoryManager::GetPool());
 
         /**
-        Squares a ciphertext. This functions computes the square of encrypted and
-        stores the result in the destination parameter. Dynamic memory allocations
-        in the process are allocated from the memory pool pointed to by the given
+        Squares a ciphertext. This functions computes the square of encrypted and stores the result in the destination
+        parameter. Dynamic memory allocations in the process are allocated from the memory pool pointed to by the given
         MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to square
         @param[out] destination The ciphertext to overwrite with the square
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::invalid_argument if encrypted is not valid for the encryption
-        parameters
+        @throws std::invalid_argument if encrypted is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the output scale
-        is too large for the encryption parameters
+        @throws std::invalid_argument if the output scale is too large for the encryption parameters
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
@@ -323,20 +284,16 @@ namespace seal
         }
 
         /**
-        Relinearizes a ciphertext. This functions relinearizes encrypted, reducing
-        its size down to 2. If the size of encrypted is K+1, the given relinearization
-        keys need to have size at least K-1. Dynamic memory allocations in the
-        process are allocated from the memory pool pointed to by the given
-        MemoryPoolHandle.
+        Relinearizes a ciphertext. This functions relinearizes encrypted, reducing its size down to 2. If the size of
+        encrypted is K+1, the given relinearization keys need to have size at least K-1. Dynamic memory allocations in
+        the process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to relinearize
         @param[in] relin_keys The relinearization keys
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::invalid_argument if encrypted or relin_keys is not valid for the
-        encryption parameters
+        @throws std::invalid_argument if encrypted or relin_keys is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
-        @throws std::invalid_argument if relin_keys do not correspond to the top level
-        parameters in the current context
+        @throws std::invalid_argument if relin_keys do not correspond to the top level parameters in the current context
         @throws std::invalid_argument if the size of relin_keys is too small
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if keyswitching is not supported by the context
@@ -349,21 +306,18 @@ namespace seal
         }
 
         /**
-        Relinearizes a ciphertext. This functions relinearizes encrypted, reducing
-        its size down to 2, and stores the result in the destination parameter.
-        If the size of encrypted is K+1, the given relinearization keys need to
-        have size at least K-1. Dynamic memory allocations in the process are allocated
-        from the memory pool pointed to by the given MemoryPoolHandle.
+        Relinearizes a ciphertext. This functions relinearizes encrypted, reducing its size down to 2, and stores the
+        result in the destination parameter. If the size of encrypted is K+1, the given relinearization keys need to
+        have size at least K-1. Dynamic memory allocations in the process are allocated from the memory pool pointed to
+        by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to relinearize
         @param[in] relin_keys The relinearization keys
         @param[out] destination The ciphertext to overwrite with the relinearized result
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::invalid_argument if encrypted or relin_keys is not valid for the
-        encryption parameters
+        @throws std::invalid_argument if encrypted or relin_keys is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
-        @throws std::invalid_argument if relin_keys do not correspond to the top level
-        parameters in the current context
+        @throws std::invalid_argument if relin_keys do not correspond to the top level parameters in the current context
         @throws std::invalid_argument if the size of relin_keys is too small
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if keyswitching is not supported by the context
@@ -378,10 +332,9 @@ namespace seal
         }
 
         /**
-        Given a ciphertext encrypted modulo q_1...q_k, this function switches the
-        modulus down to q_1...q_{k-1} and stores the result in the destination
-        parameter. Dynamic memory allocations in the process are allocated from
-        the memory pool pointed to by the given MemoryPoolHandle.
+        Given a ciphertext encrypted modulo q_1...q_k, this function switches the modulus down to q_1...q_{k-1} and
+        stores the result in the destination parameter. Dynamic memory allocations in the process are allocated from the
+        memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to be switched to a smaller modulus
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
@@ -389,8 +342,7 @@ namespace seal
         @throws std::invalid_argument if encrypted is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
         @throws std::invalid_argument if encrypted is already at lowest level
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the scale is too
-        large for the new encryption parameters
+        @throws std::invalid_argument if the scale is too large for the new encryption parameters
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
@@ -398,17 +350,15 @@ namespace seal
             const Ciphertext &encrypted, Ciphertext &destination, MemoryPoolHandle pool = MemoryManager::GetPool());
 
         /**
-        Given a ciphertext encrypted modulo q_1...q_k, this function switches the
-        modulus down to q_1...q_{k-1}. Dynamic memory allocations in the process
-        are allocated from the memory pool pointed to by the given MemoryPoolHandle.
+        Given a ciphertext encrypted modulo q_1...q_k, this function switches the modulus down to q_1...q_{k-1}. Dynamic
+        memory allocations in the process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to be switched to a smaller modulus
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
         @throws std::invalid_argument if encrypted is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
         @throws std::invalid_argument if encrypted is already at lowest level
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the scale is too
-        large for the new encryption parameters
+        @throws std::invalid_argument if the scale is too large for the new encryption parameters
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
@@ -418,15 +368,13 @@ namespace seal
         }
 
         /**
-        Modulus switches an NTT transformed plaintext from modulo q_1...q_k down
-        to modulo q_1...q_{k-1}.
+        Modulus switches an NTT transformed plaintext from modulo q_1...q_k down to modulo q_1...q_{k-1}.
 
         @param[in] plain The plaintext to be switched to a smaller modulus
         @throws std::invalid_argument if plain is not in NTT form
         @throws std::invalid_argument if plain is not valid for the encryption parameters
         @throws std::invalid_argument if plain is already at lowest level
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the scale is too
-        large for the new encryption parameters
+        @throws std::invalid_argument if the scale is too large for the new encryption parameters
         */
         inline void mod_switch_to_next_inplace(Plaintext &plain)
         {
@@ -439,8 +387,8 @@ namespace seal
         }
 
         /**
-        Modulus switches an NTT transformed plaintext from modulo q_1...q_k down
-        to modulo q_1...q_{k-1} and stores the result in the destination parameter.
+        Modulus switches an NTT transformed plaintext from modulo q_1...q_k down to modulo q_1...q_{k-1} and stores the
+        result in the destination parameter.
 
         @param[in] plain The plaintext to be switched to a smaller modulus
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
@@ -448,8 +396,7 @@ namespace seal
         @throws std::invalid_argument if plain is not in NTT form
         @throws std::invalid_argument if plain is not valid for the encryption parameters
         @throws std::invalid_argument if plain is already at lowest level
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the scale is too
-        large for the new encryption parameters
+        @throws std::invalid_argument if the scale is too large for the new encryption parameters
         @throws std::invalid_argument if pool is uninitialized
         */
         inline void mod_switch_to_next(const Plaintext &plain, Plaintext &destination)
@@ -459,10 +406,9 @@ namespace seal
         }
 
         /**
-        Given a ciphertext encrypted modulo q_1...q_k, this function switches the
-        modulus down until the parameters reach the given parms_id. Dynamic memory
-        allocations in the process are allocated from the memory pool pointed to
-        by the given MemoryPoolHandle.
+        Given a ciphertext encrypted modulo q_1...q_k, this function switches the modulus down until the parameters
+        reach the given parms_id. Dynamic memory allocations in the process are allocated from the memory pool pointed
+        to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to be switched to a smaller modulus
         @param[in] parms_id The target parms_id
@@ -470,10 +416,9 @@ namespace seal
         @throws std::invalid_argument if encrypted is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
         @throws std::invalid_argument if parms_id is not valid for the encryption parameters
-        @throws std::invalid_argument if encrypted is already at lower level in modulus chain
-        than the parameters corresponding to parms_id
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the scale is too
-        large for the new encryption parameters
+        @throws std::invalid_argument if encrypted is already at lower level in modulus chain than the parameters
+        corresponding to parms_id
+        @throws std::invalid_argument if the scale is too large for the new encryption parameters
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
@@ -481,10 +426,9 @@ namespace seal
             Ciphertext &encrypted, parms_id_type parms_id, MemoryPoolHandle pool = MemoryManager::GetPool());
 
         /**
-        Given a ciphertext encrypted modulo q_1...q_k, this function switches the
-        modulus down until the parameters reach the given parms_id and stores the
-        result in the destination parameter. Dynamic memory allocations in the process
-        are allocated from the memory pool pointed to by the given MemoryPoolHandle.
+        Given a ciphertext encrypted modulo q_1...q_k, this function switches the modulus down until the parameters
+        reach the given parms_id and stores the result in the destination parameter. Dynamic memory allocations in the
+        process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to be switched to a smaller modulus
         @param[in] parms_id The target parms_id
@@ -493,10 +437,9 @@ namespace seal
         @throws std::invalid_argument if encrypted is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
         @throws std::invalid_argument if parms_id is not valid for the encryption parameters
-        @throws std::invalid_argument if encrypted is already at lower level in modulus chain
-        than the parameters corresponding to parms_id
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the scale is too
-        large for the new encryption parameters
+        @throws std::invalid_argument if encrypted is already at lower level in modulus chain than the parameters
+        corresponding to parms_id
+        @throws std::invalid_argument if the scale is too large for the new encryption parameters
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
@@ -509,25 +452,23 @@ namespace seal
         }
 
         /**
-        Given an NTT transformed plaintext modulo q_1...q_k, this function switches
-        the modulus down until the parameters reach the given parms_id.
+        Given an NTT transformed plaintext modulo q_1...q_k, this function switches the modulus down until the
+        parameters reach the given parms_id.
 
         @param[in] plain The plaintext to be switched to a smaller modulus
         @param[in] parms_id The target parms_id
         @throws std::invalid_argument if plain is not in NTT form
         @throws std::invalid_argument if plain is not valid for the encryption parameters
         @throws std::invalid_argument if parms_id is not valid for the encryption parameters
-        @throws std::invalid_argument if plain is already at lower level in modulus chain
-        than the parameters corresponding to parms_id
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the scale is too
-        large for the new encryption parameters
+        @throws std::invalid_argument if plain is already at lower level in modulus chain than the parameters
+        corresponding to parms_id
+        @throws std::invalid_argument if the scale is too large for the new encryption parameters
         */
         void mod_switch_to_inplace(Plaintext &plain, parms_id_type parms_id);
 
         /**
-        Given an NTT transformed plaintext modulo q_1...q_k, this function switches
-        the modulus down until the parameters reach the given parms_id and stores
-        the result in the destination parameter.
+        Given an NTT transformed plaintext modulo q_1...q_k, this function switches the modulus down until the
+        parameters reach the given parms_id and stores the result in the destination parameter.
 
         @param[in] plain The plaintext to be switched to a smaller modulus
         @param[in] parms_id The target parms_id
@@ -535,10 +476,9 @@ namespace seal
         @throws std::invalid_argument if plain is not in NTT form
         @throws std::invalid_argument if plain is not valid for the encryption parameters
         @throws std::invalid_argument if parms_id is not valid for the encryption parameters
-        @throws std::invalid_argument if plain is already at lower level in modulus chain
-        than the parameters corresponding to parms_id
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the scale is too
-        large for the new encryption parameters
+        @throws std::invalid_argument if plain is already at lower level in modulus chain than the parameters
+        corresponding to parms_id
+        @throws std::invalid_argument if the scale is too large for the new encryption parameters
         */
         inline void mod_switch_to(const Plaintext &plain, parms_id_type parms_id, Plaintext &destination)
         {
@@ -547,11 +487,9 @@ namespace seal
         }
 
         /**
-        Given a ciphertext encrypted modulo q_1...q_k, this function switches the
-        modulus down to q_1...q_{k-1}, scales the message down accordingly, and
-        stores the result in the destination parameter. Dynamic memory allocations
-        in the process are allocated from the memory pool pointed to by the given
-        MemoryPoolHandle.
+        Given a ciphertext encrypted modulo q_1...q_k, this function switches the modulus down to q_1...q_{k-1}, scales
+        the message down accordingly, and stores the result in the destination parameter. Dynamic memory allocations in
+        the process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to be switched to a smaller modulus
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
@@ -567,10 +505,9 @@ namespace seal
             const Ciphertext &encrypted, Ciphertext &destination, MemoryPoolHandle pool = MemoryManager::GetPool());
 
         /**
-        Given a ciphertext encrypted modulo q_1...q_k, this function switches the
-        modulus down to q_1...q_{k-1} and scales the message down accordingly. Dynamic
-        memory allocations in the process are allocated from the memory pool pointed
-        to by the given MemoryPoolHandle.
+        Given a ciphertext encrypted modulo q_1...q_k, this function switches the modulus down to q_1...q_{k-1} and
+        scales the message down accordingly. Dynamic memory allocations in the process are allocated from the memory
+        pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to be switched to a smaller modulus
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
@@ -587,9 +524,8 @@ namespace seal
         }
 
         /**
-        Given a ciphertext encrypted modulo q_1...q_k, this function switches the
-        modulus down until the parameters reach the given parms_id and scales the
-        message down accordingly. Dynamic memory allocations in the process are
+        Given a ciphertext encrypted modulo q_1...q_k, this function switches the modulus down until the parameters
+        reach the given parms_id and scales the message down accordingly. Dynamic memory allocations in the process are
         allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to be switched to a smaller modulus
@@ -599,8 +535,8 @@ namespace seal
         @throws std::invalid_argument if encrypted is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
         @throws std::invalid_argument if parms_id is not valid for the encryption parameters
-        @throws std::invalid_argument if encrypted is already at lower level in modulus chain
-        than the parameters corresponding to parms_id
+        @throws std::invalid_argument if encrypted is already at lower level in modulus chain than the parameters
+        corresponding to parms_id
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
@@ -608,11 +544,10 @@ namespace seal
             Ciphertext &encrypted, parms_id_type parms_id, MemoryPoolHandle pool = MemoryManager::GetPool());
 
         /**
-        Given a ciphertext encrypted modulo q_1...q_k, this function switches the
-        modulus down until the parameters reach the given parms_id, scales the message
-        down accordingly, and stores the result in the destination parameter. Dynamic
-        memory allocations in the process are allocated from the memory pool pointed
-        to by the given MemoryPoolHandle.
+        Given a ciphertext encrypted modulo q_1...q_k, this function switches the modulus down until the parameters
+        reach the given parms_id, scales the message down accordingly, and stores the result in the destination
+        parameter. Dynamic memory allocations in the process are allocated from the memory pool pointed to by the given
+        MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to be switched to a smaller modulus
         @param[in] parms_id The target parms_id
@@ -622,8 +557,8 @@ namespace seal
         @throws std::invalid_argument if encrypted is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
         @throws std::invalid_argument if parms_id is not valid for the encryption parameters
-        @throws std::invalid_argument if encrypted is already at lower level in modulus chain
-        than the parameters corresponding to parms_id
+        @throws std::invalid_argument if encrypted is already at lower level in modulus chain than the parameters
+        corresponding to parms_id
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
@@ -636,25 +571,21 @@ namespace seal
         }
 
         /**
-        Multiplies several ciphertexts together. This function computes the product
-        of several ciphertext given as an std::vector and stores the result in the
-        destination parameter. The multiplication is done in a depth-optimal order,
-        and relinearization is performed automatically after every multiplication
-        in the process. In relinearization the given relinearization keys are used.
-        Dynamic memory allocations in the process are allocated from the memory
-        pool pointed to by the given MemoryPoolHandle.
+        Multiplies several ciphertexts together. This function computes the product of several ciphertext given as an
+        std::vector and stores the result in the destination parameter. The multiplication is done in a depth-optimal
+        order, and relinearization is performed automatically after every multiplication in the process. In
+        relinearization the given relinearization keys are used. Dynamic memory allocations in the process are allocated
+        from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypteds The ciphertexts to multiply
         @param[in] relin_keys The relinearization keys
         @param[out] destination The ciphertext to overwrite with the multiplication result
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::logic_error if scheme is not scheme_type::BFV
+        @throws std::logic_error if scheme is not scheme_type::bfv
         @throws std::invalid_argument if encrypteds is empty
-        @throws std::invalid_argument if the ciphertexts or relin_keys are not valid for
-        the encryption parameters
+        @throws std::invalid_argument if ciphertexts or relin_keys are not valid for the encryption parameters
         @throws std::invalid_argument if encrypteds are not in the default NTT form
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the output scale
-        is too large for the encryption parameters
+        @throws std::invalid_argument if the output scale is too large for the encryption parameters
         @throws std::invalid_argument if the size of relin_keys is too small
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if keyswitching is not supported by the context
@@ -665,23 +596,19 @@ namespace seal
             MemoryPoolHandle pool = MemoryManager::GetPool());
 
         /**
-        Exponentiates a ciphertext. This functions raises encrypted to a power.
-        Dynamic memory allocations in the process are allocated from the memory
-        pool pointed to by the given MemoryPoolHandle. The exponentiation is done
-        in a depth-optimal order, and relinearization is performed automatically
-        after every multiplication in the process. In relinearization the given
-        relinearization keys are used.
+        Exponentiates a ciphertext. This functions raises encrypted to a power. Dynamic memory allocations in the
+        process are allocated from the memory pool pointed to by the given MemoryPoolHandle. The exponentiation is done
+        in a depth-optimal order, and relinearization is performed automatically after every multiplication in the
+        process. In relinearization the given relinearization keys are used.
 
         @param[in] encrypted The ciphertext to exponentiate
         @param[in] exponent The power to raise the ciphertext to
         @param[in] relin_keys The relinearization keys
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::logic_error if scheme is not scheme_type::BFV
-        @throws std::invalid_argument if encrypted or relin_keys is not valid for the
-        encryption parameters
+        @throws std::logic_error if scheme is not scheme_type::bfv
+        @throws std::invalid_argument if encrypted or relin_keys is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the output scale
-        is too large for the encryption parameters
+        @throws std::invalid_argument if the output scale is too large for the encryption parameters
         @throws std::invalid_argument if exponent is zero
         @throws std::invalid_argument if the size of relin_keys is too small
         @throws std::invalid_argument if pool is uninitialized
@@ -693,24 +620,21 @@ namespace seal
             MemoryPoolHandle pool = MemoryManager::GetPool());
 
         /**
-        Exponentiates a ciphertext. This functions raises encrypted to a power and
-        stores the result in the destination parameter. Dynamic memory allocations
-        in the process are allocated from the memory pool pointed to by the given
-        MemoryPoolHandle. The exponentiation is done in a depth-optimal order, and
-        relinearization is performed automatically after every multiplication in
-        the process. In relinearization the given relinearization keys are used.
+        Exponentiates a ciphertext. This functions raises encrypted to a power and stores the result in the destination
+        parameter. Dynamic memory allocations in the process are allocated from the memory pool pointed to by the given
+        MemoryPoolHandle. The exponentiation is done in a depth-optimal order, and relinearization is performed
+        automatically after every multiplication in the process. In relinearization the given relinearization keys are
+        used.
 
         @param[in] encrypted The ciphertext to exponentiate
         @param[in] exponent The power to raise the ciphertext to
         @param[in] relin_keys The relinearization keys
         @param[out] destination The ciphertext to overwrite with the power
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::logic_error if scheme is not scheme_type::BFV
-        @throws std::invalid_argument if encrypted or relin_keys is not valid for the
-        encryption parameters
+        @throws std::logic_error if scheme is not scheme_type::bfv
+        @throws std::invalid_argument if encrypted or relin_keys is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted is not in the default NTT form
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the output scale
-        is too large for the encryption parameters
+        @throws std::invalid_argument if the output scale is too large for the encryption parameters
         @throws std::invalid_argument if exponent is zero
         @throws std::invalid_argument if the size of relin_keys is too small
         @throws std::invalid_argument if pool is uninitialized
@@ -726,29 +650,28 @@ namespace seal
         }
 
         /**
-        Adds a ciphertext and a plaintext. The plaintext must be valid for the current
-        encryption parameters.
+        Adds a ciphertext and a plaintext.
 
         @param[in] encrypted The ciphertext to add
         @param[in] plain The plaintext to add
-        @throws std::invalid_argument if encrypted or plain is not valid for the
-        encryption parameters
-        @throws std::invalid_argument if encrypted or plain is in NTT form
+        @throws std::invalid_argument if encrypted or plain is not valid for the encryption parameters
+        @throws std::invalid_argument if encrypted or plain is not in the default NTT form
+        @throws std::invalid_argument if encrypted and plain are at different level or scale
         @throws std::logic_error if result ciphertext is transparent
         */
         void add_plain_inplace(Ciphertext &encrypted, const Plaintext &plain);
 
         /**
-        Adds a ciphertext and a plaintext. This function adds a ciphertext and
-        a plaintext and stores the result in the destination parameter. The plaintext
-        must be valid for the current encryption parameters.
+        Adds a ciphertext and a plaintext. This function adds a ciphertext and a plaintext and stores the result in the
+        destination parameter. Note that in many cases it can be much more efficient to perform any computations on raw
+        unencrypted data before encoding it, rather than using this function to compute on the plaintext objects.
 
         @param[in] encrypted The ciphertext to add
         @param[in] plain The plaintext to add
         @param[out] destination The ciphertext to overwrite with the addition result
-        @throws std::invalid_argument if encrypted or plain is not valid for the
-        encryption parameters
-        @throws std::invalid_argument if encrypted or plain is in NTT form
+        @throws std::invalid_argument if encrypted or plain is not valid for the encryption parameters
+        @throws std::invalid_argument if encrypted or plain is not in the default NTT form
+        @throws std::invalid_argument if encrypted and plain are at different level or scale
         @throws std::logic_error if result ciphertext is transparent
         */
         inline void add_plain(const Ciphertext &encrypted, const Plaintext &plain, Ciphertext &destination)
@@ -758,29 +681,27 @@ namespace seal
         }
 
         /**
-        Subtracts a plaintext from a ciphertext. The plaintext must be valid for the
-        current encryption parameters.
+        Subtracts a plaintext from a ciphertext.
 
         @param[in] encrypted The ciphertext to subtract from
         @param[in] plain The plaintext to subtract
-        @throws std::invalid_argument if encrypted or plain is not valid for the
-        encryption parameters
-        @throws std::invalid_argument if encrypted or plain is in NTT form
+        @throws std::invalid_argument if encrypted or plain is not valid for the encryption parameters
+        @throws std::invalid_argument if encrypted or plain is not in the default NTT form
+        @throws std::invalid_argument if encrypted and plain are at different level or scale
         @throws std::logic_error if result ciphertext is transparent
         */
         void sub_plain_inplace(Ciphertext &encrypted, const Plaintext &plain);
 
         /**
-        Subtracts a plaintext from a ciphertext. This function subtracts a plaintext
-        from a ciphertext and stores the result in the destination parameter. The
-        plaintext must be valid for the current encryption parameters.
+        Subtracts a plaintext from a ciphertext. This function subtracts a plaintext from a ciphertext and stores the
+        result in the destination parameter.
 
         @param[in] encrypted The ciphertext to subtract from
         @param[in] plain The plaintext to subtract
         @param[out] destination The ciphertext to overwrite with the subtraction result
-        @throws std::invalid_argument if encrypted or plain is not valid for the
-        encryption parameters
-        @throws std::invalid_argument if encrypted or plain is in NTT form
+        @throws std::invalid_argument if encrypted or plain is not valid for the encryption parameters
+        @throws std::invalid_argument if encrypted or plain is not in the default NTT form
+        @throws std::invalid_argument if encrypted and plain are at different level or scale
         @throws std::logic_error if result ciphertext is transparent
         */
         inline void sub_plain(const Ciphertext &encrypted, const Plaintext &plain, Ciphertext &destination)
@@ -790,19 +711,15 @@ namespace seal
         }
 
         /**
-        Multiplies a ciphertext with a plaintext. The plaintext must be valid for the
-        current encryption parameters, and cannot be identially 0. Dynamic memory
-        allocations in the process are allocated from the memory pool pointed to by
-        the given MemoryPoolHandle.
+        Multiplies a ciphertext with a plaintext. The plaintext cannot be identically 0. Dynamic memory allocations in
+        the process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to multiply
         @param[in] plain The plaintext to multiply
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::invalid_argument if the encrypted or plain is not valid for
-        the encryption parameters
+        @throws std::invalid_argument if encrypted or plain is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted and plain are in different NTT forms
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the output
-        scale is too large for the encryption parameters
+        @throws std::invalid_argument if the output scale is too large for the encryption parameters
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
@@ -810,22 +727,17 @@ namespace seal
             Ciphertext &encrypted, const Plaintext &plain, MemoryPoolHandle pool = MemoryManager::GetPool());
 
         /**
-        Multiplies a ciphertext with a plaintext. This function multiplies
-        a ciphertext with a plaintext and stores the result in the destination
-        parameter. The plaintext must be a valid for the current encryption parameters,
-        and cannot be identially 0. Dynamic memory allocations in the process are
-        allocated from the memory pool pointed to by the given MemoryPoolHandle.
+        Multiplies a ciphertext with a plaintext. This function multiplies a ciphertext with a plaintext and stores the
+        result in the destination parameter. The plaintext cannot be identically 0. Dynamic memory allocations in the
+        process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to multiply
         @param[in] plain The plaintext to multiply
         @param[out] destination The ciphertext to overwrite with the multiplication result
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::invalid_argument if the encrypted or plain is not valid for
-        the encryption parameters
+        @throws std::invalid_argument if encrypted or plain is not valid for the encryption parameters
         @throws std::invalid_argument if encrypted and plain are in different NTT forms
-        @throws std::invalid_argument if plain is zero
-        @throws std::invalid_argument if, when using scheme_type::CKKS, the output
-        scale is too large for the encryption parameters
+        @throws std::invalid_argument if the output scale is too large for the encryption parameters
         @throws std::invalid_argument if pool is uninitialized
         @throws std::logic_error if result ciphertext is transparent
         */
@@ -838,16 +750,13 @@ namespace seal
         }
 
         /**
-        Transforms a plaintext to NTT domain. This functions applies the Number
-        Theoretic Transform to a plaintext by first embedding integers modulo the
-        plaintext modulus to integers modulo the coefficient modulus and then
-        performing David Harvey's NTT on the resulting polynomial. The transformation
-        is done with respect to encryption parameters corresponding to a given parms_id.
-        For the operation to be valid, the plaintext must have degree less than
-        poly_modulus_degree and each coefficient must be less than the plaintext
-        modulus, i.e., the plaintext must be a valid plaintext under the current
-        encryption parameters. Dynamic memory allocations in the process are allocated
-        from the memory pool pointed to by the given MemoryPoolHandle.
+        Transforms a plaintext to NTT domain. This functions applies the Number Theoretic Transform to a plaintext by
+        first embedding integers modulo the plaintext modulus to integers modulo the coefficient modulus and then
+        performing David Harvey's NTT on the resulting polynomial. The transformation is done with respect to encryption
+        parameters corresponding to a given parms_id. For the operation to be valid, the plaintext must have degree less
+        than poly_modulus_degree and each coefficient must be less than the plaintext modulus, i.e., the plaintext must
+        be a valid plaintext under the current encryption parameters. Dynamic memory allocations in the process are
+        allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] plain The plaintext to transform
         @param[in] parms_id The parms_id with respect to which the NTT is done
@@ -861,17 +770,14 @@ namespace seal
             Plaintext &plain, parms_id_type parms_id, MemoryPoolHandle pool = MemoryManager::GetPool());
 
         /**
-        Transforms a plaintext to NTT domain. This functions applies the Number
-        Theoretic Transform to a plaintext by first embedding integers modulo the
-        plaintext modulus to integers modulo the coefficient modulus and then
-        performing David Harvey's NTT on the resulting polynomial. The transformation
-        is done with respect to encryption parameters corresponding to a given
-        parms_id. The result is stored in the destination_ntt parameter. For the
-        operation to be valid, the plaintext must have degree less than poly_modulus_degree
-        and each coefficient must be less than the plaintext modulus, i.e., the plaintext
-        must be a valid plaintext under the current encryption parameters. Dynamic
-        memory allocations in the process are allocated from the memory pool pointed
-        to by the given MemoryPoolHandle.
+        Transforms a plaintext to NTT domain. This functions applies the Number Theoretic Transform to a plaintext by
+        first embedding integers modulo the plaintext modulus to integers modulo the coefficient modulus and then
+        performing David Harvey's NTT on the resulting polynomial. The transformation is done with respect to encryption
+        parameters corresponding to a given parms_id. The result is stored in the destination_ntt parameter. For the
+        operation to be valid, the plaintext must have degree less than poly_modulus_degree and each coefficient must be
+        less than the plaintext modulus, i.e., the plaintext must be a valid plaintext under the current encryption
+        parameters. Dynamic memory allocations in the process are allocated from the memory pool pointed to by the given
+        MemoryPoolHandle.
 
         @param[in] plain The plaintext to transform
         @param[in] parms_id The parms_id with respect to which the NTT is done
@@ -891,8 +797,8 @@ namespace seal
         }
 
         /**
-        Transforms a ciphertext to NTT domain. This functions applies David Harvey's
-        Number Theoretic Transform separately to each polynomial of a ciphertext.
+        Transforms a ciphertext to NTT domain. This functions applies David Harvey's Number Theoretic Transform
+        separately to each polynomial of a ciphertext.
 
         @param[in] encrypted The ciphertext to transform
         @throws std::invalid_argument if encrypted is not valid for the encryption
@@ -903,9 +809,8 @@ namespace seal
         void transform_to_ntt_inplace(Ciphertext &encrypted);
 
         /**
-        Transforms a ciphertext to NTT domain. This functions applies David Harvey's
-        Number Theoretic Transform separately to each polynomial of a ciphertext.
-        The result is stored in the destination_ntt parameter.
+        Transforms a ciphertext to NTT domain. This functions applies David Harvey's Number Theoretic Transform
+        separately to each polynomial of a ciphertext. The result is stored in the destination_ntt parameter.
 
         @param[in] encrypted The ciphertext to transform
         @param[out] destination_ntt The ciphertext to overwrite with the transformed result
@@ -921,9 +826,8 @@ namespace seal
         }
 
         /**
-        Transforms a ciphertext back from NTT domain. This functions applies the
-        inverse of David Harvey's Number Theoretic Transform separately to each
-        polynomial of a ciphertext.
+        Transforms a ciphertext back from NTT domain. This functions applies the inverse of David Harvey's Number
+        Theoretic Transform separately to each polynomial of a ciphertext.
 
         @param[in] encrypted_ntt The ciphertext to transform
         @throws std::invalid_argument if encrypted_ntt is not valid for the encryption
@@ -934,9 +838,9 @@ namespace seal
         void transform_from_ntt_inplace(Ciphertext &encrypted_ntt);
 
         /**
-        Transforms a ciphertext back from NTT domain. This functions applies the
-        inverse of David Harvey's Number Theoretic Transform separately to each
-        polynomial of a ciphertext. The result is stored in the destination parameter.
+        Transforms a ciphertext back from NTT domain. This functions applies the inverse of David Harvey's Number
+        Theoretic Transform separately to each polynomial of a ciphertext. The result is stored in the destination
+        parameter.
 
         @param[in] encrypted_ntt The ciphertext to transform
         @param[out] destination The ciphertext to overwrite with the transformed result
@@ -952,19 +856,16 @@ namespace seal
         }
 
         /**
-        Applies a Galois automorphism to a ciphertext. To evaluate the Galois
-        automorphism, an appropriate set of Galois keys must also be provided.
-        Dynamic memory allocations in the process are allocated from the memory
-        pool pointed to by the given MemoryPoolHandle.
+        Applies a Galois automorphism to a ciphertext. To evaluate the Galois automorphism, an appropriate set of Galois
+        keys must also be provided. Dynamic memory allocations in the process are allocated from the memory pool pointed
+        to by the given MemoryPoolHandle.
 
-        The desired Galois automorphism is given as a Galois element, and must be
-        an odd integer in the interval [1, M-1], where M = 2*N, and N = poly_modulus_degree.
-        Used with batching, a Galois element 3^i % M corresponds to a cyclic row
-        rotation i steps to the left, and a Galois element 3^(N/2-i) % M corresponds
-        to a cyclic row rotation i steps to the right. The Galois element M-1 corresponds
-        to a column rotation (row swap) in BFV, and complex conjugation in CKKS.
-        In the polynomial view (not batching), a Galois automorphism by a Galois
-        element p changes Enc(plain(x)) to Enc(plain(x^p)).
+        The desired Galois automorphism is given as a Galois element, and must be an odd integer in the interval
+        [1, M-1], where M = 2*N, and N = poly_modulus_degree. Used with batching, a Galois element 3^i % M corresponds
+        to a cyclic row rotation i steps to the left, and a Galois element 3^(N/2-i) % M corresponds to a cyclic row
+        rotation i steps to the right. The Galois element M-1 corresponds to a column rotation (row swap) in BFV, and
+        complex conjugation in CKKS. In the polynomial view (not batching), a Galois automorphism by a Galois element p
+        changes Enc(plain(x)) to Enc(plain(x^p)).
 
         @param[in] encrypted The ciphertext to apply the Galois automorphism to
         @param[in] galois_elt The Galois element
@@ -987,20 +888,16 @@ namespace seal
             MemoryPoolHandle pool = MemoryManager::GetPool());
 
         /**
-        Applies a Galois automorphism to a ciphertext and writes the result to the
-        destination parameter. To evaluate the Galois automorphism, an appropriate
-        set of Galois keys must also be provided. Dynamic memory allocations in
-        the process are allocated from the memory pool pointed to by the given
-        MemoryPoolHandle.
+        Applies a Galois automorphism to a ciphertext and writes the result to the destination parameter. To evaluate
+        the Galois automorphism, an appropriate set of Galois keys must also be provided. Dynamic memory allocations in
+        the process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
-        The desired Galois automorphism is given as a Galois element, and must be
-        an odd integer in the interval [1, M-1], where M = 2*N, and N = poly_modulus_degree.
-        Used with batching, a Galois element 3^i % M corresponds to a cyclic row
-        rotation i steps to the left, and a Galois element 3^(N/2-i) % M corresponds
-        to a cyclic row rotation i steps to the right. The Galois element M-1 corresponds
-        to a column rotation (row swap) in BFV, and complex conjugation in CKKS.
-        In the polynomial view (not batching), a Galois automorphism by a Galois
-        element p changes Enc(plain(x)) to Enc(plain(x^p)).
+        The desired Galois automorphism is given as a Galois element, and must be an odd integer in the interval
+        [1, M-1], where M = 2*N, and N = poly_modulus_degree. Used with batching, a Galois element 3^i % M corresponds
+        to a cyclic row rotation i steps to the left, and a Galois element 3^(N/2-i) % M corresponds to a cyclic row
+        rotation i steps to the right. The Galois element M-1 corresponds to a column rotation (row swap) in BFV, and
+        complex conjugation in CKKS. In the polynomial view (not batching), a Galois automorphism by a Galois element p
+        changes Enc(plain(x)) to Enc(plain(x^p)).
 
         @param[in] encrypted The ciphertext to apply the Galois automorphism to
         @param[in] galois_elt The Galois element
@@ -1028,20 +925,17 @@ namespace seal
         }
 
         /**
-        Rotates plaintext matrix rows cyclically. When batching is used with the
-        BFV scheme, this function rotates the encrypted plaintext matrix rows
-        cyclically to the left (steps > 0) or to the right (steps < 0). Since
-        the size of the batched matrix is 2-by-(N/2), where N is the degree of
-        the polynomial modulus, the number of steps to rotate must have absolute
-        value at most N/2-1. Dynamic memory allocations in the process are allocated
-        from the memory pool pointed to by the given MemoryPoolHandle.
-
+        Rotates plaintext matrix rows cyclically. When batching is used with the BFV scheme, this function rotates the
+        encrypted plaintext matrix rows cyclically to the left (steps > 0) or to the right (steps < 0). Since the size
+        of the batched matrix is 2-by-(N/2), where N is the degree of the polynomial modulus, the number of steps to
+        rotate must have absolute value at most N/2-1. Dynamic memory allocations in the process are allocated from the
+        memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to rotate
         @param[in] steps The number of steps to rotate (negative left, positive right)
         @param[in] galois_keys The Galois keys
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::logic_error if scheme is not scheme_type::BFV
+        @throws std::logic_error if scheme is not scheme_type::bfv
         @throws std::logic_error if the encryption parameters do not support batching
         @throws std::invalid_argument if encrypted or galois_keys is not valid for
         the encryption parameters
@@ -1059,7 +953,7 @@ namespace seal
             Ciphertext &encrypted, int steps, const GaloisKeys &galois_keys,
             MemoryPoolHandle pool = MemoryManager::GetPool())
         {
-            if (context_->key_context_data()->parms().scheme() != scheme_type::BFV)
+            if (context_.key_context_data()->parms().scheme() != scheme_type::bfv)
             {
                 throw std::logic_error("unsupported scheme");
             }
@@ -1067,21 +961,18 @@ namespace seal
         }
 
         /**
-        Rotates plaintext matrix rows cyclically. When batching is used with the
-        BFV scheme, this function rotates the encrypted plaintext matrix rows
-        cyclically to the left (steps > 0) or to the right (steps < 0) and writes
-        the result to the destination parameter. Since the size of the batched
-        matrix is 2-by-(N/2), where N is the degree of the polynomial modulus,
-        the number of steps to rotate must have absolute value at most N/2-1. Dynamic
-        memory allocations in the process are allocated from the memory pool pointed
-        to by the given MemoryPoolHandle.
+        Rotates plaintext matrix rows cyclically. When batching is used with the BFV scheme, this function rotates the
+        encrypted plaintext matrix rows cyclically to the left (steps > 0) or to the right (steps < 0) and writes the
+        result to the destination parameter. Since the size of the batched matrix is 2-by-(N/2), where N is the degree
+        of the polynomial modulus, the number of steps to rotate must have absolute value at most N/2-1. Dynamic memory
+        allocations in the process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to rotate
         @param[in] steps The number of steps to rotate (negative left, positive right)
         @param[in] galois_keys The Galois keys
         @param[out] destination The ciphertext to overwrite with the rotated result
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::logic_error if scheme is not scheme_type::BFV
+        @throws std::logic_error if scheme is not scheme_type::bfv
         @throws std::logic_error if the encryption parameters do not support batching
         @throws std::invalid_argument if encrypted or galois_keys is not valid for
         the encryption parameters
@@ -1104,19 +995,16 @@ namespace seal
         }
 
         /**
-        Rotates plaintext matrix columns cyclically. When batching is used with
-        the BFV scheme, this function rotates the encrypted plaintext matrix
-        columns cyclically. Since the size of the batched matrix is 2-by-(N/2),
-        where N is the degree of the polynomial modulus, this means simply swapping
-        the two rows. Dynamic memory allocations in the process are allocated from
-        the memory pool pointed to by the given MemoryPoolHandle.
-
+        Rotates plaintext matrix columns cyclically. When batching is used with the BFV scheme, this function rotates
+        the encrypted plaintext matrix columns cyclically. Since the size of the batched matrix is 2-by-(N/2), where N
+        is the degree of the polynomial modulus, this means simply swapping the two rows. Dynamic memory allocations in
+        the process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to rotate
         @param[in] galois_keys The Galois keys
         @param[out] destination The ciphertext to overwrite with the rotated result
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::logic_error if scheme is not scheme_type::BFV
+        @throws std::logic_error if scheme is not scheme_type::bfv
         @throws std::logic_error if the encryption parameters do not support batching
         @throws std::invalid_argument if encrypted or galois_keys is not valid for
         the encryption parameters
@@ -1132,7 +1020,7 @@ namespace seal
         inline void rotate_columns_inplace(
             Ciphertext &encrypted, const GaloisKeys &galois_keys, MemoryPoolHandle pool = MemoryManager::GetPool())
         {
-            if (context_->key_context_data()->parms().scheme() != scheme_type::BFV)
+            if (context_.key_context_data()->parms().scheme() != scheme_type::bfv)
             {
                 throw std::logic_error("unsupported scheme");
             }
@@ -1140,19 +1028,17 @@ namespace seal
         }
 
         /**
-        Rotates plaintext matrix columns cyclically. When batching is used with
-        the BFV scheme, this function rotates the encrypted plaintext matrix columns
-        cyclically, and writes the result to the destination parameter. Since the
-        size of the batched matrix is 2-by-(N/2), where N is the degree of the
-        polynomial modulus, this means simply swapping the two rows. Dynamic memory
-        allocations in the process are allocated from the memory pool pointed to
+        Rotates plaintext matrix columns cyclically. When batching is used with the BFV scheme, this function rotates
+        the encrypted plaintext matrix columns cyclically, and writes the result to the destination parameter. Since the
+        size of the batched matrix is 2-by-(N/2), where N is the degree of the polynomial modulus, this means simply
+        swapping the two rows. Dynamic memory allocations in the process are allocated from the memory pool pointed to
         by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to rotate
         @param[in] galois_keys The Galois keys
         @param[out] destination The ciphertext to overwrite with the rotated result
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::logic_error if scheme is not scheme_type::BFV
+        @throws std::logic_error if scheme is not scheme_type::bfv
         @throws std::logic_error if the encryption parameters do not support batching
         @throws std::invalid_argument if encrypted or galois_keys is not valid for
         the encryption parameters
@@ -1174,6 +1060,7 @@ namespace seal
         }
 
         /**
+<<<<<<< HEAD
          * convolve ciphertext with given kernel Plaintext
          * 
          * 
@@ -1195,12 +1082,19 @@ namespace seal
         of steps to rotate must have absolute value at most N/2-1. Dynamic memory
         allocations in the process are allocated from the memory pool pointed to
         by the given MemoryPoolHandle.
+=======
+        Rotates plaintext vector cyclically. When using the CKKS scheme, this function rotates the encrypted plaintext
+        vector cyclically to the left (steps > 0) or to the right (steps < 0). Since the size of the batched matrix is
+        2-by-(N/2), where N is the degree of the polynomial modulus, the number of steps to rotate must have absolute
+        value at most N/2-1. Dynamic memory allocations in the process are allocated from the memory pool pointed to by
+        the given MemoryPoolHandle.
+>>>>>>> master
 
         @param[in] encrypted The ciphertext to rotate
         @param[in] steps The number of steps to rotate (negative left, positive right)
         @param[in] galois_keys The Galois keys
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::logic_error if scheme is not scheme_type::CKKS
+        @throws std::logic_error if scheme is not scheme_type::ckks
         @throws std::invalid_argument if encrypted or galois_keys is not valid for
         the encryption parameters
         @throws std::invalid_argument if galois_keys do not correspond to the top
@@ -1217,7 +1111,7 @@ namespace seal
             Ciphertext &encrypted, int steps, const GaloisKeys &galois_keys,
             MemoryPoolHandle pool = MemoryManager::GetPool())
         {
-            if (context_->key_context_data()->parms().scheme() != scheme_type::CKKS)
+            if (context_.key_context_data()->parms().scheme() != scheme_type::ckks)
             {
                 throw std::logic_error("unsupported scheme");
             }
@@ -1225,20 +1119,18 @@ namespace seal
         }
 
         /**
-        Rotates plaintext vector cyclically. When using the CKKS scheme, this function
-        rotates the encrypted plaintext vector cyclically to the left (steps > 0)
-        or to the right (steps < 0) and writes the result to the destination parameter.
-        Since the size of the batched matrix is 2-by-(N/2), where N is the degree
-        of the polynomial modulus, the number of steps to rotate must have absolute
-        value at most N/2-1. Dynamic memory allocations in the process are allocated
-        from the memory pool pointed to by the given MemoryPoolHandle.
+        Rotates plaintext vector cyclically. When using the CKKS scheme, this function rotates the encrypted plaintext
+        vector cyclically to the left (steps > 0) or to the right (steps < 0) and writes the result to the destination
+        parameter. Since the size of the batched matrix is 2-by-(N/2), where N is the degree of the polynomial modulus,
+        the number of steps to rotate must have absolute value at most N/2-1. Dynamic memory allocations in the process
+        are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to rotate
         @param[in] steps The number of steps to rotate (negative left, positive right)
         @param[in] galois_keys The Galois keys
         @param[out] destination The ciphertext to overwrite with the rotated result
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::logic_error if scheme is not scheme_type::CKKS
+        @throws std::logic_error if scheme is not scheme_type::ckks
         @throws std::invalid_argument if encrypted or galois_keys is not valid for
         the encryption parameters
         @throws std::invalid_argument if galois_keys do not correspond to the top
@@ -1260,16 +1152,15 @@ namespace seal
         }
 
         /**
-        Complex conjugates plaintext slot values. When using the CKKS scheme, this
-        function complex conjugates all values in the underlying plaintext. Dynamic
-        memory allocations in the process are allocated from the memory pool pointed
-        to by the given MemoryPoolHandle.
+        Complex conjugates plaintext slot values. When using the CKKS scheme, this function complex conjugates all
+        values in the underlying plaintext. Dynamic memory allocations in the process are allocated from the memory pool
+        pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to rotate
         @param[in] galois_keys The Galois keys
         @param[out] destination The ciphertext to overwrite with the rotated result
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::logic_error if scheme is not scheme_type::CKKS
+        @throws std::logic_error if scheme is not scheme_type::ckks
         @throws std::invalid_argument if encrypted or galois_keys is not valid for
         the encryption parameters
         @throws std::invalid_argument if galois_keys do not correspond to the top
@@ -1284,7 +1175,7 @@ namespace seal
         inline void complex_conjugate_inplace(
             Ciphertext &encrypted, const GaloisKeys &galois_keys, MemoryPoolHandle pool = MemoryManager::GetPool())
         {
-            if (context_->key_context_data()->parms().scheme() != scheme_type::CKKS)
+            if (context_.key_context_data()->parms().scheme() != scheme_type::ckks)
             {
                 throw std::logic_error("unsupported scheme");
             }
@@ -1292,17 +1183,15 @@ namespace seal
         }
 
         /**
-        Complex conjugates plaintext slot values. When using the CKKS scheme, this
-        function complex conjugates all values in the underlying plaintext, and
-        writes the result to the destination parameter. Dynamic memory allocations
-        in the process are allocated from the memory pool pointed to by the given
-        MemoryPoolHandle.
+        Complex conjugates plaintext slot values. When using the CKKS scheme, this function complex conjugates all
+        values in the underlying plaintext, and writes the result to the destination parameter. Dynamic memory
+        allocations in the process are allocated from the memory pool pointed to by the given MemoryPoolHandle.
 
         @param[in] encrypted The ciphertext to rotate
         @param[in] galois_keys The Galois keys
         @param[out] destination The ciphertext to overwrite with the rotated result
         @param[in] pool The MemoryPoolHandle pointing to a valid memory pool
-        @throws std::logic_error if scheme is not scheme_type::CKKS
+        @throws std::logic_error if scheme is not scheme_type::ckks
         @throws std::invalid_argument if encrypted or galois_keys is not valid for
         the encryption parameters
         @throws std::invalid_argument if galois_keys do not correspond to the top
@@ -1358,7 +1247,7 @@ namespace seal
         inline void conjugate_internal(Ciphertext &encrypted, const GaloisKeys &galois_keys, MemoryPoolHandle pool)
         {
             // Verify parameters.
-            auto context_data_ptr = context_->get_context_data(encrypted.parms_id());
+            auto context_data_ptr = context_.get_context_data(encrypted.parms_id());
             if (!context_data_ptr)
             {
                 throw std::invalid_argument("encrypted is not valid for encryption parameters");
@@ -1387,7 +1276,7 @@ namespace seal
 
         void populate_Zmstar_to_generator();
 
-        std::shared_ptr<SEALContext> context_{ nullptr };
+        SEALContext context_;
 
         std::map<std::uint64_t, std::pair<std::uint64_t, std::uint64_t>> Zmstar_to_generator_{};
     };

@@ -117,15 +117,20 @@ static_assert(sizeof(unsigned long long) == 8, "Require sizeof(unsigned long lon
 #include <cstddef>
 namespace seal
 {
-    using SEAL_BYTE = std::byte;
-}
+    using seal_byte = std::byte;
+} // namespace seal
 #else
 namespace seal
 {
-    enum class SEAL_BYTE : unsigned char
+    enum class seal_byte : unsigned char
     {
     };
-}
+} // namespace seal
+#endif
+
+// Force inline
+#ifndef SEAL_FORCE_INLINE
+#define SEAL_FORCE_INLINE inline
 #endif
 
 // Use `if constexpr' from C++17
@@ -156,8 +161,15 @@ namespace seal
 #define SEAL_ITERATE std::for_each_n
 #endif
 
-// Which random number generator factory to use by default
-#define SEAL_DEFAULT_RNG_FACTORY BlakePRNGFactory()
+// Which random number generator to use by default
+#define SEAL_DEFAULT_PRNG_FACTORY SEAL_JOIN(SEAL_DEFAULT_PRNG, PRNGFactory)
+
+// Which distribution to use for noise sampling: rounded Gaussian or Centered Binomial Distribution
+#ifdef SEAL_USE_GAUSSIAN_NOISE
+#define SEAL_NOISE_SAMPLER sample_poly_normal
+#else
+#define SEAL_NOISE_SAMPLER sample_poly_cbd
+#endif
 
 // Use generic functions as (slower) fallback
 #ifndef SEAL_ADD_CARRY_UINT64
@@ -170,7 +182,7 @@ namespace seal
 #endif
 
 #ifndef SEAL_MULTIPLY_UINT64
-#define SEAL_MULTIPLY_UINT64(operand1, operand2, result128) multiply_uint64_generic(operand1, operand2, result128);
+#define SEAL_MULTIPLY_UINT64(operand1, operand2, result128) multiply_uint64_generic(operand1, operand2, result128)
 #endif
 
 #ifndef SEAL_DIVIDE_UINT128_UINT64
@@ -179,7 +191,7 @@ namespace seal
 #endif
 
 #ifndef SEAL_MULTIPLY_UINT64_HW64
-#define SEAL_MULTIPLY_UINT64_HW64(operand1, operand2, hw64) multiply_uint64_hw64_generic(operand1, operand2, hw64);
+#define SEAL_MULTIPLY_UINT64_HW64(operand1, operand2, hw64) multiply_uint64_hw64_generic(operand1, operand2, hw64)
 #endif
 
 #ifndef SEAL_MSB_INDEX_UINT64
@@ -253,3 +265,7 @@ namespace seal
 #define SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(name, poly_modulus_degree, pool)                                  \
     auto SEAL_JOIN(_seal_temp_alloc_, __LINE__)(seal::util::allocate_zero_uint(poly_modulus_degree, pool)); \
     seal::util::CoeffIter name(SEAL_JOIN(_seal_temp_alloc_, __LINE__).get());
+
+// Conditionally select the former if true and the latter if false
+// This is a temporary solution that generates constant-time code with all compilers on all platforms.
+#define SEAL_COND_SELECT(cond, if_true, if_false) (cond ? if_true : if_false)

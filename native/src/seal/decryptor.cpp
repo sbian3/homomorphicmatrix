@@ -8,8 +8,6 @@
 #include "seal/util/polycore.h"
 #include "seal/util/scalingvariant.h"
 #include "seal/util/uintarith.h"
-#include "seal/util/uintarithmod.h"
-#include "seal/util/uintarithsmallmod.h"
 #include "seal/util/uintcore.h"
 #include "seal/util/linarith.h"
 #include "seal/util/uintlinarith.h"
@@ -55,14 +53,10 @@ namespace seal
         }
     } // namespace
 
-    Decryptor::Decryptor(shared_ptr<SEALContext> context, const SecretKey &secret_key) : context_(move(context))
+    Decryptor::Decryptor(const SEALContext &context, const SecretKey &secret_key) : context_(context)
     {
         // Verify parameters
-        if (!context_)
-        {
-            throw invalid_argument("invalid context");
-        }
-        if (!context_->parameters_set())
+        if (!context_.parameters_set())
         {
             throw invalid_argument("encryption parameters are not set correctly");
         }
@@ -71,7 +65,7 @@ namespace seal
             throw invalid_argument("secret key is not valid for encryption parameters");
         }
 
-        auto &parms = context_->key_context_data()->parms();
+        auto &parms = context_.key_context_data()->parms();
         auto &coeff_modulus = parms.coeff_modulus();
         size_t coeff_count = parms.poly_modulus_degree();
         size_t coeff_modulus_size = coeff_modulus.size();
@@ -97,16 +91,16 @@ namespace seal
             throw invalid_argument("encrypted is empty");
         }
 
-        auto &context_data = *context_->first_context_data();
+        auto &context_data = *context_.first_context_data();
         auto &parms = context_data.parms();
 
         switch (parms.scheme())
         {
-        case scheme_type::BFV:
+        case scheme_type::bfv:
             bfv_decrypt(encrypted, destination, pool_);
             return;
 
-        case scheme_type::CKKS:
+        case scheme_type::ckks:
             ckks_decrypt(encrypted, destination, pool_);
             return;
 
@@ -122,7 +116,7 @@ namespace seal
             throw invalid_argument("encrypted cannot be in NTT form");
         }
 
-        auto &context_data = *context_->get_context_data(encrypted.parms_id());
+        auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
         size_t coeff_count = parms.poly_modulus_degree();
@@ -462,7 +456,7 @@ namespace seal
         }
 
         // We already know that the parameters are valid
-        auto &context_data = *context_->get_context_data(encrypted.parms_id());
+        auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
         size_t coeff_count = parms.poly_modulus_degree();
@@ -502,7 +496,7 @@ namespace seal
         }
 #endif
         // WARNING: This function must be called with the original context_data
-        auto &context_data = *context_->key_context_data();
+        auto &context_data = *context_.key_context_data();
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
         size_t coeff_count = parms.poly_modulus_degree();
@@ -557,12 +551,12 @@ namespace seal
     // Store result in destination in RNS form.
     void Decryptor::dot_product_ct_sk_array(const Ciphertext &encrypted, RNSIter destination, MemoryPoolHandle pool)
     {
-        auto &context_data = *context_->get_context_data(encrypted.parms_id());
+        auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
         size_t coeff_count = parms.poly_modulus_degree();
         size_t coeff_modulus_size = coeff_modulus.size();
-        size_t key_coeff_modulus_size = context_->key_context_data()->parms().coeff_modulus().size();
+        size_t key_coeff_modulus_size = context_.key_context_data()->parms().coeff_modulus().size();
         size_t encrypted_size = encrypted.size();
         auto is_ntt_form = encrypted.is_ntt_form();
 
@@ -620,7 +614,7 @@ namespace seal
             throw invalid_argument("encrypted is empty");
         }
 
-        if (context_->key_context_data()->parms().scheme() != scheme_type::BFV)
+        if (context_.key_context_data()->parms().scheme() != scheme_type::bfv)
         {
             throw logic_error("unsupported scheme");
         }
@@ -629,7 +623,7 @@ namespace seal
             throw invalid_argument("encrypted cannot be in NTT form");
         }
 
-        auto &context_data = *context_->get_context_data(encrypted.parms_id());
+        auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
         auto &plain_modulus = parms.plain_modulus();

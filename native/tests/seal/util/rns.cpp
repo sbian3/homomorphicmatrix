@@ -61,7 +61,7 @@ namespace sealtest
 
         TEST(RNSBaseTest, Copy)
         {
-            auto pool = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW);
+            auto pool = MemoryManager::GetPool(mm_prof_opt::mm_force_new);
             RNSBase base({ 3, 4 }, pool);
             ASSERT_EQ(2l, pool.use_count());
             {
@@ -133,7 +133,7 @@ namespace sealtest
 
         TEST(RNSBaseTest, Extend)
         {
-            auto pool = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW);
+            auto pool = MemoryManager::GetPool(mm_prof_opt::mm_force_new);
             RNSBase base({ 3 }, pool);
             ASSERT_EQ(2l, pool.use_count());
 
@@ -170,7 +170,7 @@ namespace sealtest
 
         TEST(RNSBaseTest, Drop)
         {
-            auto pool = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW);
+            auto pool = MemoryManager::GetPool(mm_prof_opt::mm_force_new);
             RNSBase base({ 3, 5, 7, 11 }, pool);
             ASSERT_EQ(2l, pool.use_count());
 
@@ -331,7 +331,7 @@ namespace sealtest
             }
         }
 
-        TEST(BaseConvToolTest, Initialize)
+        TEST(BaseConverterTest, Initialize)
         {
             auto pool = MemoryManager::GetPool();
 
@@ -344,7 +344,7 @@ namespace sealtest
             ASSERT_NO_THROW(BaseConverter bct(RNSBase({ 2, 3, 5 }, pool), RNSBase({ 7, 11 }, pool), pool));
         }
 
-        TEST(BaseConvToolTest, Convert)
+        TEST(BaseConverterTest, Convert)
         {
             auto pool = MemoryManager::GetPool();
 
@@ -401,7 +401,7 @@ namespace sealtest
             }
         }
 
-        TEST(BaseConvToolTest, ConvertArray)
+        TEST(BaseConverterTest, ConvertArray)
         {
             auto pool = MemoryManager::GetPool();
 
@@ -1024,7 +1024,7 @@ namespace sealtest
             vector<uint64_t> in(poly_modulus_degree * rns_tool->base_q()->size());
             set_zero_uint(in.size(), in.data());
             RNSIter in_iter(in.data(), poly_modulus_degree);
-            rns_tool->divide_and_round_q_last_inplace(in_iter, pool);
+            rns_tool->divide_and_round_q_last_ntt_inplace(in_iter, ntt, pool);
             ASSERT_EQ(0ULL, in[0]);
             ASSERT_EQ(0ULL, in[1]);
 
