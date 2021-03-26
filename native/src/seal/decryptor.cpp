@@ -180,7 +180,7 @@ namespace seal
             throw invalid_argument("encrypted cannot be in NTT form");
         }
 
-        auto &context_data = *context_->get_context_data(encrypted.parms_id());
+        auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
         size_t coeff_count = parms.poly_modulus_degree();
@@ -235,7 +235,7 @@ namespace seal
             throw invalid_argument("encrypted cannot be in NTT form");
         }
 
-        auto &context_data = *context_->get_context_data(encrypted.parms_id());
+        auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
         size_t coeff_count = parms.poly_modulus_degree();
@@ -290,7 +290,7 @@ namespace seal
             throw invalid_argument("encrypted cannot be in NTT form");
         }
 
-        auto &context_data = *context_->get_context_data(encrypted.parms_id());
+        auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
         size_t coeff_count = parms.poly_modulus_degree();
@@ -324,12 +324,12 @@ namespace seal
 
     }
     void Decryptor::dot_product_with_matrix(Ciphertext &encrypted, util::RNSIter destination, std::vector<std::vector<int64_t>> matrix,  MemoryPoolHandle pool){
-        auto &context_data = *context_->get_context_data(encrypted.parms_id());
+        auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
         size_t coeff_count = parms.poly_modulus_degree();
         size_t coeff_modulus_size = coeff_modulus.size();
-        size_t key_coeff_modulus_size = context_->key_context_data()->parms().coeff_modulus().size();
+        size_t key_coeff_modulus_size = context_.key_context_data()->parms().coeff_modulus().size();
         size_t encrypted_size = encrypted.size();
         //auto is_ntt_form = encrypted.is_ntt_form();
 
@@ -363,12 +363,12 @@ namespace seal
 
 
     void Decryptor::dot_product_with_matrix(Ciphertext &encrypted, util::RNSIter destination, std::vector<std::vector<uint64_t>> matrix,  MemoryPoolHandle pool){
-        auto &context_data = *context_->get_context_data(encrypted.parms_id());
+        auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
         size_t coeff_count = parms.poly_modulus_degree();
         size_t coeff_modulus_size = coeff_modulus.size();
-        size_t key_coeff_modulus_size = context_->key_context_data()->parms().coeff_modulus().size();
+        size_t key_coeff_modulus_size = context_.key_context_data()->parms().coeff_modulus().size();
         size_t encrypted_size = encrypted.size();
         //auto is_ntt_form = encrypted.is_ntt_form();
 
@@ -405,12 +405,12 @@ namespace seal
 
 
     void Decryptor::dot_product_with_kernel(Ciphertext &encrypted, util::RNSIter destination, std::vector<uint64_t> kernel,  MemoryPoolHandle pool){
-        auto &context_data = *context_->get_context_data(encrypted.parms_id());
+        auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
         size_t coeff_count = parms.poly_modulus_degree();
         size_t coeff_modulus_size = coeff_modulus.size();
-        size_t key_coeff_modulus_size = context_->key_context_data()->parms().coeff_modulus().size();
+        size_t key_coeff_modulus_size = context_.key_context_data()->parms().coeff_modulus().size();
         size_t encrypted_size = encrypted.size();
         //auto is_ntt_form = encrypted.is_ntt_form();
 

@@ -36,7 +36,7 @@ void test_matconv(){
 }
 
 void test_print_iter(){
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     // how many "c"?
     uint64_t poly_count = 4;
     // polynomial degree
@@ -61,7 +61,7 @@ void test_print_iter(){
 }
 
 void test_innerprod(){
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     uint64_t array_size = 10;
     // polynomial degree
     uint64_t coeff_degree = array_size;
@@ -90,7 +90,7 @@ void test_innerprod(){
 }
 
 void test_conviter(){
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     uint64_t array_size = 10;
     // polynomial degree
     uint64_t coeff_degree = array_size;
@@ -116,7 +116,7 @@ void test_conviter(){
 }
 
 void test_innerprod_vector(){
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     uint64_t array_size = 10;
     // polynomial degree
     uint64_t coeff_degree = array_size;
@@ -142,7 +142,7 @@ void test_innerprod_vector(){
 }
 
 void test_init_matrix(){
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     uint64_t array_size = 10;
     // polynomial degree
     uint64_t coeff_degree = array_size;
@@ -159,7 +159,7 @@ void test_init_matrix(){
 }
 
 void test_init_matrix_uint(){
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     uint64_t array_size = 10;
     Modulus modulus(15);
     // polynomial degree
@@ -177,7 +177,7 @@ void test_init_matrix_uint(){
 }
 
 void test_init_matrix_uint_by_kernel(){
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     uint64_t array_size = 3;
     Modulus modulus(15);
     // polynomial degree
@@ -196,7 +196,7 @@ void test_init_matrix_uint_by_kernel(){
 
 
 void test_matrix_conversion_with_coeffiter(){
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     uint64_t array_size = 10;
     uint64_t coeff_degree = array_size;
     Modulus modulus(100);
@@ -217,7 +217,7 @@ void test_matrix_conversion_with_coeffiter(){
 }
 
 void test_secret_product(){
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     uint64_t array_size = 3;
     uint64_t coeff_degree = array_size;
     Modulus modulus(100);
@@ -236,7 +236,7 @@ void test_secret_product(){
 }
 
 void test_matrix_conversion_with_rnsiter(){
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::FORCE_NEW, true);
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     // modulus chain
     vector<Modulus> mod_chain = {10, 15, 100};
     // polynomial degree

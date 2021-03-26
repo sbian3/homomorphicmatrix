@@ -123,7 +123,7 @@ void test_bfv_matrix(){
     print_example_banner("matrix_conversion");
 
     // parameter setting
-    EncryptionParameters parms(scheme_type::BFV);
+    EncryptionParameters parms(scheme_type::bfv);
     size_t poly_modulus_degree;
     cout << "poly_modulus_degree: ";
     cin >> poly_modulus_degree;
@@ -133,11 +133,11 @@ void test_bfv_matrix(){
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 7;
     parms.set_plain_modulus(plaintext_modulus);
-    auto context = SEALContext::Create(parms);
+    SEALContext context(parms);
     print_line(__LINE__);
     cout << "Set encryption parameters and print" << endl;
     print_parameters(context);
-    cout << "Parameter validation: " << context->parameter_error_message() << endl;
+    cout << "Parameter validation: " << context.parameter_error_message() << endl;
 
     cout << endl;
 
@@ -145,8 +145,9 @@ void test_bfv_matrix(){
     cout << "keygen step" << endl;
     KeyGenerator keygen(context);
     cout << "pubkey " << endl;
-    PublicKey public_key = keygen.public_key();
     SecretKey secret_key = keygen.secret_key();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
@@ -202,7 +203,7 @@ void test_lin_conv_packing(){
     print_example_banner("matrix_conversion");
 
     // parameter setting
-    EncryptionParameters parms(scheme_type::BFV);
+    EncryptionParameters parms(scheme_type::bfv);
     size_t poly_modulus_degree;
     cout << "poly_modulus_degree: ";
     cin >> poly_modulus_degree;
@@ -212,11 +213,11 @@ void test_lin_conv_packing(){
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 7;
     parms.set_plain_modulus(plaintext_modulus);
-    auto context = SEALContext::Create(parms);
+    SEALContext context(parms);
     print_line(__LINE__);
     cout << "Set encryption parameters and print" << endl;
     print_parameters(context);
-    cout << "Parameter validation: " << context->parameter_error_message() << endl;
+    cout << "Parameter validation: " << context.parameter_error_message() << endl;
 
     cout << endl;
 
@@ -224,8 +225,9 @@ void test_lin_conv_packing(){
     cout << "keygen step" << endl;
     KeyGenerator keygen(context);
     cout << "pubkey " << endl;
-    PublicKey public_key = keygen.public_key();
     SecretKey secret_key = keygen.secret_key();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
@@ -277,7 +279,7 @@ void test_bfv_conv(){
     print_example_banner("matrix_conversion");
 
     // parameter setting
-    EncryptionParameters parms(scheme_type::BFV);
+    EncryptionParameters parms(scheme_type::bfv);
     size_t poly_modulus_degree;
     cout << "poly_modulus_degree: ";
     cin >> poly_modulus_degree;
@@ -287,11 +289,11 @@ void test_bfv_conv(){
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 7;
     parms.set_plain_modulus(plaintext_modulus);
-    auto context = SEALContext::Create(parms);
+    SEALContext context(parms);
     print_line(__LINE__);
     cout << "Set encryption parameters and print" << endl;
     print_parameters(context);
-    cout << "Parameter validation: " << context->parameter_error_message() << endl;
+    cout << "Parameter validation: " << context.parameter_error_message() << endl;
 
     cout << endl;
 
@@ -299,8 +301,9 @@ void test_bfv_conv(){
     cout << "keygen step" << endl;
     KeyGenerator keygen(context);
     cout << "pubkey " << endl;
-    PublicKey public_key = keygen.public_key();
     SecretKey secret_key = keygen.secret_key();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
@@ -358,7 +361,7 @@ void test_ntt_conv(){
     print_example_banner("matrix_conversion");
 
     // parameter setting
-    EncryptionParameters parms(scheme_type::BFV);
+    EncryptionParameters parms(scheme_type::bfv);
     size_t poly_modulus_degree;
     cout << "poly_modulus_degree: ";
     cin >> poly_modulus_degree;
@@ -368,11 +371,11 @@ void test_ntt_conv(){
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 7;
     parms.set_plain_modulus(plaintext_modulus);
-    auto context = SEALContext::Create(parms);
+    SEALContext context(parms);
     print_line(__LINE__);
     cout << "Set encryption parameters and print" << endl;
     print_parameters(context);
-    cout << "Parameter validation: " << context->parameter_error_message() << endl;
+    cout << "Parameter validation: " << context.parameter_error_message() << endl;
 
     cout << endl;
 
@@ -380,8 +383,9 @@ void test_ntt_conv(){
     cout << "keygen step" << endl;
     KeyGenerator keygen(context);
     cout << "pubkey " << endl;
-    PublicKey public_key = keygen.public_key();
     SecretKey secret_key = keygen.secret_key();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
@@ -433,7 +437,7 @@ void test_conv_cipher_direct(){
     print_example_banner("strait convolution of ciphertext");
 
     // parameter setting
-    EncryptionParameters parms(scheme_type::BFV);
+    EncryptionParameters parms(scheme_type::bfv);
     size_t poly_modulus_degree;
     cout << "poly_modulus_degree: ";
     cin >> poly_modulus_degree;
@@ -443,11 +447,11 @@ void test_conv_cipher_direct(){
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 1032193;
     parms.set_plain_modulus(plaintext_modulus);
-    auto context = SEALContext::Create(parms);
+    SEALContext context(parms);
     print_line(__LINE__);
     cout << "Set encryption parameters and print" << endl;
     print_parameters(context);
-    cout << "Parameter validation: " << context->parameter_error_message() << endl;
+    cout << "Parameter validation: " << context.parameter_error_message() << endl;
 
     cout << endl;
 
@@ -455,8 +459,9 @@ void test_conv_cipher_direct(){
     cout << "keygen step" << endl;
     KeyGenerator keygen(context);
     cout << "pubkey " << endl;
-    PublicKey public_key = keygen.public_key();
     SecretKey secret_key = keygen.secret_key();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
@@ -507,7 +512,7 @@ void test_lin_2dconv(){
     print_example_banner("matrix_conversion");
 
     // parameter setting
-    EncryptionParameters parms(scheme_type::BFV);
+    EncryptionParameters parms(scheme_type::bfv);
     size_t poly_modulus_degree;
     cout << "poly_modulus_degree: ";
     cin >> poly_modulus_degree;
@@ -517,11 +522,11 @@ void test_lin_2dconv(){
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 7;
     parms.set_plain_modulus(plaintext_modulus);
-    auto context = SEALContext::Create(parms);
+    SEALContext context(parms);
     print_line(__LINE__);
     cout << "Set encryption parameters and print" << endl;
     print_parameters(context);
-    cout << "Parameter validation: " << context->parameter_error_message() << endl;
+    cout << "Parameter validation: " << context.parameter_error_message() << endl;
 
     cout << endl;
 
@@ -529,8 +534,9 @@ void test_lin_2dconv(){
     cout << "keygen step" << endl;
     KeyGenerator keygen(context);
     cout << "pubkey " << endl;
-    PublicKey public_key = keygen.public_key();
     SecretKey secret_key = keygen.secret_key();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
@@ -580,7 +586,7 @@ void test_conv_ensei(){
     print_example_banner("strait convolution of ciphertext");
 
     // parameter setting
-    EncryptionParameters parms(scheme_type::BFV);
+    EncryptionParameters parms(scheme_type::bfv);
     size_t poly_modulus_degree;
     cout << "poly_modulus_degree: ";
     cin >> poly_modulus_degree;
@@ -590,11 +596,11 @@ void test_conv_ensei(){
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 1032193;
     parms.set_plain_modulus(plaintext_modulus);
-    auto context = SEALContext::Create(parms);
+    SEALContext context(parms);
     print_line(__LINE__);
     cout << "Set encryption parameters and print" << endl;
     print_parameters(context);
-    cout << "Parameter validation: " << context->parameter_error_message() << endl;
+    cout << "Parameter validation: " << context.parameter_error_message() << endl;
 
     cout << endl;
 
@@ -602,8 +608,9 @@ void test_conv_ensei(){
     cout << "keygen step" << endl;
     KeyGenerator keygen(context);
     cout << "pubkey " << endl;
-    PublicKey public_key = keygen.public_key();
     SecretKey secret_key = keygen.secret_key();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
@@ -616,7 +623,7 @@ void test_conv_ensei(){
     cout << "Express x = " + x + " as a plaintext polynomial " + x_plain.to_string() + "." << endl;
     cout << "Coeff count: " << x_plain.coeff_count() << endl;
     print_plain(x_plain, 10);
-    evaluator.transform_to_ntt_inplace(x_plain, context->first_parms_id());
+    evaluator.transform_to_ntt_inplace(x_plain, context.first_parms_id());
 
     // encrypt x
     Ciphertext x_encrypted;
@@ -630,7 +637,7 @@ void test_conv_ensei(){
     // prepare kernel plaintext and ntt
     string kernel_str = "1 + 1x^1 + 2x^2 + 3x^3";
     Plaintext kernel(kernel_str);
-    evaluator.transform_to_ntt_inplace(kernel, context->first_parms_id());
+    evaluator.transform_to_ntt_inplace(kernel, context.first_parms_id());
 
     // convolve encrypted x
     auto time_start = chrono::high_resolution_clock::now();
@@ -646,7 +653,7 @@ void test_conv_ensei(){
 }
 
 void test_ensei_convolution(){
-    EncryptionParameters parms(scheme_type::BFV);
+    EncryptionParameters parms(scheme_type::bfv);
     size_t poly_modulus_degree;
     cout << "poly_modulus_degree: ";
     cin >> poly_modulus_degree;
@@ -655,18 +662,21 @@ void test_ensei_convolution(){
 
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
 
-    auto context = SEALContext::Create(parms);
+    SEALContext context(parms);
     print_parameters(context);
     cout << endl;
 
-    auto qualifiers = context->first_context_data()->qualifiers();
+    auto qualifiers = context.first_context_data()->qualifiers();
     cout << "Batching enabled: " << boolalpha << qualifiers.using_batching << endl;
 
     KeyGenerator keygen(context);
-    PublicKey public_key = keygen.public_key();
     SecretKey secret_key = keygen.secret_key();
-    GaloisKeys gal_keys = keygen.galois_keys_local();
-    RelinKeys relin_keys = keygen.relin_keys_local();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
+    GaloisKeys gal_keys;
+    keygen.create_galois_keys(gal_keys);
+    RelinKeys relin_keys;
+    keygen.create_relin_keys(relin_keys);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
@@ -737,7 +747,7 @@ void test_ensei_convolution(){
     vector<uint64_t> kernel_v = {1,1,2,3};
     Plaintext kernel;
     batch_encoder.encode(kernel_v, kernel);
-    evaluator.transform_to_ntt_inplace(kernel, context->first_parms_id());
+    evaluator.transform_to_ntt_inplace(kernel, context.first_parms_id());
     auto time_start = chrono::high_resolution_clock::now();
     evaluator.multiply_plain_inplace(encrypted_matrix, kernel);
     evaluator.transform_from_ntt_inplace(encrypted_matrix);

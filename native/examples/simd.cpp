@@ -19,7 +19,7 @@ void test_batch_encoder()
     with BFV, and when used properly will result in implementations outperforming
     anything done with the IntegerEncoder.
     */
-    EncryptionParameters parms(scheme_type::BFV);
+    EncryptionParameters parms(scheme_type::bfv);
     size_t poly_modulus_degree = 8192;
     parms.set_poly_modulus_degree(poly_modulus_degree);
     parms.set_coeff_modulus(CoeffModulus::BFVDefault(poly_modulus_degree));
@@ -32,7 +32,7 @@ void test_batch_encoder()
     */
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
 
-    auto context = SEALContext::Create(parms);
+    SEALContext context(parms);
     print_parameters(context);
     cout << endl;
 
@@ -40,13 +40,15 @@ void test_batch_encoder()
     We can verify that batching is indeed enabled by looking at the encryption
     parameter qualifiers created by SEALContext.
     */
-    auto qualifiers = context->first_context_data()->qualifiers();
+    auto qualifiers = context.first_context_data()->qualifiers();
     cout << "Batching enabled: " << boolalpha << qualifiers.using_batching << endl;
 
     KeyGenerator keygen(context);
-    PublicKey public_key = keygen.public_key();
     SecretKey secret_key = keygen.secret_key();
-    RelinKeys relin_keys = keygen.relin_keys_local();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
+    RelinKeys relin_keys;
+    keygen.create_relin_keys(relin_keys);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
@@ -165,7 +167,7 @@ void test_batch_encoder()
 }
 
 void test_batch_convolution(){
-    EncryptionParameters parms(scheme_type::BFV);
+    EncryptionParameters parms(scheme_type::bfv);
     size_t poly_modulus_degree;
     cout << "poly_modulus_degree: ";
     cin >> poly_modulus_degree;
@@ -174,18 +176,21 @@ void test_batch_convolution(){
 
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
 
-    auto context = SEALContext::Create(parms);
+    SEALContext context(parms);
     print_parameters(context);
     cout << endl;
 
-    auto qualifiers = context->first_context_data()->qualifiers();
+    auto qualifiers = context.first_context_data()->qualifiers();
     cout << "Batching enabled: " << boolalpha << qualifiers.using_batching << endl;
 
     KeyGenerator keygen(context);
-    PublicKey public_key = keygen.public_key();
     SecretKey secret_key = keygen.secret_key();
-    GaloisKeys gal_keys = keygen.galois_keys_local();
-    RelinKeys relin_keys = keygen.relin_keys_local();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
+    GaloisKeys gal_keys;
+    keygen.create_galois_keys(gal_keys);
+    RelinKeys relin_keys;
+    keygen.create_relin_keys(relin_keys);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
@@ -281,7 +286,7 @@ void test_batch_convolution(){
 
 
 void test_batch_matrix(){
-    EncryptionParameters parms(scheme_type::BFV);
+    EncryptionParameters parms(scheme_type::bfv);
     size_t poly_modulus_degree;
     cout << "poly_modulus_degree: ";
     cin >> poly_modulus_degree;
@@ -290,18 +295,21 @@ void test_batch_matrix(){
 
     parms.set_plain_modulus(PlainModulus::Batching(poly_modulus_degree, 20));
 
-    auto context = SEALContext::Create(parms);
+    SEALContext context(parms);
     print_parameters(context);
     cout << endl;
 
-    auto qualifiers = context->first_context_data()->qualifiers();
+    auto qualifiers = context.first_context_data()->qualifiers();
     cout << "Batching enabled: " << boolalpha << qualifiers.using_batching << endl;
 
     KeyGenerator keygen(context);
-    PublicKey public_key = keygen.public_key();
     SecretKey secret_key = keygen.secret_key();
-    GaloisKeys gal_keys = keygen.galois_keys_local();
-    RelinKeys relin_keys = keygen.relin_keys_local();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
+    GaloisKeys gal_keys;
+    keygen.create_galois_keys(gal_keys);
+    RelinKeys relin_keys;
+    keygen.create_relin_keys(relin_keys);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
