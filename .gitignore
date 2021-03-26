@@ -42,6 +42,7 @@ thirdparty/
 .vimrc
 .lvimrc
 .local_vimrc
+*.swp
 
 #### Archives ####
 # It's better to unpack these files and commit the raw source because
