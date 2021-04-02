@@ -83,6 +83,11 @@ void test_bfv_matrix(){
     print_plain(x_decrypted, 20);
 }
 
-int main(){
+int main(int argc, char* argv[]){
+    uint64_t input_dim, kernel_dim;
+    int ret = check_args(argc, argv, input_dim, kernel_dim);
+    if(ret == 0){
+        return 1;
+    }
     test_bfv_matrix();
 }

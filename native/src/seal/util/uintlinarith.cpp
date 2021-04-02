@@ -118,6 +118,7 @@ namespace seal
         // diagonal functions for packed convolution
         //
 
+        // result list is reversed(index is also)
         vector<uint64_t> create_diagonal_list(vector<uint64_t> kernel, uint64_t colsize, uint64_t rowsize, Modulus &modulus, vector<uint64_t> &diagonal_list){
             vector<uint64_t> indexes;
             diagonal_list[colsize-1] = kernel[0];
@@ -125,6 +126,8 @@ namespace seal
                 diagonal_list[colsize-i-1] = kernel[i];
                 diagonal_list[colsize + rowsize - 1 - i] = util::negate_uint_mod(kernel[i], modulus);
             }
+            reverse(diagonal_list.begin(), diagonal_list.end());
+            indexes.reserve(kernel.size());
             for(uint64_t i = 0;i < diagonal_list.size();i++){
                 if(diagonal_list[i] != 0) indexes.push_back(i);
             }
@@ -135,6 +138,7 @@ namespace seal
             vector<uint64_t> ret;
             uint64_t n = a.size();
             int64_t index = start_col + colsize-1;
+            ret.reserve(n + colsize);
             for(;index > start_col;index--){
                 ret.push_back(a[index]);
             }

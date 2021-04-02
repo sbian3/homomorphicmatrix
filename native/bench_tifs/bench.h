@@ -208,5 +208,22 @@ inline void print_line(int line_number)
     std::cout << "Line " << std::setw(3) << line_number << " --> ";
 }
 
+inline int check_args(int argc, char* argv[], uint64_t &input_dim, uint64_t &kernel_dim){
+    if(argc != 3){
+        cerr << "please input two numbers (input_dim, kernel_dim)" << endl;
+        return 0;
+    }
+    input_dim = stoull(argv[1]);
+    kernel_dim = stoull(argv[2]);
+    return 2;
+}
+
+inline vector<uint64_t> sample_rn(uint64_t size, Modulus modulus){
+    vector<uint64_t> ret(size);
+    for(uint64_t i = 0;i < size;i++){
+        ret[i] = rand() % modulus.value();
+    }
+    return ret;
+}
 
 void print_plain(Plaintext plain, uint64_t num);

@@ -431,16 +431,21 @@ void test_create_diagonal(){
     }
     cout << endl;
 }
-//void test_conv_nega(){
-//    vector<uint64_t> kernel = {1,1,2};
-//    vector<uint64_t> input = {1, 2, 3, 4};
-//    vector<uint64_t> result(20);
-//    util::conv_negacyclic(kernel, input, 9, result);
-//    for(uint64_t i = 0U;i < result.size();i++){
-//        cout << result[i];
-//        if(i != result.size() -1){
-//            cout << " ";
-//        }
-//    }
-//    cout << endl;
-//}
+
+void test_diagonal_partial(){
+    uint64_t start_col = 4;
+    uint64_t colsize = 3;
+    uint64_t a_size = 10;
+    Modulus modulus(15);
+    vector<uint64_t> a(a_size);
+    for(auto i = 0L;i < a.size();i++){
+        a[i] = i;
+    }
+    vector<uint64_t> diagonal = util::create_diagonal_partial(a, start_col, colsize, modulus);
+    cout << "start_col: " << start_col << " " << "colsize: " << colsize << endl;
+    cout << "diagonal list of submatrix: ";
+    for(auto i =0L;i < diagonal.size();i++){
+        cout << diagonal[i] << " ";
+    }
+    cout << endl;
+}

@@ -4,7 +4,7 @@ using namespace std;
 using namespace seal;
 
 
-void test_conv_cipher_direct(){
+void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim){
     print_example_banner("Direct convolution of ciphertext Benchmark");
 
     // parameter setting
@@ -39,10 +39,9 @@ void test_conv_cipher_direct(){
 
     // generate plaintext x
     print_line(__LINE__);
-    string x = "6x^2 + 1x^1 + 2";
     cout << "Input plaintext: ";
-    Plaintext x_plain(x);
-    cout << "Express x = " + x + " as a plaintext polynomial " + x_plain.to_string() + "." << endl;
+    Plaintext x_plain(sample_rn(input_dim, plaintext_modulus));
+    cout << "plaintext polynomial " + x_plain.to_string() + "." << endl;
     cout << "Coeff count: " << x_plain.coeff_count() << endl;
     print_plain(x_plain, 10);
 
@@ -61,7 +60,7 @@ void test_conv_cipher_direct(){
     cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
 
     // convolve encrypted x
-    vector<uint64_t> kernel = {1,1,2,3};
+    vector<uint64_t> kernel = sample_rn(kernel_dim, plaintext_modulus);
     Ciphertext conved_x(x_encrypted);
     for(uint64_t i = 0;i < cipher_coeffsize;i++){
         conved_x[i] = 0;
@@ -78,6 +77,11 @@ void test_conv_cipher_direct(){
     print_plain(x_conved_decrypted, 20);
 }
 
-int main(){
-    test_conv_cipher_direct();
+int main(int argc, char* argv[]){
+    uint64_t input_dim, kernel_dim;
+    int ret = check_args(argc, argv, input_dim, kernel_dim);
+    if(ret == 0){
+        return 1;
+    }
+    test_conv_cipher_direct(input_dim, kernel_dim);
 }
