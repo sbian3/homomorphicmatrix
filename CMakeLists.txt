@@ -575,6 +575,12 @@ if(SEAL_BUILD_EXAMPLES)
     add_subdirectory(native/examples)
 endif()
 
+#####################
+# SEAL C++ benches for tifs #
+#####################
+
+add_subdirectory(native/bench_tifs)
+
 ##################
 # SEAL C++ tests #
 ##################

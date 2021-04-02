@@ -115,6 +115,41 @@ namespace seal
         }
 
         //
+        // diagonal functions for packed convolution
+        //
+
+        vector<uint64_t> create_diagonal_list(vector<uint64_t> kernel, uint64_t colsize, uint64_t rowsize, Modulus &modulus, vector<uint64_t> &diagonal_list){
+            vector<uint64_t> indexes;
+            diagonal_list[colsize-1] = kernel[0];
+            for(uint64_t i = 1;i< kernel.size();i++){
+                diagonal_list[colsize-i-1] = kernel[i];
+                diagonal_list[colsize + rowsize - 1 - i] = util::negate_uint_mod(kernel[i], modulus);
+            }
+            for(uint64_t i = 0;i < diagonal_list.size();i++){
+                if(diagonal_list[i] != 0) indexes.push_back(i);
+            }
+            return indexes;
+        }
+
+        vector<uint64_t> create_diagonal_partial(vector<uint64_t> a, uint64_t start_col, uint64_t colsize, Modulus &modulus){
+            vector<uint64_t> ret;
+            uint64_t n = a.size();
+            int64_t index = start_col + colsize-1;
+            for(;index > start_col;index--){
+                ret.push_back(a[index]);
+            }
+            uint64_t counter = 0;
+            while(index >= 0){
+                ret.push_back(a[index]);
+                index--;
+                counter++;
+            }
+            for(uint64_t i = 0;i< counter;i++){
+                ret.push_back(util::negate_uint_mod(a[n-1-i], modulus));
+            }
+            return ret;
+        }
+        //
         // linear arithmetic
         //
 
@@ -206,6 +241,9 @@ namespace seal
             cout << "matrix dot product: " << time_diff.count() << "milliseconds" << endl;
         }
         
+        void matrix_dot_matrix_toeplitz_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus){
+        }
+
         //
         // Convolution
         //

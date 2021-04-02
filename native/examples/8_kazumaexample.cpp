@@ -491,6 +491,11 @@ void test_conv_cipher_direct(){
 
     // convolve encrypted x
     vector<uint64_t> kernel = {1,1,2,3};
+    cout << "kernel:";
+    for(uint64_t i = 0;i < kernel.size();i++){
+        cout << kernel[i] << " ";
+    }
+    cout << endl;
     Ciphertext conved_x(x_encrypted);
     for(uint64_t i = 0;i < cipher_coeffsize;i++){
         conved_x[i] = 0;
@@ -773,6 +778,43 @@ void test_ensei_convolution(){
     print_matrix(pod_result, row_size);
 }
 
+void experiment_packed_conv_matrix_dot(){
+
+    // generate transform matrix using kernel
+    uint64_t coeff_degree = 16;
+    Modulus modulus(7);
+    vector<uint64_t> c(coeff_degree);
+    vector<vector<uint64_t>> A(coeff_degree, vector<uint64_t>(coeff_degree));
+    vector<vector<uint64_t>> lt_matrix(coeff_degree, vector<uint64_t>(coeff_degree));
+    vector<vector<uint64_t>> result(coeff_degree, vector<uint64_t>(coeff_degree));
+
+    for(auto i = 0L;i < coeff_degree;i++){
+        c[i] = rand() % modulus.value();
+    }
+    util::init_matrix_with_coeff(A, coeff_degree, c, modulus);
+    cout << "A matrix" << endl;
+    util::print_matrix(A);
+
+    // packed kernel
+    uint64_t kernel_size = 8;
+    //vector<uint64_t> kernel1 = {1,2,3,5,3, 2, 1, 6};
+    //vector<uint64_t> kernel2 = {2,3,4,5, 6, 2, 1, 2};
+    vector<uint64_t> kernel1(kernel_size);
+    vector<uint64_t> kernel2(kernel_size);
+    for(auto i = 0L;i< kernel_size;i++){
+        kernel1[i] = rand() % modulus.value();
+        kernel2[i] = rand() % modulus.value();
+    }
+    util::init_matrix_rotate_partial(lt_matrix, kernel1, 0, 0, modulus);
+    util::init_matrix_rotate_partial(lt_matrix, kernel2, coeff_degree/2, coeff_degree/2, modulus);
+    cout << "LT matrix(packed kernel)" << endl;
+    util::print_matrix(lt_matrix);
+
+    cout << "matrix dot matrix" << endl;
+    util::matrix_dot_product_mod(lt_matrix, A, result, modulus);
+    util::print_matrix(result);
+}
+
 void example_kazuma(){
     // matrix_conversion();
     //test_conversion();
@@ -781,7 +823,7 @@ void example_kazuma(){
     //test_innerprod_vector();
     //test_matrix_conversion_with_rnsiter();
     //test_init_matrix();
-    //test_init_matrix_uint();
+    test_init_matrix_uint();
     //test_init_matrix_uint_by_kernel();
     //test_matrix_dot_product();
     //test_print_iter();
@@ -803,5 +845,6 @@ void example_kazuma(){
     //test_dianonal_kernel();
     //test_init_matrix_2dconv();
     //test_lin_2dconv();
-    test_ensei_convolution();
+    //test_ensei_convolution();
+    //experiment_packed_conv_matrix_dot();
 }

@@ -45,6 +45,13 @@ namespace seal
         void init_matrix_2dconv(vector<vector<uint64_t>> &matrix, uint64_t input_size, vector<vector<uint64_t>> kernel);
 
         //
+        // diagonal functions for packed convolution
+        //
+
+        vector<uint64_t> create_diagonal_list(vector<uint64_t> kernel, uint64_t colsize, uint64_t rowsize, Modulus &modulus, vector<uint64_t> &diagonal_list);
+
+        vector<uint64_t> create_diagonal_partial(vector<uint64_t> a, uint64_t start_col, uint64_t colsize, Modulus &modulus);
+        //
         // linear arithmetic
         //
 
@@ -95,6 +102,7 @@ namespace seal
 
         void matrix_dot_product_mod_t(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus);
 
+        void matrix_dot_matrix_toeplitz_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus);
         //
         // Convolution
         //

@@ -1,3 +1,4 @@
+#include "testprimitives.h"
 #include "testutil.h"
 #include "seal/util/uintlinarith.h"
 
@@ -24,8 +25,16 @@ void test_matrix_init_partial(){
 }
 
 void test_matconv(){
-    uint64_t size=3;
+    uint64_t size=5;
+    uint64_t conv_size = 5;
+    Modulus modulus(11);
     vector<vector<int64_t>> matrix(size, vector<int64_t>(size));
+    vector<uint64_t> a(conv_size);
+    for(uint64_t i = 0;i<conv_size;i++){
+        a[i] = rand() % modulus.value();
+    }
+    for(uint64_t i = 0;i<conv_size;i++){
+    }
     uint64_t rotate = 0;
     util::init_matrix_rotate(matrix, size, rotate, 1);
     rotate++;
@@ -141,7 +150,7 @@ void test_innerprod_vector(){
     cout << "expected result: " << expected_result << endl;
 }
 
-void test_init_matrix(){
+void test_init_matrix_coeff(){
     MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     uint64_t array_size = 10;
     // polynomial degree
@@ -162,13 +171,14 @@ void test_init_matrix_uint(){
     MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     uint64_t array_size = 10;
     Modulus modulus(15);
+    cout << "modulus: " << modulus.value() << endl;
     // polynomial degree
     uint64_t coeff_degree = array_size;
     vector<std::uint64_t> arr(array_size);
     vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
 
     for(size_t i = 0;i < array_size;i++){
-        arr[i] = i+1;
+        arr[i] = i;
     }
     SEAL_ALLOCATE_GET_COEFF_ITER(coeff_iter, coeff_degree, pool_);
     util::set_poly(arr.data(), coeff_degree, 1, coeff_iter);
@@ -402,6 +412,25 @@ void test_init_matrix_2dconv(){
     util::print_matrix(matrix);
 }
 
+void test_create_diagonal(){
+    vector<uint64_t> kernel = {1,2,3};
+    uint64_t colsize = 5;
+    uint64_t rowsize = 5;
+    Modulus modulus(7);
+    vector<uint64_t> diagonal(colsize + rowsize - 1);
+    vector<uint64_t> indexes = util::create_diagonal_list(kernel, colsize, rowsize, modulus, diagonal);
+    cout << "diagonal: ";
+    for(uint64_t i = 0;i < diagonal.size();i++){
+        cout << diagonal[i] << " ";
+    }
+    cout << endl;
+
+    cout << "index: ";
+    for(uint64_t i = 0;i < indexes.size();i++){
+        cout << indexes[i] << " ";
+    }
+    cout << endl;
+}
 //void test_conv_nega(){
 //    vector<uint64_t> kernel = {1,1,2};
 //    vector<uint64_t> input = {1, 2, 3, 4};

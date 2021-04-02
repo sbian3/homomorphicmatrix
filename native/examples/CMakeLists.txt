@@ -33,10 +33,20 @@ if(SEAL_BUILD_EXAMPLES)
             ${CMAKE_CURRENT_LIST_DIR}/testutil.cpp
     )
 
+    add_executable(testprim)
+
+    target_sources(testprim
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/testutil.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/testprimitives.cpp
+    )
+
     if(TARGET SEAL::seal)
         target_link_libraries(sealexamples PRIVATE SEAL::seal)
+        target_link_libraries(testprim PRIVATE SEAL::seal)
     elseif(TARGET SEAL::seal_shared)
         target_link_libraries(sealexamples PRIVATE SEAL::seal_shared)
+        target_link_libraries(testprim PRIVATE SEAL::seal_shared)
     else()
         message(FATAL_ERROR "Cannot find target SEAL::seal or SEAL::seal_shared")
     endif()
