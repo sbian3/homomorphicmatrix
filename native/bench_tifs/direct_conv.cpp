@@ -37,10 +37,10 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim){
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
 
-    // generate plaintext x
+    // sample plaintext x
     print_line(__LINE__);
     cout << "Input plaintext: ";
-    Plaintext x_plain(sample_rn(input_dim, plaintext_modulus));
+    Plaintext x_plain(sample_rn(input_dim, Modulus(7)));
     cout << "plaintext polynomial " + x_plain.to_string() + "." << endl;
     cout << "Coeff count: " << x_plain.coeff_count() << endl;
     print_plain(x_plain, 10);
@@ -60,11 +60,16 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim){
     cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
 
     // convolve encrypted x
-    vector<uint64_t> kernel = sample_rn(kernel_dim, plaintext_modulus);
-    Ciphertext conved_x(x_encrypted);
-    for(uint64_t i = 0;i < cipher_coeffsize;i++){
-        conved_x[i] = 0;
+    vector<uint64_t> kernel = sample_rn(kernel_dim, Modulus(7));
+    cout << "kernel: ";
+    for(uint64_t i = 0;i<kernel.size();i++){
+        if(i == kernel.size() - 1){
+            cout << kernel[i] << endl;
+        }else{
+            cout << kernel[i] << " ";
+        }
     }
+    Ciphertext conved_x(x_encrypted);
     auto time_start = chrono::high_resolution_clock::now();
     util::conv_negacyclic(kernel, x_encrypted, mod_chain, conved_x);
     auto time_end = chrono::high_resolution_clock::now();

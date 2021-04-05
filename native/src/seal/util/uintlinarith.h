@@ -50,7 +50,7 @@ namespace seal
 
         vector<uint64_t> create_diagonal_list(vector<uint64_t> kernel, uint64_t colsize, uint64_t rowsize, Modulus &modulus, vector<uint64_t> &diagonal_list);
 
-        vector<uint64_t> create_diagonal_partial(vector<uint64_t> a, uint64_t start_col, uint64_t colsize, Modulus &modulus);
+        vector<uint64_t> create_diagonal_from_submatrix(vector<uint64_t> a, uint64_t start_col, uint64_t colsize, Modulus &modulus);
         //
         // linear arithmetic
         //
