@@ -4,6 +4,7 @@
 
 
 // assume kernel_L is reversed( indexes is also )
+// offsetは0が中心になるようになっている．
 vector<uint64_t> calc_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> kernel_L, vector<uint64_t> kernel_L_indexes, vector<uint64_t> list_R, Modulus & modulus){
     // RはL以上を想定
     assert(kernel_L_indexes.size() <= list_R.size());
@@ -25,11 +26,13 @@ vector<uint64_t> calc_product_diagonal(int64_t offset, uint64_t colsize_R, uint6
     for(uint64_t i = 0;i < kernel_L_indexes.size();i++){
         uint64_t prod;
         if(offset >= 0){
+            // boarder check and mul
             if(kernel_L_indexes[i]+offset >= list_R.size() || kernel_L_indexes[i] >= kernel_L.size()) break;
             prod = util::multiply_uint_mod(kernel_L[kernel_L_indexes[i]], list_R[kernel_L_indexes[i]+offset], modulus);
         }else{
+            // boarder check and mul
             if(kernel_L_indexes[i] <= -offset-1) continue;
-            if(kernel_L_indexes[i]-offset >= kernel_L.size() || kernel_L_indexes[i] >= list_R.size()) break;
+            if(kernel_L_indexes[i] >= kernel_L.size() || kernel_L_indexes[i]+offset >= list_R.size()) break;
             prod = util::multiply_uint_mod(kernel_L[kernel_L_indexes[i]], list_R[kernel_L_indexes[i]+offset], modulus);
         }
         if(offset < 0){
@@ -40,7 +43,7 @@ vector<uint64_t> calc_product_diagonal(int64_t offset, uint64_t colsize_R, uint6
     }
     vector<uint64_t> diagonal;
     uint64_t partial_sum = 0;
-    uint64_t prod_times = rowsize_R;
+    uint64_t prod_times = colsize_R;
     // 最初の内積を計算
     for(uint64_t i = 0;i < prod_times;i++){
         partial_sum = util::add_uint_mod(partial_sum, wise_prod[i], modulus);
@@ -74,19 +77,25 @@ void diagonallist_to_matrix(vector<uint64_t> diagonallist, uint64_t start_col, u
 
 void test_prod_diagonal(){
     vector<uint64_t> kernel = {1, 2, 4};
-    uint64_t colsize_K = 5;
+    uint64_t colsize_K = 4;
     uint64_t rowsize_K = 5;
     uint64_t colsize_R = 5;
-    uint64_t rowsize_R = 5;
-    vector<uint64_t> list_R = {3, 2, 1, 5, 3, 8, 3, 4, 7};
+    uint64_t rowsize_R = 6;
+    vector<uint64_t> diagonallist_R = {3, 2, 1, 5, 3, 8, 3, 4, 7, 1};
     Modulus modulus(11);
     vector<uint64_t> kernel_diagonallist(colsize_K + rowsize_K - 1);
     vector<uint64_t> indexes = util::create_diagonal_list(kernel, colsize_K, rowsize_K, modulus, kernel_diagonallist);
-    vector<uint64_t> diagonal_0 = calc_product_diagonal(-3, colsize_R, rowsize_R, kernel_diagonallist, indexes, list_R, modulus);
-    for(auto i = 0;i < diagonal_0.size();i++){
-        cout << diagonal_0[i] << " ";
+    int64_t k = static_cast<int64_t>(colsize_K);
+    k  = -k + 1;
+    for(;k < static_cast<int64_t>(rowsize_R);k++){
+    vector<uint64_t> diagonal_vec;
+    diagonal_vec = calc_product_diagonal(k, colsize_R, rowsize_R, kernel_diagonallist, indexes, diagonallist_R, modulus);
+    cout << "offset: " << k << endl;
+        for(auto i = 0;i < diagonal_vec.size();i++){
+            cout << diagonal_vec[i] << " ";
+        }
+        cout << endl;
     }
-    cout << endl;
 }
 
 int main(){

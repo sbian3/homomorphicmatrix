@@ -75,8 +75,20 @@ vector<KernelInfo> pack_kernel(vector<vector<uint64_t>> kernels, uint64_t block_
     return kernel_info;
 }
 
-void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> kernel_infos, CoeffIter c_1, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus &modulus){
-
+void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus &modulus){
+    // for each block
+    for(uint64_t i = 0;i < kernel_infos.size();i++){
+        // get diagonal lists for kernel/c1
+        vector<uint64_t> kernel_diagonal_list = kernel_infos[i].diagonal_list;
+        vector<uint64_t> kernel_index = kernel_infos[i].index;
+        uint64_t submat_startcol, submat_colsize;
+        kernel_infos[i].getParamsforSubmatrix(submat_startcol, submat_colsize);
+        vector<uint64_t> diagonal_c1 = util::create_diagonal_from_submatrix(c1, poly_degree , submat_startcol, submat_colsize, modulus);
+        // calc_product_diagonal
+        
+        
+        // write diagonals to result matrix
+    }
 }
 
 
