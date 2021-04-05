@@ -152,11 +152,11 @@ namespace seal
     }
 
 
-    //
+    ///////////////////////////////
     //
     // add propose decrypt function
     //
-    //
+    ///////////////////////////////
     
 
     void Decryptor::decrypt_bfv_with_matrix(Ciphertext &encrypted, Plaintext &destination, std::vector<std::vector<int64_t>> matrix){
@@ -339,6 +339,7 @@ namespace seal
             throw invalid_argument("encrypted_size must be 2");
         }
 
+        // prepare secret key array
         compute_secret_key_array(encrypted_size - 1);
         //auto secret_key_array = RNSIter(secret_key_array_.get(), coeff_count, key_coeff_modulus_size);
         SEAL_ALLOCATE_GET_RNS_ITER(secret_key_array, coeff_count, coeff_modulus_size, pool);
@@ -351,13 +352,16 @@ namespace seal
         PolyIter cipher_polyiter(encrypted);
         //cout << "polyiter(before)" << endl;
         //print_iter(cipher_polyiter, 1);
+        // calculate destination = W dot c_0
         util::matrix_dot_vector(matrix, coeff_modulus_size, *cipher_polyiter, coeff_modulus, destination);
         //cout << "polyiter(after)" << endl;
         //print_iter(destination, coeff_modulus_size);
         cipher_polyiter++;
         SEAL_ALLOCATE_ZERO_GET_RNS_ITER(c1_result, coeff_count,coeff_modulus_size, pool);
         cout << "convert c_1" << endl;
+        // calculate c1_result = (W dot C_1) dot s
         secret_product_with_matrix_rns(matrix, coeff_modulus_size, *cipher_polyiter, secret_key_array, coeff_modulus, c1_result);
+        // destination =  destination + c1_result
         add_poly_coeffmod(destination, c1_result, coeff_modulus_size, coeff_modulus, destination);
     }
 
@@ -440,11 +444,11 @@ namespace seal
         add_poly_coeffmod(destination, c1_result, coeff_modulus_size, coeff_modulus, destination);
     }
 
-    //
+    //////////////////////////////
     //
     // end of added function
     //
-    //
+    //////////////////////////////
 
 
     
