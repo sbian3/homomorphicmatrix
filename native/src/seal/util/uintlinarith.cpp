@@ -134,9 +134,9 @@ namespace seal
             return indexes;
         }
 
-        vector<uint64_t> create_diagonal_from_submatrix(vector<uint64_t> a, uint64_t start_col, uint64_t colsize, Modulus &modulus){
+        vector<uint64_t> create_diagonal_from_submatrix(CoeffIter a, uint64_t poly_degree, uint64_t start_col, uint64_t colsize, Modulus &modulus){
             vector<uint64_t> ret;
-            uint64_t n = a.size();
+            uint64_t n = poly_degree;
             int64_t index = start_col + colsize-1;
             ret.reserve(n + colsize);
             for(;index > start_col;index--){

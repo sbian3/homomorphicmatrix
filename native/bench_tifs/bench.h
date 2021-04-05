@@ -24,6 +24,7 @@
 
 using namespace std;
 using namespace seal;
+using namespace seal::util;
 
 /*
 Helper function: Prints the name of the example in a fancy banner.
