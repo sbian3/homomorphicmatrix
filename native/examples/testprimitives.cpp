@@ -56,6 +56,22 @@ vector<uint64_t> calc_product_diagonal(int64_t offset, uint64_t colsize_R, uint6
     return diagonal;
 }
 
+void diagonallist_to_matrix(vector<uint64_t> diagonallist, uint64_t start_col, uint64_t start_row, uint64_t colsize, uint64_t rowsize, vector<vector<uint64_t>> &result){
+    assert(start_col + colsize <= result[0].size());
+    assert(start_row + rowsize <= result.size()); 
+    assert(diagonallist.size() == colsize + rowsize - 1);
+
+    // write diagonal scalars to result
+    uint64_t index = colsize-1;
+    for(uint64_t i = 0;i < colsize;i++){
+        for(uint64_t k = 0;k < colsize;k++){
+            if(i+k >= colsize) break;
+            result[start_col + colsize - 1 - i + k][k] = diagonallist[i];
+        }
+    }
+    index += colsize;
+}
+
 void test_prod_diagonal(){
     vector<uint64_t> kernel = {1, 2, 4};
     uint64_t colsize_K = 5;
