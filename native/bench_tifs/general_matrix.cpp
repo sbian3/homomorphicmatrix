@@ -182,8 +182,8 @@ void test_decrypt_separate(){
 }
 
 int main(int argc, char* argv[]){
-    uint64_t input_dim, kernel_dim;
-    int ret = check_args(argc, argv, input_dim, kernel_dim);
+    uint64_t input_dim, kernel_dim,poly_modulus_degree;
+    int ret = check_args(argc, argv, input_dim, kernel_dim, poly_modulus_degree);
     //if(ret == 0){
     //    return 1;
     //}

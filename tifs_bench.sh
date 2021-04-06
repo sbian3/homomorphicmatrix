@@ -3,6 +3,9 @@
 input_n=(4 8 16 32 64)
 input_dims=()
 kernel_dim=4
+poly_degrees=(1024 2048 4096 8192 16384)
+poly_degree=16384
+pack_num=2
 err=tifs_result/err.log
 
 # calculate input dimensions (n^2)
@@ -15,13 +18,33 @@ done
 
 # assume executable file is build/bin/direct_conv
 function direct_conv(){
-    mkdir -p tifs_result/
+    mkdir -p tifs_result/direct_conv
     for input_dim in ${input_dims[@]}
     do
         echo "Direct Convolution: (input, kernel) = ($input_dim, $kernel_dim)"
-        output_path="tifs_result/direct_conv$input_dim.txt"
-        env build/bin/direct_conv $input_dim $kernel_dim 2>$err # > $output_path
+        output_path="tifs_result/direct_conv/direct$input_dim.txt"
+        env build/bin/direct_conv $input_dim $kernel_dim $poly_degree 2>$err  > $output_path
+    done
+}
+
+function packed_conv(){
+    mkdir -p tifs_result/packed_conv
+    for input_dim in ${input_dims[@]}
+    do
+        echo "Packed Convolution: (input, kernel, pack_num) = ($input_dim, $kernel_dim, $pack_num)"
+        echo "Polynomial Length: $poly_degree"
+        output_path="tifs_result/packed_conv/pack$input_dim.txt"
+        env build/bin/packed_conv $input_dim $kernel_dim $poly_degree $pack_num 2>$err > $output_path
+    done
+}
+
+function general_lt(){
+    mkdir -p tifs_result/general_lt
+    for input_dim in ${input_dims[@]}
+    do
+        echo "General Linear Transformation: ()"
     done
 }
 
 direct_conv
+packed_conv

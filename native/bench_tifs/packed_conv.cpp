@@ -151,23 +151,24 @@ void print_input_kernel(vector<vector<uint64_t>> input, vector<vector<uint64_t>>
 }
 
 
-void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_num){
+void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_num, uint64_t poly_modulus_degree){
     print_example_banner("Homomorphic packed convolution Benchmark");
 
     // sample input and kernel
     Modulus sample_mod(7);
     vector<vector<uint64_t>> input = sample_rn(pack_num, input_dim, sample_mod);
     vector<vector<uint64_t>> kernel = sample_rn(pack_num, kernel_dim, sample_mod);
-    print_input_kernel(input, kernel);
+    //print_input_kernel(input, kernel);
 
 
     // parameter setting
     EncryptionParameters parms(scheme_type::bfv);
-    size_t poly_modulus_degree;
-    cout << "poly_modulus_degree: ";
-    cin >> poly_modulus_degree;
+    //size_t poly_modulus_degree;
+    //cout << "poly_modulus_degree: ";
+    //cin >> poly_modulus_degree;
     parms.set_poly_modulus_degree(poly_modulus_degree);
-    vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
+    //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
+    vector<Modulus> mod_chain =  {Modulus(0xffffff00000001)};
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 7;
     parms.set_plain_modulus(plaintext_modulus);
@@ -194,11 +195,11 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
         throw invalid_argument("polynomial degree is too small");
     }
     vector<uint64_t> packed_input = pack_input(input, block_size, poly_modulus_degree);
-    cout << "Input plaintext: ";
+    //cout << "Input plaintext: ";
     Plaintext x_plain(packed_input);
-    cout << "Express x = as a plaintext polynomial " + x_plain.to_string() + "." << endl;
-    cout << "Coeff count: " << x_plain.coeff_count() << endl;
-    print_plain(x_plain, block_size * pack_num);
+    //cout << "Express x = as a plaintext polynomial " + x_plain.to_string() + "." << endl;
+    //cout << "Coeff count: " << x_plain.coeff_count() << endl;
+    //print_plain(x_plain, block_size * pack_num);
 
     // pack kernels
     vector<KernelInfo> kernelinfos = pack_kernel(kernel, block_size, plaintext_modulus);
@@ -240,7 +241,7 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
 
     // plaintext check
     cout << "decryption of x_tranformed: " << endl;
-    print_plain(x_decrypted, block_size * pack_num);
+    //print_plain(x_decrypted, block_size * pack_num);
 }
 
 
@@ -304,13 +305,14 @@ void vector_to_plain(){
 // main
 /////////////////
 int main(int argc, char* argv[]){
-    uint64_t input_dim, kernel_dim, pack_num;
-    if(argc != 4){
-        cerr << "please input two numbers (input_dim, kernel_dim, pack_num)" << endl;
+    uint64_t input_dim, kernel_dim, pack_num, poly_degree;
+    if(argc != 5){
+        cerr << "please input two numbers.argc: " << argc << endl;
         return 1;
     }
     input_dim = stoull(argv[1]);
     kernel_dim = stoull(argv[2]);
-    pack_num = stoull(argv[3]);
-    bench_packed_conv(input_dim, kernel_dim, pack_num);
+    poly_degree = stoull(argv[3]);
+    pack_num = stoull(argv[4]);
+    bench_packed_conv(input_dim, kernel_dim, pack_num, poly_degree);
 }

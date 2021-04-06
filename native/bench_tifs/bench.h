@@ -209,14 +209,16 @@ inline void print_line(int line_number)
     std::cout << "Line " << std::setw(3) << line_number << " --> ";
 }
 
-inline int check_args(int argc, char* argv[], uint64_t &input_dim, uint64_t &kernel_dim){
-    if(argc != 3){
-        cerr << "please input two numbers (input_dim, kernel_dim)" << endl;
+inline int check_args(int argc, char* argv[], uint64_t &input_dim, uint64_t &kernel_dim, uint64_t &poly_degree){
+    if(argc != 4){
+        cerr << "please input two numbers (input_dim, kernel_dim, poly_degree)" << argc << endl;
         return 0;
     }
     input_dim = stoull(argv[1]);
     kernel_dim = stoull(argv[2]);
-    return 2;
+    poly_degree = stoull(argv[3]);
+
+    return 3;
 }
 
 inline vector<uint64_t> sample_rn(uint64_t size, Modulus modulus){
