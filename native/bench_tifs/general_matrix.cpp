@@ -89,14 +89,15 @@ void test_bfv_matrix(){
     print_plain(x_decrypted, 20);
 }
 
-void test_decrypt_separate(){
+void test_decrypt_separate(uint64_t input_dim, uint64_t kernel_dim, uint64_t poly_modulus_degree){
     print_example_banner("Homomorphic general Linear Transformation Benchmark");
+
+    if(poly_modulus_degree < input_dim){
+        throw invalid_argument("input_dim is too large");
+    }
 
     // parameter setting
     EncryptionParameters parms(scheme_type::bfv);
-    size_t poly_modulus_degree;
-    cout << "poly_modulus_degree: ";
-    cin >> poly_modulus_degree;
     parms.set_poly_modulus_degree(poly_modulus_degree);
 
     vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
@@ -124,11 +125,12 @@ void test_decrypt_separate(){
 
     // generate plaintext x
     print_line(__LINE__);
-    string x = "6x^2 + 1x^1 + 2";
-    cout << "Input plaintext: ";
-    Plaintext x_plain(x);
-    cout << "Express x = " + x + " as a plaintext polynomial " + x_plain.to_string() + "." << endl;
-    cout << "Coeff count: " << x_plain.coeff_count() << endl;
+    vector<uint64_t> input = sample_rn(input_dim, Modulus(7));
+    //string x = "6x^2 + 1x^1 + 2";
+    //cout << "Input plaintext: ";
+    Plaintext x_plain(input);
+    //cout << "Express x = " + x + " as a plaintext polynomial " + x_plain.to_string() + "." << endl;
+    //cout << "Coeff count: " << x_plain.coeff_count() << endl;
     print_plain(x_plain, 10);
 
     // generate transform matrix
@@ -148,8 +150,8 @@ void test_decrypt_separate(){
     cout << "----Encrypt x_plain to x_encrypted.----" << endl;
     encryptor.encrypt(x_plain, x_encrypted);
     cout << "Coeff modulus size: " << x_encrypted.coeff_modulus_size() << endl;
-    uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
-    cout << "Coeff size: " << cipher_coeffsize << endl;
+    //uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
+    //cout << "Coeff size: " << cipher_coeffsize << endl;
     cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
 
     // lt
@@ -184,9 +186,9 @@ void test_decrypt_separate(){
 int main(int argc, char* argv[]){
     uint64_t input_dim, kernel_dim,poly_modulus_degree;
     int ret = check_args(argc, argv, input_dim, kernel_dim, poly_modulus_degree);
-    //if(ret == 0){
-    //    return 1;
-    //}
+    if(ret == 0){
+        return 1;
+    }
     //test_bfv_matrix();
-    test_decrypt_separate();
+    test_decrypt_separate(input_dim, kernel_dim, poly_modulus_degree);
 }
