@@ -21,6 +21,14 @@ class KernelInfo{
             return size_row;
         }
 
+        uint64_t get_startcol(){
+            return start_col;
+        }
+
+        uint64_t get_startrow(){
+            return start_row;
+        }
+
         void getParamsforSubmatrix(uint64_t &submat_startcol, uint64_t &submat_colsize){
             submat_startcol = start_row;
             submat_colsize = size_row;
@@ -83,6 +91,18 @@ vector<KernelInfo> pack_kernel(vector<vector<uint64_t>> kernels, uint64_t block_
     return kernel_info;
 }
 
+void pack_kernel_to_matrix(vector<KernelInfo> kernelinfos, vector<vector<uint64_t>> &matrix){
+    for(uint64_t i = 0;i < kernelinfos.size();i++){
+        KernelInfo kinfo = kernelinfos[i];
+        // kernel scalar is reversed in default
+        // so, scalar must be reversed again
+        vector<uint64_t> k_scalar = kinfo.diagonal_list;
+        reverse(k_scalar.begin(), k_scalar.end());
+        vector<vector<uint64_t>> diagonals = util::scalars_to_diagonallist(k_scalar, kinfo.get_colsize(), kinfo.get_rowsize());
+        util::diagonallist_to_matrix(diagonals, kinfo.get_startcol(), kinfo.get_startrow(), kinfo.get_colsize(), kinfo.get_rowsize(),matrix);
+    }
+}
+
 void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus &modulus){
     // for each block
     for(uint64_t i = 0;i < kernel_infos.size();i++){
@@ -116,6 +136,97 @@ void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> kernel_infos, CoeffIter c
     }
 }
 
+void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_num){
+    print_example_banner("Homomorphic packed convolution Benchmark");
+
+    // sample input and kernel
+    
+
+
+    // parameter setting
+    EncryptionParameters parms(scheme_type::bfv);
+    size_t poly_modulus_degree;
+    cout << "poly_modulus_degree: ";
+    cin >> poly_modulus_degree;
+    parms.set_poly_modulus_degree(poly_modulus_degree);
+
+    vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
+    parms.set_coeff_modulus(mod_chain);
+    uint64_t plaintext_modulus = 7;
+    parms.set_plain_modulus(plaintext_modulus);
+    SEALContext context(parms);
+    print_line(__LINE__);
+    cout << "Set encryption parameters and print" << endl;
+    print_parameters(context);
+    cout << "Parameter validation: " << context.parameter_error_message() << endl;
+
+    cout << endl;
+
+    // generate encryption helper
+    cout << "keygen step" << endl;
+    KeyGenerator keygen(context);
+    cout << "pubkey " << endl;
+    SecretKey secret_key = keygen.secret_key();
+    PublicKey public_key;
+    keygen.create_public_key(public_key);
+    Encryptor encryptor(context, public_key);
+    Evaluator evaluator(context);
+    Decryptor decryptor(context, secret_key);
+
+    // generate plaintext x
+    print_line(__LINE__);
+    string x = "6x^2 + 1x^1 + 2";
+    cout << "Input plaintext: ";
+    Plaintext x_plain(x);
+    cout << "Express x = " + x + " as a plaintext polynomial " + x_plain.to_string() + "." << endl;
+    cout << "Coeff count: " << x_plain.coeff_count() << endl;
+    print_plain(x_plain, 10);
+
+    // generate transform matrix
+    vector<vector<uint64_t>> matrix(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
+    util::init_matrix_identity(matrix, poly_modulus_degree, 2);
+    matrix[0][1] = 1;
+
+    // convert plaintext by matrix
+    Plaintext copied_plain = Plaintext(x_plain);
+    copied_plain.resize(poly_modulus_degree);
+    //convert(x_plain, copied_plain, matrix, poly_modulus_degree, plaintext_modulus);
+    cout << "Copied and converted plaintext" << endl;
+    //print_plain_coefficients(copied_plain);
+
+    // encrypt x
+    Ciphertext x_encrypted;
+    cout << "----Encrypt x_plain to x_encrypted.----" << endl;
+    encryptor.encrypt(x_plain, x_encrypted);
+    cout << "Coeff modulus size: " << x_encrypted.coeff_modulus_size() << endl;
+    uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
+    cout << "Coeff size: " << cipher_coeffsize << endl;
+    cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+
+    // lt
+    Ciphertext x_enc_lin(x_encrypted);
+    util::set_zero_poly(poly_modulus_degree, x_encrypted.coeff_modulus_size(), x_enc_lin.data());
+    vector<vector<uint64_t>> matrix_conved(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
+    cout << "decryption of x_encrypted: ";
+    auto time_start = chrono::high_resolution_clock::now();
+    //make_convedmatrix(matrix, poly_modulus_degree, x_encrypted, parms.coeff_modulus()[0], matrix_conved);
+    decryptor.linear_trans(x_encrypted, matrix, x_enc_lin);
+    //print_iter(PolyIter(x_encrypted), 2);
+    //print_iter(PolyIter(x_enc_lin), 2);
+    // decrypt
+    Plaintext x_decrypted;
+    decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, x_decrypted);
+    auto time_end = chrono::high_resolution_clock::now();
+    auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
+
+    // compare converted plain and decryption of x_converted
+    //cout << "Converted plain: " << endl;
+    //print_plain(copied_plain, 10);
+    cout << "decryption of x_tranformed: " << endl;
+    print_plain(x_decrypted, 20);
+}
+
+
 
 /////////////////
 // tests
@@ -128,6 +239,18 @@ void test_init_kernelinfo(){
     for(uint64_t i = 0;i < kernel_infos.size();i++){
         kernel_infos[i].print();
     }
+}
+
+
+void test_pack_kernel_to_matrix(){
+    vector<vector<uint64_t>> kernels = { {1 , 2, 3}, {4, 5, 6} };
+    uint64_t block_size = 6;
+    uint64_t matrix_size = 18;
+    Modulus modulus(7);
+    vector<KernelInfo> kernel_infos = pack_kernel(kernels, block_size, modulus);
+    vector<vector<uint64_t>> matrix(matrix_size, vector<uint64_t>(matrix_size));
+    pack_kernel_to_matrix(kernel_infos, matrix);
+    util::print_matrix(matrix);
 }
 
 void test_kernel_dot_c1(){
@@ -163,6 +286,14 @@ void vector_to_plain(){
 //////////////////
 // main
 /////////////////
-int main(){
-    test_kernel_dot_c1();
+int main(int argc, char* argv[]){
+    uint64_t input_dim, kernel_dim, pack_num;
+    if(argc != 4){
+        cerr << "please input two numbers (input_dim, kernel_dim, pack_num)" << endl;
+        return 1;
+    }
+    input_dim = stoull(argv[1]);
+    kernel_dim = stoull(argv[2]);
+    pack_num = stoull(argv[3]);
+    bench_packed_conv(input_dim, kernel_dim, pack_num);
 }

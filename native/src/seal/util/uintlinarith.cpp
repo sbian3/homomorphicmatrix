@@ -214,7 +214,7 @@ namespace seal
             return diagonal;
         }
         
-        // 対角成分ベクトルを乗算結果の行列に書き込む
+        // 対角成分ベクトルを行列に書き込む
         // diagonallist: 左端からの対角成分ベクトル
         // resultは長方形を仮定
         void diagonallist_to_matrix(vector<vector<uint64_t>> diagonallist, uint64_t start_col, uint64_t start_row, uint64_t colsize, uint64_t rowsize, vector<vector<uint64_t>> &result){
@@ -242,6 +242,36 @@ namespace seal
                 }
             }
         }
+
+        vector<vector<uint64_t>> scalars_to_diagonallist(vector<uint64_t> scalars, uint64_t colsize, uint64_t rowsize){
+            vector<vector<uint64_t>> diagonals(colsize + rowsize - 1);
+            // 小さいほうの長さがmax
+            uint64_t maxlength = colsize >= rowsize? rowsize: colsize;
+            uint64_t keeplength = colsize >= rowsize? colsize-rowsize: rowsize-colsize;
+            // 縦(最上も含む)
+            uint64_t i = 0;
+            for(;i < colsize;i++){
+                for(uint64_t j = 0;j < i+1;j++){
+                    diagonals[i].push_back(scalars[i]);
+                }
+            }
+            // キープ
+            for(;i < colsize + keeplength;i++){
+                for(uint64_t j = 0;j < maxlength;j++){
+                    diagonals[i].push_back(scalars[i]);
+                }
+            }
+            // しぼむ
+            while(maxlength > 0){
+                maxlength--;
+                for(uint64_t j = 0;j < maxlength;j++){
+                    diagonals[i].push_back(scalars[i]);
+                }
+                i++;
+            }
+            return diagonals;
+        }
+
         ///////////////////////////
         //
         // linear arithmetic
