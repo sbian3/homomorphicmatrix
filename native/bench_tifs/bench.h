@@ -227,4 +227,14 @@ inline vector<uint64_t> sample_rn(uint64_t size, Modulus modulus){
     return ret;
 }
 
+inline vector<vector<uint64_t>> sample_rn(uint64_t size_col, uint64_t size_row, Modulus modulus){
+    vector<vector<uint64_t>> ret(size_col, vector<uint64_t>(size_row));
+    for(uint64_t i = 0; i < size_col;i++){
+        for(uint64_t j = 0; j < size_row;j++){
+            ret[i][j] = rand() % modulus.value();
+        }
+    }
+    return ret;
+}
+
 void print_plain(Plaintext plain, uint64_t num);
