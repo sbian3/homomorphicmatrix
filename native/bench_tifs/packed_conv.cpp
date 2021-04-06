@@ -13,6 +13,14 @@ class KernelInfo{
         vector<uint64_t> diagonal_list;
         vector<uint64_t> index;
 
+        uint64_t get_colsize(){
+            return size_col;
+        }
+
+        uint64_t get_rowsize(){
+            return size_row;
+        }
+
         void getParamsforSubmatrix(uint64_t &submat_startcol, uint64_t &submat_colsize){
             submat_startcol = start_row;
             submat_colsize = size_row;
@@ -78,16 +86,33 @@ vector<KernelInfo> pack_kernel(vector<vector<uint64_t>> kernels, uint64_t block_
 void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus &modulus){
     // for each block
     for(uint64_t i = 0;i < kernel_infos.size();i++){
-        // get diagonal lists for kernel/c1
-        vector<uint64_t> kernel_diagonal_list = kernel_infos[i].diagonal_list;
-        vector<uint64_t> kernel_index = kernel_infos[i].index;
-        uint64_t submat_startcol, submat_colsize;
-        kernel_infos[i].getParamsforSubmatrix(submat_startcol, submat_colsize);
+        // get diagonal lists for kernel
+        KernelInfo kinfo = kernel_infos[i];
+        vector<uint64_t> kernel_diagonal_list = kinfo.diagonal_list;
+        vector<uint64_t> kernel_index = kinfo.index;
+        uint64_t colsize_K = kinfo.get_colsize();
+
+        // diagonal list of c1
+        uint64_t submat_startcol,submat_startrow, submat_colsize, submat_rowsize;
+        submat_rowsize = poly_degree;
+        submat_startrow = 0;
+        kinfo.getParamsforSubmatrix(submat_startcol, submat_colsize);
         vector<uint64_t> diagonal_c1 = util::create_diagonal_from_submatrix(c1, poly_degree , submat_startcol, submat_colsize, modulus);
-        // calc_product_diagonal
-        
+
+        // calc diagonal of product
+        vector<vector<uint64_t>> matrix_product_diagonals(colsize_K + submat_rowsize - 1);
+        uint64_t index = 0;
+        int64_t k = static_cast<int64_t>(colsize_K);
+        k = -k+1;
+        for(k;k<static_cast<int64_t>(submat_rowsize);k++){
+            vector<uint64_t> diagonal_vec;
+            diagonal_vec = util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus);
+            matrix_product_diagonals[index] = diagonal_vec;
+            index++;
+        }
         
         // write diagonals to result matrix
+        util::diagonallist_to_matrix(matrix_product_diagonals, submat_startcol, submat_startrow, colsize_K, submat_rowsize, result);
     }
 }
 
@@ -105,6 +130,18 @@ void test_init_kernelinfo(){
     }
 }
 
+void test_kernel_dot_c1(){
+    vector<uint64_t> c1 = {1, 4, 2, 5, 1, 3};
+    uint64_t poly_degree = c1.size();
+    vector<vector<uint64_t>> kernels = { {3, 1, 2}, {2, 3, 5} };
+    uint64_t block_size = 3;
+    Modulus modulus(7);
+    vector<KernelInfo> kernel_info = pack_kernel(kernels, block_size, modulus);
+    vector<vector<uint64_t>> result(poly_degree, vector<uint64_t>(poly_degree));
+    matrix_dot_matrix_toeplitz_mod(kernel_info, c1, poly_degree, result, modulus);
+    util::print_matrix(result);
+}
+
 void test_pack_input(){
     vector<vector<uint64_t>> inputs = { {1 , 2, 3}, {4, 5, 6} };
     uint64_t block_size = 6;
@@ -116,12 +153,16 @@ void test_pack_input(){
     cout << endl;
 }
 
-//////////////////
-// main
-/////////////////
-int main(){
+void vector_to_plain(){
     print_example_banner("Packed Convolution Benchmark");
     vector<uint64_t> coeff = {1, 2, 3,4, 10};
     Plaintext plain(coeff);
     print_plain(plain, coeff.size());
+}
+
+//////////////////
+// main
+/////////////////
+int main(){
+    test_kernel_dot_c1();
 }

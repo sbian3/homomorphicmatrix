@@ -781,7 +781,7 @@ void test_ensei_convolution(){
 void experiment_packed_conv_matrix_dot(){
 
     // generate transform matrix using kernel
-    uint64_t coeff_degree = 16;
+    uint64_t coeff_degree = 6;
     Modulus modulus(7);
     vector<uint64_t> c(coeff_degree);
     vector<vector<uint64_t>> A(coeff_degree, vector<uint64_t>(coeff_degree));
@@ -796,7 +796,7 @@ void experiment_packed_conv_matrix_dot(){
     util::print_matrix(A);
 
     // packed kernel
-    uint64_t kernel_size = 8;
+    uint64_t kernel_size = 3;
     //vector<uint64_t> kernel1 = {1,2,3,5,3, 2, 1, 6};
     //vector<uint64_t> kernel2 = {2,3,4,5, 6, 2, 1, 2};
     vector<uint64_t> kernel1(kernel_size);
@@ -823,7 +823,7 @@ void example_kazuma(){
     //test_innerprod_vector();
     //test_matrix_conversion_with_rnsiter();
     //test_init_matrix();
-    test_init_matrix_uint();
+    //test_init_matrix_uint();
     //test_init_matrix_uint_by_kernel();
     //test_matrix_dot_product();
     //test_print_iter();
@@ -846,5 +846,5 @@ void example_kazuma(){
     //test_init_matrix_2dconv();
     //test_lin_2dconv();
     //test_ensei_convolution();
-    //experiment_packed_conv_matrix_dot();
+    experiment_packed_conv_matrix_dot();
 }

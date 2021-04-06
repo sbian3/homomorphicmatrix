@@ -433,7 +433,7 @@ void test_create_diagonal(){
 }
 
 // for now, this test goes fail
-void test_diagonal_partial(){
+void test_diagonal_from_submat(){
     uint64_t start_col = 4;
     uint64_t colsize = 3;
     uint64_t a_size = 10;
@@ -443,7 +443,7 @@ void test_diagonal_partial(){
         a[i] = i;
     }
     vector<uint64_t> diagonal;
-    //diagonal = util::create_diagonal_from_submatrix(a, start_col, colsize, modulus);
+    diagonal = util::create_diagonal_from_submatrix(a, a_size, start_col, colsize, modulus);
     cout << "start_col: " << start_col << " " << "colsize: " << colsize << endl;
     cout << "diagonal list of submatrix: ";
     for(auto i =0L;i < diagonal.size();i++){

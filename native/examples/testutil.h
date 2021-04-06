@@ -22,3 +22,4 @@ void test_dianonal_kernel();
 void test_init_matrix_2dconv();
 void test_create_diagonal();
 void test_diagonal_partial();
+void test_diagonal_from_submat();
