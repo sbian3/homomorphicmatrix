@@ -133,10 +133,10 @@ namespace seal
         // for decryptor
         //
 
-        inline void generate_c1(vector<vector<uint64_t>> matrix, uint64_t coeff_degree, CoeffIter c, const Modulus &modulus, vector<vector<uint64_t>> &new_c1){
+        inline void matrix_dot_convedcoeff(vector<vector<uint64_t>> matrix, uint64_t coeff_degree, CoeffIter c, const Modulus &modulus, vector<vector<uint64_t>> &result){
             vector<vector<uint64_t>> A(coeff_degree, vector<uint64_t>(coeff_degree));
             init_matrix_with_coeff(A, coeff_degree, c, modulus);
-            matrix_dot_product_mod(matrix, A, new_c1, modulus);
+            matrix_dot_product_mod(matrix, A, result, modulus);
         }
 
         inline void generate_c1_conv(vector<uint64_t> &kernel, uint64_t coeff_degree, CoeffIter c, const Modulus &modulus, vector<vector<uint64_t>> &new_c1){
@@ -149,12 +149,12 @@ namespace seal
             uint64_t coeff_degree = c.poly_modulus_degree();
             SEAL_ITERATE(iter(c, s, mod_chain, result), rns_count, [&](auto I){
                     auto time_start = chrono::high_resolution_clock::now();
-                    vector<vector<uint64_t>> new_c1(coeff_degree, vector<uint64_t>(coeff_degree));
-                    generate_c1(matrix, coeff_degree, get<0>(I), get<2>(I), new_c1);
+                    vector<vector<uint64_t>> c1_transformed(coeff_degree, vector<uint64_t>(coeff_degree));
+                    matrix_dot_convedcoeff(matrix, coeff_degree, get<0>(I), get<2>(I), c1_transformed);
                     auto time_c1 = chrono::high_resolution_clock::now();
                     auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_c1 - time_start);
                     cout << "c1 generation: " << time_diff.count() << "ms" << endl;
-                    matrix_dot_vector(new_c1, get<1>(I), get<2>(I), coeff_degree, get<3>(I));
+                    matrix_dot_vector(c1_transformed, get<1>(I), get<2>(I), coeff_degree, get<3>(I));
                     });
         }
 
