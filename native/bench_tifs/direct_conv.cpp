@@ -70,15 +70,22 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim){
         }
     }
     Ciphertext conved_x(x_encrypted);
-    auto time_start = chrono::high_resolution_clock::now();
+    auto lt_start = chrono::high_resolution_clock::now();
     util::conv_negacyclic(kernel, x_encrypted, mod_chain, conved_x);
-    auto time_end = chrono::high_resolution_clock::now();
-    auto time_diff = chrono::duration_cast<chrono::microseconds>(time_end - time_start);
-    cout << "straight convolution: " << time_diff.count() << "us" << endl;
+    auto lt_end = chrono::high_resolution_clock::now();
 
     cout << "decryption of x_tranformed: " << endl;
     Plaintext x_conved_decrypted;
+    auto dec_start = chrono::high_resolution_clock::now();
     decryptor.decrypt(conved_x, x_conved_decrypted);
+    auto dec_end = chrono::high_resolution_clock::now();
+
+    // time result
+    auto lt_diff = chrono::duration_cast<chrono::microseconds>(lt_end - lt_start);
+    auto dec_diff = chrono::duration_cast<chrono::microseconds>(dec_end - dec_start);
+    cout << "Linear transformation: " << lt_diff.count() << "us" << endl;
+    cout << "Decryption: " << dec_diff.count() << "us" << endl;
+
     print_plain(x_conved_decrypted, 20);
 }
 

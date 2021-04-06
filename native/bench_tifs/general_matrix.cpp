@@ -157,16 +157,22 @@ void test_decrypt_separate(){
     util::set_zero_poly(poly_modulus_degree, x_encrypted.coeff_modulus_size(), x_enc_lin.data());
     vector<vector<uint64_t>> matrix_conved(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
     cout << "decryption of x_encrypted: ";
-    auto time_start = chrono::high_resolution_clock::now();
+    auto lt_start = chrono::high_resolution_clock::now();
     make_convedmatrix(matrix, poly_modulus_degree, x_encrypted, parms.coeff_modulus()[0], matrix_conved);
     decryptor.linear_trans(x_encrypted, matrix, x_enc_lin);
-    //print_iter(PolyIter(x_encrypted), 2);
-    //print_iter(PolyIter(x_enc_lin), 2);
+    auto lt_end = chrono::high_resolution_clock::now();
+
     // decrypt
     Plaintext x_decrypted;
+    auto dec_start = chrono::high_resolution_clock::now();
     decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, x_decrypted);
-    auto time_end = chrono::high_resolution_clock::now();
-    auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
+    auto dec_end = chrono::high_resolution_clock::now();
+
+    // time result
+    auto lt_diff = chrono::duration_cast<chrono::milliseconds>(lt_end - lt_start);
+    auto dec_diff = chrono::duration_cast<chrono::milliseconds>(dec_end - dec_start);
+    cout << "Linear transformation: " << lt_diff.count() << "ms" << endl;
+    cout << "Decryption: " << dec_diff.count() << "ms" << endl;
 
     // compare converted plain and decryption of x_converted
     //cout << "Converted plain: " << endl;

@@ -198,7 +198,7 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     Plaintext x_plain(packed_input);
     cout << "Express x = as a plaintext polynomial " + x_plain.to_string() + "." << endl;
     cout << "Coeff count: " << x_plain.coeff_count() << endl;
-    print_plain(x_plain, 10);
+    print_plain(x_plain, block_size * pack_num);
 
     // pack kernels
     vector<KernelInfo> kernelinfos = pack_kernel(kernel, block_size, plaintext_modulus);
@@ -221,20 +221,24 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     util::set_zero_poly(poly_modulus_degree, x_encrypted.coeff_modulus_size(), x_enc_lin.data());
     vector<vector<uint64_t>> matrix_conved(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
     cout << "decryption of x_encrypted: ";
-    auto time_start = chrono::high_resolution_clock::now();
+    auto lt_start = chrono::high_resolution_clock::now();
     make_packedconv_matrixproduct(kernelinfos, x_encrypted, poly_modulus_degree, matrix_conved, parms.coeff_modulus()[0]);
     decryptor.linear_trans(x_encrypted, matrix, x_enc_lin);
-    //print_iter(PolyIter(x_encrypted), 2);
-    //print_iter(PolyIter(x_enc_lin), 2);
+    auto lt_end = chrono::high_resolution_clock::now();
+
     // decrypt
     Plaintext x_decrypted;
+    auto dec_start = chrono::high_resolution_clock::now();
     decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, x_decrypted);
-    auto time_end = chrono::high_resolution_clock::now();
-    auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
+    auto dec_end = chrono::high_resolution_clock::now();
 
-    // compare converted plain and decryption of x_converted
-    //cout << "Converted plain: " << endl;
-    //print_plain(copied_plain, 10);
+    // time result
+    auto lt_diff = chrono::duration_cast<chrono::milliseconds>(lt_end - lt_start);
+    auto dec_diff = chrono::duration_cast<chrono::milliseconds>(dec_end - dec_start);
+    cout << "Linear transformation: " << lt_diff.count() << "ms" << endl;
+    cout << "Decryption: " << dec_diff.count() << "ms" << endl;
+
+    // plaintext check
     cout << "decryption of x_tranformed: " << endl;
     print_plain(x_decrypted, block_size * pack_num);
 }
