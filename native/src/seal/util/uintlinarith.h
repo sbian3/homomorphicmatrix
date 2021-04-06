@@ -27,6 +27,27 @@ namespace seal
 {
     namespace util
     {
+        //
+        // print function
+        // 
+
+        void print_matrix(vector<vector<uint64_t>>& matrix);
+        void print_iter(CoeffIter operand1, uint64_t coeff_count);
+
+        inline void print_iter(RNSIter operand1, uint64_t rns_count){
+            uint64_t coeff_count = operand1.poly_modulus_degree();
+            SEAL_ITERATE(operand1, rns_count, [&](auto I){
+                    print_iter(I, coeff_count);
+                    cout << "end of RNS...." << endl;
+                    });
+        }
+
+        inline void print_iter(PolyIter operand1, uint64_t poly_count){
+            uint64_t rns_count = operand1.coeff_modulus_size();
+            SEAL_ITERATE(operand1, poly_count, [&](auto I){
+                    print_iter(I, rns_count);
+                    });
+        }
         // 
         // matrix initialization
         // 
@@ -168,28 +189,6 @@ namespace seal
                     auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_c1 - time_start);
                     cout << "c1 generation: " << time_diff.count() << "ms" << endl;
                     matrix_dot_vector(new_c1, get<1>(I), get<2>(I), coeff_degree, get<3>(I));
-                    });
-        }
-
-        //
-        // print function
-        // 
-
-        void print_matrix(vector<vector<uint64_t>>& matrix);
-        void print_iter(CoeffIter operand1, uint64_t coeff_count);
-
-        inline void print_iter(RNSIter operand1, uint64_t rns_count){
-            uint64_t coeff_count = operand1.poly_modulus_degree();
-            SEAL_ITERATE(operand1, rns_count, [&](auto I){
-                    print_iter(I, coeff_count);
-                    cout << "end of RNS...." << endl;
-                    });
-        }
-
-        inline void print_iter(PolyIter operand1, uint64_t poly_count){
-            uint64_t rns_count = operand1.coeff_modulus_size();
-            SEAL_ITERATE(operand1, poly_count, [&](auto I){
-                    print_iter(I, rns_count);
                     });
         }
 

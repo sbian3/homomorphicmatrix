@@ -387,6 +387,7 @@ namespace seal
         inverse_ntt_negacyclic_harvey(secret_key_array, coeff_modulus_size, ntt_tables);
 
         PolyIter cipher_polyiter(encrypted);
+        set_poly(cipher_polyiter, coeff_count, coeff_modulus_size, destination);
         cipher_polyiter++;
         SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s, coeff_count,coeff_modulus_size, pool);
         SEAL_ITERATE(iter(*cipher_polyiter, secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
