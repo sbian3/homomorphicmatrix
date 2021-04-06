@@ -338,9 +338,6 @@ namespace seal
             cout << "matrix dot product: " << time_diff.count() << "milliseconds" << endl;
         }
         
-        void matrix_dot_matrix_toeplitz_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus){
-        }
-
         ///////////////////////
         //
         // Convolution

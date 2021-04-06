@@ -107,7 +107,6 @@ namespace seal
 
         void matrix_dot_product_mod_t(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus);
 
-        void matrix_dot_matrix_toeplitz_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus);
         //
         // Convolution
         //
@@ -132,6 +131,7 @@ namespace seal
         // 
         // for decryptor
         //
+
 
         inline void matrix_dot_convedcoeff(vector<vector<uint64_t>> matrix, uint64_t coeff_degree, CoeffIter c, const Modulus &modulus, vector<vector<uint64_t>> &result){
             vector<vector<uint64_t>> A(coeff_degree, vector<uint64_t>(coeff_degree));
