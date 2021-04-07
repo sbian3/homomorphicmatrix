@@ -1,11 +1,11 @@
 
 #pragma once
 
-#include "seal/seal.h"
 #include "seal/util/common.h"
 #include "seal/util/defines.h"
 #include "seal/util/pointer.h"
 #include "seal/util/iterator.h"
+#include "seal/ciphertext.h"
 #include <algorithm>
 #include <cstdint>
 #include <cstring>

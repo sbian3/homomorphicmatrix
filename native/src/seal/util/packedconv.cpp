@@ -162,5 +162,82 @@ namespace seal
             return diagonals;
         }
 
+
+        vector<uint64_t> pack_input(const vector<vector<uint64_t>> input, uint64_t block_size, uint64_t poly_size){
+            assert(input.size() * block_size <= poly_size);
+            vector<uint64_t> packed_input(poly_size);
+            for(uint64_t i = 0;i < input.size();i++){
+                uint64_t input_start = block_size * i;
+                for(uint64_t j = 0;j < input[i].size();j++){
+                    packed_input[input_start + j] = input[i][j];
+                }
+            }
+            return packed_input;
+        }
+
+        // kernel: 初期化したkernel vectorのvector. 長さはpack_num個
+        // block_size: 1ブロックの大きさ．
+        // return: KernelInfoのベクトルを生成して返す
+        vector<KernelInfo> pack_kernel(vector<vector<uint64_t>> kernels, uint64_t block_size, Modulus modulus){
+            uint64_t packing_num = kernels.size();
+            vector<KernelInfo> kernel_info(packing_num);
+            uint64_t start_col = 0;
+            uint64_t start_row = 0;
+            for(uint64_t i = 0;i < packing_num;i++){
+                KernelInfo kinfo(start_col, start_row, block_size, block_size, kernels[i], modulus);
+                kernel_info[i] = kinfo;
+                start_col += block_size;
+                start_row += block_size;
+            }
+            return kernel_info;
+        }
+
+        void pack_kernel_to_matrix(vector<KernelInfo> kernelinfos, vector<vector<uint64_t>> &matrix){
+            for(uint64_t i = 0;i < kernelinfos.size();i++){
+                KernelInfo kinfo = kernelinfos[i];
+                // kernel scalar is reversed in default
+                // so, scalar must be reversed again
+                vector<uint64_t> k_scalar = kinfo.diagonal_list;
+                reverse(k_scalar.begin(), k_scalar.end());
+                vector<vector<uint64_t>> diagonals = util::scalars_to_diagonallist(k_scalar, kinfo.get_colsize(), kinfo.get_rowsize());
+                util::diagonallist_to_matrix(diagonals, kinfo.get_startcol(), kinfo.get_startrow(), kinfo.get_colsize(), kinfo.get_rowsize(),matrix);
+            }
+        }
+
+        // 行列積結果を対角成分のみから計算する．
+        void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus &modulus){
+            // for each block
+            for(uint64_t i = 0;i < kernel_infos.size();i++){
+                // get diagonal lists for kernel
+                KernelInfo kinfo = kernel_infos[i];
+                vector<uint64_t> kernel_diagonal_list = kinfo.diagonal_list;
+                vector<uint64_t> kernel_index = kinfo.index;
+                uint64_t colsize_K = kinfo.get_colsize();
+
+                // diagonal list of c1
+                uint64_t submat_startcol,submat_startrow, submat_colsize, submat_rowsize;
+                submat_rowsize = poly_degree;
+                submat_startrow = 0;
+                kinfo.getParamsforSubmatrix(submat_startcol, submat_colsize);
+                vector<uint64_t> diagonal_c1 = util::create_diagonal_from_submatrix(c1, poly_degree , submat_startcol, submat_colsize, modulus);
+
+                // calc diagonal of product
+                vector<vector<uint64_t>> matrix_product_diagonals(colsize_K + submat_rowsize - 1);
+                uint64_t index = 0;
+                int64_t k = static_cast<int64_t>(colsize_K);
+                k = -k+1;
+                for(;k<static_cast<int64_t>(submat_rowsize);k++){
+                    vector<uint64_t> diagonal_vec;
+                    diagonal_vec = util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus);
+                    matrix_product_diagonals[index] = diagonal_vec;
+                    index++;
+                }
+
+                // write diagonals to result matrix
+                util::diagonallist_to_matrix(matrix_product_diagonals, submat_startcol, submat_startrow, colsize_K, submat_rowsize, result);
+            }
+        }
+
+
     }
 }

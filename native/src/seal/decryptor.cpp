@@ -408,6 +408,18 @@ namespace seal
             util::matrix_dot_vector(lt_matrix, coeff_modulus_size, *cipher_polyiter, coeff_modulus, *lt_cipher_polyiter);
         }
 
+    // WIP
+    void Decryptor::lt_packedconv(Ciphertext &encrypted, std::vector<util::KernelInfo> kernel_infos, Ciphertext &lt_cipher){
+            auto &context_data = *context_.get_context_data(encrypted.parms_id());
+            auto &parms = context_data.parms();
+            auto &coeff_modulus = parms.coeff_modulus();
+            size_t coeff_modulus_size = coeff_modulus.size();
+
+            PolyIter cipher_polyiter(encrypted);
+            PolyIter lt_cipher_polyiter(lt_cipher);
+            //util::matrix_dot_vector(lt_matrix, coeff_modulus_size, *cipher_polyiter, coeff_modulus, *lt_cipher_polyiter);
+        }
+
     void Decryptor::dot_product_with_kernel(Ciphertext &encrypted, util::RNSIter destination, std::vector<uint64_t> kernel,  MemoryPoolHandle pool){
         auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
