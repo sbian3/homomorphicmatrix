@@ -149,7 +149,6 @@ namespace seal
         }
 
         inline void kernel_matrix_dot_vector(vector<KernelInfo> kernel_infos, uint64_t coeff_modulus_size, RNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
-            uint64_t coeff_count = poly_rns.poly_modulus_degree();
             SEAL_ITERATE(iter(poly_rns, mod_chain, result), coeff_modulus_size, [&](auto I){
                     kernel_matrix_dot_vector(kernel_infos, get<0>(I), get<1>(I), get<2>(I));
                     });

@@ -102,10 +102,10 @@ void test_delete_cipher(uint64_t input_dim, uint64_t kernel_dim, uint64_t poly_m
 }
 
 void test_kernel_matrix_dot_vector(){
-    vector<vector<uint64_t>> kernels = { {1 , 2, 3}, {4, 5, 6} };
-    uint64_t block_size = 6;
-    uint64_t matrix_size = 18;
-    Modulus modulus(7);
+    vector<vector<uint64_t>> kernels = { {1 , 0, 3}, {4, 2, 1} };
+    uint64_t block_size = 10;
+    uint64_t matrix_size = 300;
+    Modulus modulus(1023);
     vector<KernelInfo> kernel_infos = pack_kernel(kernels, block_size, modulus);
     vector<vector<uint64_t>> kernel_matrix(matrix_size, vector<uint64_t>(matrix_size));
     pack_kernel_to_matrix(kernel_infos, kernel_matrix);
@@ -113,16 +113,24 @@ void test_kernel_matrix_dot_vector(){
     print_matrix(kernel_matrix);
     MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     SEAL_ALLOCATE_GET_COEFF_ITER(vec_right, matrix_size, pool_);
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(result_actual, matrix_size, pool_);
+    vector<uint64_t> result_expected(matrix_size);
+
+    // right vector generation
     for(uint64_t i = 0;i < matrix_size;i++){
-        vec_right[i] = i+1;
+        vec_right[i] = rand() % modulus.value();
     }
     cout << "vector (right)" << endl;
     print_iter(vec_right, matrix_size);
-    vector<uint64_t> result_expected(matrix_size);
+
+    // expect result
     util::matrix_dot_vector(kernel_matrix, vec_right, modulus, matrix_size, result_expected);
-    util::print_iter(result_expected, matrix_size);
-    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(result_actual, matrix_size, pool_);
+    cout << "expect" << endl;
+    print_iter(result_expected, matrix_size);
+
+    // actual result
     util::kernel_matrix_dot_vector(kernel_infos, vec_right, modulus, result_actual);
+    cout << "actual" << endl;
     print_iter(result_actual, matrix_size);
 }
 

@@ -417,6 +417,7 @@ namespace seal
 
             PolyIter cipher_polyiter(encrypted);
             PolyIter lt_cipher_polyiter(lt_cipher);
+            util::kernel_matrix_dot_vector(kernel_infos, **cipher_polyiter, coeff_modulus[0], **lt_cipher_polyiter);
             //util::matrix_dot_vector(lt_matrix, coeff_modulus_size, *cipher_polyiter, coeff_modulus, *lt_cipher_polyiter);
         }
 

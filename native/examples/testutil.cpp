@@ -278,6 +278,36 @@ void test_matrix_conversion_with_rnsiter(){
     print_iter(result, coeff_mod_size);
 }
 
+void test_kernel_matrix_conversion_with_rnsiter(){
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
+    // modulus chain
+    vector<Modulus> mod_chain = {10, 15, 100};
+    // polynomial degree
+    uint64_t coeff_degree = 10;
+    // rns count
+    uint64_t coeff_mod_size = mod_chain.size();
+
+    uint64_t array_size = coeff_degree * coeff_mod_size;
+    vector<std::uint64_t> arr(array_size);
+    vector<vector<int64_t>> matrix(coeff_degree, vector<int64_t>(coeff_degree));
+
+    for(uint64_t i = 0;i < coeff_mod_size;i++){
+        for(uint64_t j=0;j < coeff_degree;j++){
+            arr[i* coeff_degree+j] = j;
+        }
+    }
+    util::init_matrix_identity(matrix, coeff_degree, 2);
+    matrix[0][1] = 1;
+    SEAL_ALLOCATE_GET_RNS_ITER(rns_iter, coeff_degree, coeff_mod_size, pool_);
+    util::set_poly(arr.data(),  coeff_degree, coeff_mod_size, rns_iter);
+    cout << "print rns iter first" << endl;
+    print_iter(rns_iter, coeff_mod_size);
+    SEAL_ALLOCATE_ZERO_GET_RNS_ITER(result, coeff_degree, coeff_mod_size, pool_);
+    util::matrix_dot_vector(matrix, coeff_mod_size,  rns_iter, mod_chain, result);
+    cout << "print converted rns iter " << endl;
+    print_iter(result, coeff_mod_size);
+}
+
 void test_matrix_dot_product(){
     uint64_t coeff_degree = 1000;
     uint64_t modulus = 10000;

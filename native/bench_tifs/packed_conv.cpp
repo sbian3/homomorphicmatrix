@@ -7,12 +7,14 @@ void make_packedconv_matrixproduct(vector<KernelInfo> kernel_infos, Ciphertext &
     util::matrix_dot_matrix_toeplitz_mod(kernel_infos, **cipher_poly, poly_degree, result, modulus);
 }
 
+
 void print_input_kernel(vector<vector<uint64_t>> input, vector<vector<uint64_t>> kernel){
     cout << "inputs: " << endl;
     util::print_matrix(input);
     cout << "kernels: " << endl;
     util::print_matrix(kernel);
 }
+
 
 
 // Benchmark
@@ -67,7 +69,7 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     //print_plain(x_plain, block_size * pack_num);
 
     // pack kernels
-    vector<KernelInfo> kernelinfos = pack_kernel(kernel, block_size, plaintext_modulus);
+    vector<KernelInfo> kernelinfos = pack_kernel(kernel, block_size, parms.coeff_modulus()[0]);
 
     // generate transform matrix
     vector<vector<uint64_t>> matrix(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
@@ -86,14 +88,15 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     Ciphertext x_enc_lin(x_encrypted);
     util::set_zero_poly(poly_modulus_degree, x_encrypted.coeff_modulus_size(), x_enc_lin.data());
     vector<vector<uint64_t>> matrix_conved(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
-    cout << "decryption of x_encrypted: ";
+    //cout << "decryption of x_encrypted: ";
     auto lt_start = chrono::high_resolution_clock::now();
     make_packedconv_matrixproduct(kernelinfos, x_encrypted, poly_modulus_degree, matrix_conved, parms.coeff_modulus()[0]);
-    decryptor.linear_trans(x_encrypted, matrix, x_enc_lin);
+    decryptor.lt_packedconv(x_encrypted, kernelinfos, x_enc_lin);
     auto lt_end = chrono::high_resolution_clock::now();
 
     // decrypt
     Plaintext x_decrypted;
+    decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, x_decrypted);
     auto dec_start = chrono::high_resolution_clock::now();
     decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, x_decrypted);
     auto dec_end = chrono::high_resolution_clock::now();
@@ -125,5 +128,5 @@ int main(int argc, char* argv[]){
     kernel_dim = stoull(argv[2]);
     poly_degree = stoull(argv[3]);
     pack_num = stoull(argv[4]);
-    //bench_packed_conv(input_dim, kernel_dim, pack_num, poly_degree);
+    bench_packed_conv(input_dim, kernel_dim, pack_num, poly_degree);
 }

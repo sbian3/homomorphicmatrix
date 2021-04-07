@@ -84,6 +84,7 @@ namespace seal
         void decrypt_bfv_with_kernel(Ciphertext &encrypted, Plaintext &destination, std::vector<uint64_t> kernel);
 
         void linear_trans(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> lt_matrix, Ciphertext &lt_cipher);
+
         void lt_packedconv(Ciphertext &encrypted, std::vector<util::KernelInfo> kernel_infos, Ciphertext &lt_cipher);
 
         void dot_product_with_kernel(Ciphertext &encrypted, util::RNSIter destination, std::vector<uint64_t> kernel,  MemoryPoolHandle pool);
