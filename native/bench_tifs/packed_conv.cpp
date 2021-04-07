@@ -111,79 +111,6 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
 
 
 
-/////////////////
-// tests
-/////////////////
-void test_init_kernelinfo(){
-    vector<vector<uint64_t>> kernels = { {1 , 2, 3}, {4, 5, 6} };
-    uint64_t block_size = 32;
-    Modulus modulus(7);
-    vector<KernelInfo> kernel_infos = pack_kernel(kernels, block_size, modulus);
-    for(uint64_t i = 0;i < kernel_infos.size();i++){
-        kernel_infos[i].print();
-    }
-}
-
-void test_kernelinfo_to_rowpair(){
-    vector<vector<uint64_t>> kernels = { {1 , 2, 3}, {4, 5, 6} };
-    uint64_t block_size = 32;
-    Modulus modulus(7);
-    vector<KernelInfo> kernel_infos = pack_kernel(kernels, block_size, modulus);
-    for(uint64_t i = 0;i < kernel_infos.size();i++){
-        KernelInfo kinfo = kernel_infos[i];
-        cout << "----kernel info[ " << i << " ]----" << endl;
-        // for each row
-        vector<pair<uint64_t, uint64_t>> rowvec = kinfo.make_rowpair(modulus);
-        for(uint64_t j = 0;j < block_size;j++){
-            for(uint64_t k = 0;k < rowvec.size();k++){
-                cout << "(index, value) = "  << rowvec[k].first << ", " << rowvec[k].second << endl;
-            }
-            cout << "next row" << endl;
-            kinfo.pair_nextcol(rowvec, modulus);
-        }
-    }
-}
-
-void test_pack_kernel_to_matrix(){
-    vector<vector<uint64_t>> kernels = { {1 , 2, 3}, {4, 5, 6} };
-    uint64_t block_size = 6;
-    uint64_t matrix_size = 18;
-    Modulus modulus(7);
-    vector<KernelInfo> kernel_infos = pack_kernel(kernels, block_size, modulus);
-    vector<vector<uint64_t>> matrix(matrix_size, vector<uint64_t>(matrix_size));
-    pack_kernel_to_matrix(kernel_infos, matrix);
-    util::print_matrix(matrix);
-}
-
-void test_kernel_dot_c1(){
-    vector<uint64_t> c1 = {1, 4, 2, 5, 1, 3};
-    uint64_t poly_degree = c1.size();
-    vector<vector<uint64_t>> kernels = { {3, 1, 2}, {2, 3, 5} };
-    uint64_t block_size = 3;
-    Modulus modulus(7);
-    vector<KernelInfo> kernel_info = pack_kernel(kernels, block_size, modulus);
-    vector<vector<uint64_t>> result(poly_degree, vector<uint64_t>(poly_degree));
-    matrix_dot_matrix_toeplitz_mod(kernel_info, c1, poly_degree, result, modulus);
-    util::print_matrix(result);
-}
-
-void test_pack_input(){
-    vector<vector<uint64_t>> inputs = { {1 , 2, 3}, {4, 5, 6} };
-    uint64_t block_size = 6;
-    uint64_t poly_size = 20;
-    vector<uint64_t> plain_vec = pack_input(inputs, block_size, poly_size);
-    for(uint64_t i = 0;i < plain_vec.size();i++){
-       cout << plain_vec[i] << " "; 
-    }
-    cout << endl;
-}
-
-void vector_to_plain(){
-    print_example_banner("Packed Convolution Benchmark");
-    vector<uint64_t> coeff = {1, 2, 3,4, 10};
-    Plaintext plain(coeff);
-    print_plain(plain, coeff.size());
-}
 
 //////////////////
 // main
@@ -199,5 +126,4 @@ int main(int argc, char* argv[]){
     poly_degree = stoull(argv[3]);
     pack_num = stoull(argv[4]);
     //bench_packed_conv(input_dim, kernel_dim, pack_num, poly_degree);
-    test_kernelinfo_to_rowpair();
 }

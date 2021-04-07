@@ -130,5 +130,29 @@ namespace seal
         void pack_kernel_to_matrix(vector<KernelInfo> kernelinfos, vector<vector<uint64_t>> &matrix);
         void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus &modulus);
 
+        
+        uint64_t kernel_innerprod(vector<pair<uint64_t, uint64_t>> rowinfo, CoeffIter coeff_vec, Modulus modulus);
+
+        inline void kernel_matrix_dot_vector(vector<KernelInfo> kernel_infos, CoeffIter coeff_vec, Modulus modulus, CoeffIter result){
+            uint64_t result_index = 0;
+            for(uint64_t i = 0;i < kernel_infos.size();i++){
+                KernelInfo kinfo = kernel_infos[i];
+                vector<pair<uint64_t, uint64_t>> krow = kinfo.make_rowpair(modulus);
+                for(uint64_t j = 0;j < kinfo.get_colsize();j++){
+                    // inner_prod
+                    result[result_index] = kernel_innerprod(krow, coeff_vec, modulus);
+                    // next column
+                    kinfo.pair_nextcol(krow, modulus);
+                    result_index++;
+                }
+            }
+        }
+
+        inline void kernel_matrix_dot_vector(vector<KernelInfo> kernel_infos, uint64_t coeff_modulus_size, RNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
+            uint64_t coeff_count = poly_rns.poly_modulus_degree();
+            SEAL_ITERATE(iter(poly_rns, mod_chain, result), coeff_modulus_size, [&](auto I){
+                    kernel_matrix_dot_vector(kernel_infos, get<0>(I), get<1>(I), get<2>(I));
+                    });
+        }
     }
 }

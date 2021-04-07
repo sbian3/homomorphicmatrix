@@ -238,6 +238,15 @@ namespace seal
             }
         }
 
+        uint64_t kernel_innerprod(vector<pair<uint64_t, uint64_t>> rowinfo, CoeffIter coeff_vec, Modulus modulus){
+            uint64_t sum = 0;
+            for(uint64_t i = 0;i < rowinfo.size();i++){
+                pair<uint64_t, uint64_t> row = rowinfo[i];
+                sum = multiply_add_uint_mod(row.second, coeff_vec[row.first],sum, modulus);
+            }
+            return sum;
+        }
+
 
     }
 }
