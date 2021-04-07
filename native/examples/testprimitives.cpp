@@ -30,14 +30,24 @@ void print_plain(Plaintext plain, uint64_t num){
     std::cout << "]" << std::endl;
 }
 
+void set_zero(util::RNSIter rns, uint64_t rns_count){
+    SEAL_ITERATE(rns, rns_count, [&](auto I){
+            
+            });
+
+}
+
+void set_zero_cipher(Ciphertext &encrypted,uint64_t poly_modulus_degree, uint64_t rns_count, uint64_t c_size, uint64_t input_dim){
+    util::CoeffIter coeff_iter(encrypted.data(0));
+    coeff_iter = coeff_iter + (input_dim);
+    util::set_zero_uint(poly_modulus_degree - input_dim, coeff_iter);
+}
+
 void test_delete_cipher(uint64_t input_dim, uint64_t kernel_dim, uint64_t poly_modulus_degree){
     print_example_banner("Direct convolution of ciphertext Benchmark");
 
     // parameter setting
     EncryptionParameters parms(scheme_type::bfv);
-    //size_t poly_modulus_degree;
-    //cout << "poly_modulus_degree: ";
-    //cin >> poly_modulus_degree;
     parms.set_poly_modulus_degree(poly_modulus_degree);
 
     vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
@@ -64,15 +74,10 @@ void test_delete_cipher(uint64_t input_dim, uint64_t kernel_dim, uint64_t poly_m
 
     // sample plaintext x
     //cout << "Input plaintext: ";
-    Plaintext x_plain(sample_rn(input_dim, Modulus(7)));
+    Plaintext x_plain(sample_rn(input_dim, Modulus(9)));
     //cout << "plaintext polynomial " + x_plain.to_string() + "." << endl;
     //cout << "Coeff count: " << x_plain.coeff_count() << endl;
     print_plain(x_plain, 10);
-
-    // convert plaintext by matrix
-    Plaintext copied_plain = Plaintext(x_plain);
-    copied_plain.resize(poly_modulus_degree);
-    cout << "Copied and converted plaintext" << endl;
 
     // encrypt x
     Ciphertext x_encrypted;
@@ -82,6 +87,9 @@ void test_delete_cipher(uint64_t input_dim, uint64_t kernel_dim, uint64_t poly_m
     //uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
     //cout << "Coeff size: " << cipher_coeffsize << endl;
     cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+    set_zero_cipher(x_encrypted, poly_modulus_degree, 1, 2, input_dim);
+    util::PolyIter x_iter(x_encrypted);
+    util::print_iter(x_iter, 2);
 
     // convolve encrypted x
     cout << "decryption of x_tranformed: " << endl;
