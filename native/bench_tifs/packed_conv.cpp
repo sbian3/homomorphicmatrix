@@ -34,6 +34,35 @@ class KernelInfo{
             submat_colsize = size_row;
         }
 
+        // 行列ベクトル積計算に用いる
+        // pair<index, value>のベクトルを返す
+        vector<pair<uint64_t, uint64_t>> make_rowpair(Modulus mod){
+            vector<pair<uint64_t, uint64_t>> ret(data.size());
+            // 最初は通常の値
+            ret[0] = make_pair(start_row, data[0]);
+            // 2つ目以降はnegateして右端へ
+            for(uint64_t i = 1;i< data.size();i++){
+                ret[i] = make_pair(start_row + size_row - i, util::negate_uint_mod(data[i], mod));
+            }
+            return ret;
+        }
+
+        void pair_nextcol(vector<pair<uint64_t, uint64_t>> &pair_kernel, Modulus mod){
+            for(uint64_t i = 0;i < pair_kernel.size();i++){
+                uint64_t next_index = pair_kernel[i].first + 1;
+                uint64_t next_value = pair_kernel[i].second;
+                if(next_index < 0 || next_index > start_row + size_row){
+                    cerr << "pair_nextcol: invalid index " << endl;
+                    return;
+                }
+                if(next_index == start_row + size_row){
+                    next_index = start_row;
+                    next_value = negate_uint_mod(next_value, mod);
+                }
+                pair_kernel[i] = make_pair(next_index, next_value);
+            }
+        }
+
         void print(){
             cout << "start col: " << start_col << endl;
             cout << "start row: " << start_row << endl;
@@ -151,6 +180,7 @@ void print_input_kernel(vector<vector<uint64_t>> input, vector<vector<uint64_t>>
 }
 
 
+// Benchmark
 void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_num, uint64_t poly_modulus_degree){
     print_example_banner("Homomorphic packed convolution Benchmark");
 
@@ -167,8 +197,8 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     //cout << "poly_modulus_degree: ";
     //cin >> poly_modulus_degree;
     parms.set_poly_modulus_degree(poly_modulus_degree);
-    //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
-    vector<Modulus> mod_chain =  {Modulus(0xffffff00000001)};
+    vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
+    //vector<Modulus> mod_chain =  {Modulus(0xffffff00000001)};
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 7;
     parms.set_plain_modulus(plaintext_modulus);
@@ -259,6 +289,25 @@ void test_init_kernelinfo(){
     }
 }
 
+void test_kernelinfo_to_rowpair(){
+    vector<vector<uint64_t>> kernels = { {1 , 2, 3}, {4, 5, 6} };
+    uint64_t block_size = 32;
+    Modulus modulus(7);
+    vector<KernelInfo> kernel_infos = pack_kernel(kernels, block_size, modulus);
+    for(uint64_t i = 0;i < kernel_infos.size();i++){
+        KernelInfo kinfo = kernel_infos[i];
+        cout << "----kernel info[ " << i << " ]----" << endl;
+        // for each row
+        vector<pair<uint64_t, uint64_t>> rowvec = kinfo.make_rowpair(modulus);
+        for(uint64_t j = 0;j < block_size;j++){
+            for(uint64_t k = 0;k < rowvec.size();k++){
+                cout << "(index, value) = "  << rowvec[k].first << ", " << rowvec[k].second << endl;
+            }
+            cout << "next row" << endl;
+            kinfo.pair_nextcol(rowvec, modulus);
+        }
+    }
+}
 
 void test_pack_kernel_to_matrix(){
     vector<vector<uint64_t>> kernels = { {1 , 2, 3}, {4, 5, 6} };
@@ -315,4 +364,5 @@ int main(int argc, char* argv[]){
     poly_degree = stoull(argv[3]);
     pack_num = stoull(argv[4]);
     bench_packed_conv(input_dim, kernel_dim, pack_num, poly_degree);
+    //test_kernelinfo_to_rowpair();
 }
