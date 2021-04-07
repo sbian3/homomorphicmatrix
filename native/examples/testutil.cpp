@@ -1,6 +1,9 @@
 #include "testprimitives.h"
 #include "testutil.h"
 #include "seal/util/uintlinarith.h"
+#include "seal/util/packedconv.h"
+
+using namespace seal::util;
 
 void test_matrix_initialization(){
     uint64_t size=3;
@@ -418,7 +421,7 @@ void test_create_diagonal(){
     uint64_t rowsize = 5;
     Modulus modulus(7);
     vector<uint64_t> diagonal(colsize + rowsize - 1);
-    vector<uint64_t> indexes = util::create_diagonal_list(kernel, colsize, rowsize, modulus, diagonal);
+    vector<uint64_t> indexes = create_diagonal_list(kernel, colsize, rowsize, modulus, diagonal);
     cout << "diagonal: ";
     for(uint64_t i = 0;i < diagonal.size();i++){
         cout << diagonal[i] << " ";
@@ -442,7 +445,7 @@ void test_diagonal_from_submat(){
         a[i] = i;
     }
     vector<uint64_t> diagonal;
-    diagonal = util::create_diagonal_from_submatrix(a, a_size, start_col, colsize, modulus);
+    diagonal = create_diagonal_from_submatrix(a, a_size, start_col, colsize, modulus);
     cout << "start_col: " << start_col << " " << "colsize: " << colsize << endl;
     cout << "diagonal list of submatrix: ";
     for(auto i =0L;i < diagonal.size();i++){
@@ -460,7 +463,7 @@ void test_prod_diagonal(){
     vector<uint64_t> diagonallist_R = {3, 2, 1, 5, 3, 8, 3, 4, 7, 1};
     Modulus modulus(11);
     vector<uint64_t> kernel_diagonallist(colsize_K + rowsize_K - 1);
-    vector<uint64_t> indexes = util::create_diagonal_list(kernel, colsize_K, rowsize_K, modulus, kernel_diagonallist);
+    vector<uint64_t> indexes = create_diagonal_list(kernel, colsize_K, rowsize_K, modulus, kernel_diagonallist);
     int64_t k = static_cast<int64_t>(colsize_K);
     k  = -k + 1;
     vector<vector<uint64_t>> matrix_product_diagonals(colsize_K + rowsize_R-1);

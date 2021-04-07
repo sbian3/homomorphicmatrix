@@ -28,6 +28,7 @@ set(SEAL_SOURCE_FILES ${SEAL_SOURCE_FILES}
     ${CMAKE_CURRENT_LIST_DIR}/ztools.cpp
     ${CMAKE_CURRENT_LIST_DIR}/linarith.cpp
     ${CMAKE_CURRENT_LIST_DIR}/uintlinarith.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/packedconv.cpp
 )
 
 # Add header files for installation
@@ -67,6 +68,7 @@ install(
         ${CMAKE_CURRENT_LIST_DIR}/ztools.h
         ${CMAKE_CURRENT_LIST_DIR}/linarith.h
         ${CMAKE_CURRENT_LIST_DIR}/uintlinarith.h
+        ${CMAKE_CURRENT_LIST_DIR}/packedconv.h
     DESTINATION
         ${SEAL_INCLUDES_INSTALL_DIR}/seal/util
 )

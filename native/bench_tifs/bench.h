@@ -21,6 +21,7 @@
 #include "seal/util/linarith.h"
 #include "seal/util/uintlinarith.h"
 #include "seal/util/uintarithmod.h"
+#include "seal/util/packedconv.h"
 
 using namespace std;
 using namespace seal;
