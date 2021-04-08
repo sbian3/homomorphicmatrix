@@ -76,8 +76,8 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim, uint64_t p
     // time result
     auto lt_diff = chrono::duration_cast<chrono::microseconds>(lt_end - lt_start);
     auto dec_diff = chrono::duration_cast<chrono::microseconds>(dec_end - dec_start);
-    cout << "Linear transformation: " << lt_diff.count() << "us" << endl;
-    cout << "Decryption: " << dec_diff.count() << "us" << endl;
+    cout << TIME_LABEL_LT << lt_diff.count() << "us" << endl;
+    cout << TIME_LABEL_DEC << dec_diff.count() << "us" << endl;
 
     if(print_arr){
         print_plain(x_conved_decrypted, input_dim + kernel_dim - 1);

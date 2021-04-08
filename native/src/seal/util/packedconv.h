@@ -82,7 +82,7 @@ namespace seal
                     for(uint64_t i = 0;i < pair_kernel.size();i++){
                         uint64_t next_index = pair_kernel[i].first + 1;
                         uint64_t next_value = pair_kernel[i].second;
-                        if(next_index < 0 || next_index > start_row + size_row){
+                        if(next_index > start_row + size_row){
                             cerr << "pair_nextcol: invalid index " << endl;
                             return;
                         }

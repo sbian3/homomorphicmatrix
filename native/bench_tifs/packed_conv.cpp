@@ -104,8 +104,8 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     // time result
     auto lt_diff = chrono::duration_cast<chrono::milliseconds>(lt_end - lt_start);
     auto dec_diff = chrono::duration_cast<chrono::milliseconds>(dec_end - dec_start);
-    cout << "Linear transformation: " << lt_diff.count() << "ms" << endl;
-    cout << "Decryption: " << dec_diff.count() << "ms" << endl;
+    cout << TIME_LABEL_LT << lt_diff.count() << "ms" << endl;
+    cout << TIME_LABEL_DEC << dec_diff.count() << "ms" << endl;
 
     // plaintext check
     cout << "decryption of x_tranformed: " << endl;

@@ -259,3 +259,6 @@ inline vector<Modulus> select_modchain(uint64_t poly_degree){
     }
     return mod_chain;
 }
+
+#define TIME_LABEL_LT "Linear Transformation: "
+#define TIME_LABEL_DEC "Decryption: "
