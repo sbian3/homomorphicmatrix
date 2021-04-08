@@ -10,12 +10,12 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim, uint64_t p
     bool print_arr = true;
     // parameter setting
     EncryptionParameters parms(scheme_type::bfv);
-    //size_t poly_modulus_degree;
-    //cout << "poly_modulus_degree: ";
-    //cin >> poly_modulus_degree;
     parms.set_poly_modulus_degree(poly_modulus_degree);
     cout << "input_dim: " << input_dim << endl;
     cout << "kernel_dim: " << kernel_dim << endl;
+    if(input_dim + kernel_dim -1 > poly_modulus_degree){
+        throw invalid_argument("polynomial degree is too small");
+    }
 
     //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
     vector<Modulus> mod_chain =  select_modchain(poly_modulus_degree);

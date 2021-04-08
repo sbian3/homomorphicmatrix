@@ -15,24 +15,21 @@ void print_input_kernel(vector<vector<uint64_t>> input, vector<vector<uint64_t>>
     util::print_matrix(kernel);
 }
 
-
-
 // Benchmark
 void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_num, uint64_t poly_modulus_degree){
     print_example_banner("Homomorphic packed convolution Benchmark");
+    bool print_data = true;
 
     // sample input and kernel
     Modulus sample_mod(7);
     vector<vector<uint64_t>> input = sample_rn(pack_num, input_dim, sample_mod);
     vector<vector<uint64_t>> kernel = sample_rn(pack_num, kernel_dim, sample_mod);
-    //print_input_kernel(input, kernel);
-
+    if(print_data){
+        print_input_kernel(input, kernel);
+    }
 
     // parameter setting
     EncryptionParameters parms(scheme_type::bfv);
-    //size_t poly_modulus_degree;
-    //cout << "poly_modulus_degree: ";
-    //cin >> poly_modulus_degree;
     parms.set_poly_modulus_degree(poly_modulus_degree);
     //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
     vector<Modulus> mod_chain =  select_modchain(poly_modulus_degree);
@@ -41,7 +38,6 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     parms.set_plain_modulus(plaintext_modulus);
     cout << "Plaintext modulus: " << plaintext_modulus << endl;
     SEALContext context(parms);
-    print_line(__LINE__);
     cout << "Set encryption parameters and print" << endl;
     print_parameters(context);
     cout << "Parameter validation: " << context.parameter_error_message() << endl;
@@ -62,10 +58,7 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
         throw invalid_argument("polynomial degree is too small");
     }
     vector<uint64_t> packed_input = pack_input(input, block_size, poly_modulus_degree);
-    //cout << "Input plaintext: ";
     Plaintext x_plain(packed_input);
-    //cout << "Express x = as a plaintext polynomial " + x_plain.to_string() + "." << endl;
-    //cout << "Coeff count: " << x_plain.coeff_count() << endl;
     //print_plain(x_plain, block_size * pack_num);
 
     // pack kernels
@@ -79,9 +72,6 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     Ciphertext x_encrypted;
     cout << "----Encrypt x_plain to x_encrypted.----" << endl;
     encryptor.encrypt(x_plain, x_encrypted);
-    //cout << "Coeff modulus size: " << x_encrypted.coeff_modulus_size() << endl;
-    //uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
-    //cout << "Coeff size: " << cipher_coeffsize << endl;
     cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
 
     // lt
@@ -108,8 +98,10 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     cout << TIME_LABEL_DEC << dec_diff.count() << "ms" << endl;
 
     // plaintext check
-    cout << "decryption of x_tranformed: " << endl;
-    //print_plain(x_decrypted, block_size * pack_num);
+    cout << "----Decryption---- " << endl;
+    if(print_data){
+        print_plain(x_decrypted, block_size * pack_num);
+    }
 }
 
 

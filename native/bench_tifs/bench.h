@@ -23,6 +23,9 @@
 #include "seal/util/uintarithmod.h"
 #include "seal/util/packedconv.h"
 
+#define TIME_LABEL_LT "LinearTransformation: "
+#define TIME_LABEL_DEC "Decryption: "
+
 using namespace std;
 using namespace seal;
 using namespace seal::util;
@@ -260,5 +263,3 @@ inline vector<Modulus> select_modchain(uint64_t poly_degree){
     return mod_chain;
 }
 
-#define TIME_LABEL_LT "Linear Transformation: "
-#define TIME_LABEL_DEC "Decryption: "
