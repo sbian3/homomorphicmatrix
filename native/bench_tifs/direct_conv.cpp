@@ -7,12 +7,15 @@ using namespace seal;
 void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim, uint64_t poly_modulus_degree){
     print_example_banner("Direct convolution of ciphertext Benchmark");
 
+    bool print_arr = true;
     // parameter setting
     EncryptionParameters parms(scheme_type::bfv);
     //size_t poly_modulus_degree;
     //cout << "poly_modulus_degree: ";
     //cin >> poly_modulus_degree;
     parms.set_poly_modulus_degree(poly_modulus_degree);
+    cout << "input_dim: " << input_dim << endl;
+    cout << "kernel_dim: " << kernel_dim << endl;
 
     //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
     vector<Modulus> mod_chain =  select_modchain(poly_modulus_degree);
@@ -20,8 +23,6 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim, uint64_t p
     uint64_t plaintext_modulus = 1032193;
     parms.set_plain_modulus(plaintext_modulus);
     SEALContext context(parms);
-    print_line(__LINE__);
-    cout << "Set encryption parameters and print" << endl;
     print_parameters(context);
     cout << "Parameter validation: " << context.parameter_error_message() << endl;
 
@@ -39,14 +40,12 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim, uint64_t p
     // sample plaintext x
     //cout << "Input plaintext: ";
     Plaintext x_plain(sample_rn(input_dim, Modulus(7)));
+    if(print_arr){
+        print_plain(x_plain, input_dim);
+    }
     //cout << "plaintext polynomial " + x_plain.to_string() + "." << endl;
     //cout << "Coeff count: " << x_plain.coeff_count() << endl;
     //print_plain(x_plain, 10);
-
-    // convert plaintext by matrix
-    Plaintext copied_plain = Plaintext(x_plain);
-    copied_plain.resize(poly_modulus_degree);
-    cout << "Copied and converted plaintext" << endl;
 
     // encrypt x
     Ciphertext x_encrypted;
@@ -59,15 +58,11 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim, uint64_t p
 
     // convolve encrypted x
     vector<uint64_t> kernel = sample_rn(kernel_dim, Modulus(7));
-    cout << "kernel: ";
-    for(uint64_t i = 0;i<kernel.size();i++){
-        if(i == kernel.size() - 1){
-            cout << kernel[i] << endl;
-        }else{
-            cout << kernel[i] << " ";
-        }
+    if(print_arr){
+        print_iter(kernel, kernel_dim);
     }
     Ciphertext conved_x(x_encrypted);
+    util::set_zero_uint(conved_x.size() * conved_x.poly_modulus_degree() * conved_x.coeff_modulus_size(), conved_x.data());
     auto lt_start = chrono::high_resolution_clock::now();
     util::conv_negacyclic(kernel, x_encrypted, mod_chain, conved_x);
     auto lt_end = chrono::high_resolution_clock::now();
@@ -84,7 +79,9 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim, uint64_t p
     cout << "Linear transformation: " << lt_diff.count() << "us" << endl;
     cout << "Decryption: " << dec_diff.count() << "us" << endl;
 
-    //print_plain(x_conved_decrypted, 20);
+    if(print_arr){
+        print_plain(x_conved_decrypted, input_dim + kernel_dim - 1);
+    }
 }
 
 int main(int argc, char* argv[]){

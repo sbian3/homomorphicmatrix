@@ -32,7 +32,7 @@ function directconv_multipoly(){
     input_dim=$inputdim_multipoly
     for poly_degree in ${poly_degrees[@]}
     do
-        echo "Direct Convolution: (input, kernel) = ($input_dim, $kernel_dim)"
+        echo "Direct Convolution: (input, kernel, poly_degree) = ($input_dim, $kernel_dim, $poly_degree)"
         output_path="tifs_result/direct_conv/multipoly/direct$poly_degree.txt"
         env build/bin/direct_conv $input_dim $kernel_dim $poly_degree 2>$err  > $output_path
     done
@@ -54,8 +54,7 @@ function packedconv_multipoly(){
     input_dim=$inputdim_multipoly
     for poly_degree in ${poly_degrees[@]}
     do
-        echo "Packed Convolution: (input, kernel, pack_num) = ($input_dim, $kernel_dim, $pack_num)"
-        echo "Polynomial Length: $poly_degree"
+        echo "Packed Convolution: (input, kernel, poly_degree, pack_num) = ($input_dim, $kernel_dim, $poly_degree,  $pack_num)"
         output_path="tifs_result/packed_conv/multipoly/pack$poly_degree.txt"
         env build/bin/packed_conv $input_dim $kernel_dim $poly_degree $pack_num 2>$err > $output_path
     done
@@ -78,5 +77,5 @@ function clean(){
 }
 
 directconv_multipoly
-packedconv_multipoly
+#packedconv_multipoly
 #general_lt

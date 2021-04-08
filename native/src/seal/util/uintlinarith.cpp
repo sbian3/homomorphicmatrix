@@ -216,13 +216,9 @@ namespace seal
         //
         //////////////////////
 
+        // direct convolution (kernel * coeffiter)
         void conv_negacyclic(vector<uint64_t> &kernel, CoeffIter encrypted, uint64_t poly_degree, const Modulus &modulus, CoeffIter result){
             uint64_t size_poly = poly_degree;
-            // make sure result is 0 initialized
-            for(uint64_t i = 0;i < poly_degree;i++){
-                result[i] = 0;
-            }
-            // direct convolution (kernel * coeffiter)
             for(uint64_t i = 0U;i < kernel.size();i++){
                 for(uint64_t j = 0U;j < size_poly;j++){
                     uint64_t tmp_prod = util::multiply_uint_mod(kernel[i], encrypted[j], modulus);
