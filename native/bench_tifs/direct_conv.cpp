@@ -20,7 +20,7 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim, uint64_t p
     //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
     vector<Modulus> mod_chain =  select_modchain(poly_modulus_degree);
     parms.set_coeff_modulus(mod_chain);
-    uint64_t plaintext_modulus = 1032193;
+    uint64_t plaintext_modulus = 1024;
     parms.set_plain_modulus(plaintext_modulus);
     SEALContext context(parms);
     print_parameters(context);
@@ -59,6 +59,7 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim, uint64_t p
     // convolve encrypted x
     vector<uint64_t> kernel = sample_rn(kernel_dim, Modulus(7));
     if(print_arr){
+        cout << "print kernel Coefficients: ";
         print_iter(kernel, kernel_dim);
     }
     Ciphertext conved_x(x_encrypted);
@@ -67,7 +68,6 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim, uint64_t p
     util::conv_negacyclic(kernel, x_encrypted, mod_chain, conved_x);
     auto lt_end = chrono::high_resolution_clock::now();
 
-    cout << "decryption of x_tranformed: " << endl;
     Plaintext x_conved_decrypted;
     auto dec_start = chrono::high_resolution_clock::now();
     decryptor.decrypt(conved_x, x_conved_decrypted);
