@@ -16,14 +16,10 @@ void print_input_kernel(vector<vector<uint64_t>> input, vector<vector<uint64_t>>
 }
 
 // Benchmark
-void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_num, uint64_t poly_modulus_degree){
+void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> kernel, uint64_t pack_num, uint64_t poly_modulus_degree, vector<uint64_t> &decrypted){
     print_example_banner("Homomorphic packed convolution Benchmark");
     bool print_data = true;
 
-    // sample input and kernel
-    Modulus sample_mod(7);
-    vector<vector<uint64_t>> input = sample_rn(pack_num, input_dim, sample_mod);
-    vector<vector<uint64_t>> kernel = sample_rn(pack_num, kernel_dim, sample_mod);
     if(print_data){
         print_input_kernel(input, kernel);
     }
@@ -36,7 +32,6 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 7;
     parms.set_plain_modulus(plaintext_modulus);
-    cout << "Plaintext modulus: " << plaintext_modulus << endl;
     SEALContext context(parms);
     cout << "Set encryption parameters and print" << endl;
     print_parameters(context);
@@ -53,7 +48,7 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     Decryptor decryptor(context, secret_key);
 
     // generate plaintext x
-    uint64_t block_size = get_blocksize(input_dim, kernel_dim, 0);
+    uint64_t block_size = get_blocksize(input[0].size(), kernel[0].size(), 0);
     if(block_size * pack_num > poly_modulus_degree){
         throw invalid_argument("polynomial degree is too small");
     }
@@ -102,9 +97,32 @@ void bench_packed_conv(uint64_t input_dim, uint64_t kernel_dim, uint64_t pack_nu
     if(print_data){
         print_plain(x_decrypted, block_size * pack_num);
     }
+
+    // put decrypted result to vector
+    decrypted.assign(x_decrypted.data(), x_decrypted.data() + block_size * pack_num);
 }
 
+void test_packedconv(){
+    cout << "packedconv test" << endl;
+    uint64_t pack_num = 2;
+    uint64_t poly_degree = 1024;
+    vector<vector<uint64_t>> input = { {1, 4, 2}, {5, 1, 3} };
+    vector<vector<uint64_t>> kernel = { {3, 2, 1}, {3, 2, 5} };
+    vector<uint64_t> decrypted(10);
+    bench_packed_conv(input, kernel, pack_num, poly_degree , decrypted);
 
+    // decrypted shold be [3, 0, 1, 1, 2, 1, 6, 1, 4, 1]
+    vector<uint64_t> expect = {3, 0, 1, 1, 2, 1, 6, 1, 4, 1};
+    for(uint64_t i = 0;i < decrypted.size();i++){
+        if(expect[i] != decrypted[i]){
+            cerr << "test failed: " << i << "th number" << endl;
+            cerr << "expected: " << expect[i] << endl;
+            cerr << "actual: " << decrypted[i] << endl;
+            return;
+        }
+    }
+    cout << "test passed!!" << endl;
+}
 
 
 //////////////////
@@ -120,5 +138,15 @@ int main(int argc, char* argv[]){
     kernel_dim = stoull(argv[2]);
     poly_degree = stoull(argv[3]);
     pack_num = stoull(argv[4]);
-    bench_packed_conv(input_dim, kernel_dim, pack_num, poly_degree);
+
+    uint64_t output_dim = input_dim + kernel_dim - 1;
+    // sample input and kernel data
+    Modulus sample_mod(7);
+    vector<vector<uint64_t>> input = sample_rn(pack_num, input_dim, sample_mod);
+    vector<vector<uint64_t>> kernel = sample_rn(pack_num, kernel_dim, sample_mod);
+    vector<uint64_t> decrypted(output_dim);
+
+    // benchmark impl
+    //bench_packed_conv(input, kernel, pack_num, poly_degree, decrypted);
+    test_packedconv();
 }
