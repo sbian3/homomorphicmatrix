@@ -241,3 +241,21 @@ inline vector<vector<uint64_t>> sample_rn(uint64_t size_col, uint64_t size_row, 
 }
 
 void print_plain(Plaintext plain, uint64_t num);
+inline vector<Modulus> select_modchain(uint64_t poly_degree){
+    vector<Modulus> mod_chain;
+    switch(poly_degree){
+        case 1024:
+            // from BFVDefault
+            mod_chain = {Modulus(0x7e00001)};
+            break;
+        case 2048:
+            // from BFVDefault
+            mod_chain = {Modulus(0x3fffffff000001)};
+            break;
+        default:
+            // 4096 or larger
+            mod_chain =  {Modulus(0xffffff00000001)};
+            break;
+    }
+    return mod_chain;
+}

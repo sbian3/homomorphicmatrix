@@ -15,7 +15,7 @@ void test_conv_cipher_direct(uint64_t input_dim, uint64_t kernel_dim, uint64_t p
     parms.set_poly_modulus_degree(poly_modulus_degree);
 
     //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
-    vector<Modulus> mod_chain =  {Modulus(0xffffff00000001)};
+    vector<Modulus> mod_chain =  select_modchain(poly_modulus_degree);
     parms.set_coeff_modulus(mod_chain);
     uint64_t plaintext_modulus = 1032193;
     parms.set_plain_modulus(plaintext_modulus);
