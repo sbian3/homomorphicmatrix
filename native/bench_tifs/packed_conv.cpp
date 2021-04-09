@@ -16,9 +16,8 @@ void print_input_kernel(vector<vector<uint64_t>> input, vector<vector<uint64_t>>
 }
 
 // Benchmark
-void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> kernel, uint64_t pack_num, uint64_t poly_modulus_degree, vector<uint64_t> &decrypted){
-    print_example_banner("Homomorphic packed convolution Benchmark");
-    bool print_data = true;
+void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> kernel, uint64_t pack_num, uint64_t poly_modulus_degree, vector<uint64_t> &decrypted, int64_t &latency_lt, int64_t &latency_dec){
+    bool print_data = false;
 
     if(print_data){
         print_input_kernel(input, kernel);
@@ -33,10 +32,12 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     uint64_t plaintext_modulus = 7;
     parms.set_plain_modulus(plaintext_modulus);
     SEALContext context(parms);
-    cout << "Set encryption parameters and print" << endl;
-    print_parameters(context);
-    cout << "Parameter validation: " << context.parameter_error_message() << endl;
-    cout << endl;
+    if(print_data){
+        print_parameters(context);
+        cout << "Set encryption parameters and print" << endl;
+        cout << "Parameter validation: " << context.parameter_error_message() << endl;
+        cout << endl;
+    }
 
     // generate encryption helper
     KeyGenerator keygen(context);
@@ -54,7 +55,6 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     }
     vector<uint64_t> packed_input = pack_input(input, block_size, poly_modulus_degree);
     Plaintext x_plain(packed_input);
-    //print_plain(x_plain, block_size * pack_num);
 
     // pack kernels
     vector<KernelInfo> kernelinfos = pack_kernel(kernel, block_size, parms.coeff_modulus()[0]);
@@ -65,9 +65,11 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
 
     // encrypt x
     Ciphertext x_encrypted;
-    cout << "----Encrypt x_plain to x_encrypted.----" << endl;
     encryptor.encrypt(x_plain, x_encrypted);
-    cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+    if(print_data){
+        cout << "----Encrypt x_plain to x_encrypted.----" << endl;
+        cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+    }
 
     // lt
     Ciphertext x_enc_lin(x_encrypted);
@@ -89,12 +91,14 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     // time result
     auto lt_diff = chrono::duration_cast<chrono::milliseconds>(lt_end - lt_start);
     auto dec_diff = chrono::duration_cast<chrono::milliseconds>(dec_end - dec_start);
+    latency_lt = lt_diff.count();
+    latency_dec = dec_diff.count();
     cout << TIME_LABEL_LT << lt_diff.count() << "ms" << endl;
     cout << TIME_LABEL_DEC << dec_diff.count() << "ms" << endl;
 
     // plaintext check
-    cout << "----Decryption---- " << endl;
     if(print_data){
+        cout << "----Decryption---- " << endl;
         print_plain(x_decrypted, block_size * pack_num);
     }
 
@@ -109,11 +113,12 @@ void test_packedconv(){
     vector<vector<uint64_t>> input = { {1, 4, 2}, {5, 1, 3} };
     vector<vector<uint64_t>> kernel = { {3, 2, 1}, {3, 2, 5} };
     vector<uint64_t> decrypted(10);
-    bench_packed_conv(input, kernel, pack_num, poly_degree , decrypted);
+    int64_t time_lt, time_dec;
+    bench_packed_conv(input, kernel, pack_num, poly_degree , decrypted, time_lt, time_dec);
 
     // decrypted shold be [3, 0, 1, 1, 2, 1, 6, 1, 4, 1]
     vector<uint64_t> expect = {3, 0, 1, 1, 2, 1, 6, 1, 4, 1};
-    for(uint64_t i = 0;i < decrypted.size();i++){
+    for(uint64_t i = 0;i < expect.size();i++){
         if(expect[i] != decrypted[i]){
             cerr << "test failed: " << i << "th number" << endl;
             cerr << "expected: " << expect[i] << endl;
@@ -139,14 +144,30 @@ int main(int argc, char* argv[]){
     poly_degree = stoull(argv[3]);
     pack_num = stoull(argv[4]);
 
-    uint64_t output_dim = input_dim + kernel_dim - 1;
+    print_example_banner("Homomorphic packed convolution Benchmark");
     // sample input and kernel data
-    Modulus sample_mod(7);
-    vector<vector<uint64_t>> input = sample_rn(pack_num, input_dim, sample_mod);
-    vector<vector<uint64_t>> kernel = sample_rn(pack_num, kernel_dim, sample_mod);
+
+    uint64_t output_dim = input_dim + kernel_dim - 1;
     vector<uint64_t> decrypted(output_dim);
 
+    uint64_t latency_lt_sum = 0;
+    uint64_t latency_dec_sum = 0;
+    uint64_t bench_times = 50;
+
     // benchmark impl
-    //bench_packed_conv(input, kernel, pack_num, poly_degree, decrypted);
-    test_packedconv();
+    for(uint64_t i = 0;i < bench_times;i++){
+        Modulus sample_mod(7);
+        vector<vector<uint64_t>> input = sample_rn(pack_num, input_dim, sample_mod);
+        vector<vector<uint64_t>> kernel = sample_rn(pack_num, kernel_dim, sample_mod);
+        int64_t latency_lt, latency_dec;
+        bench_packed_conv(input, kernel, pack_num, poly_degree, decrypted, latency_lt, latency_dec);
+        latency_lt_sum += static_cast<uint64_t>(latency_lt);
+        latency_dec_sum += static_cast<uint64_t>(latency_dec);
+    }
+
+    double latency_lt = latency_lt_sum/static_cast<double>(bench_times);
+    double latency_dec = latency_dec_sum/static_cast<double>(bench_times);
+    cout << TIME_LABEL_LT << latency_lt << "ms" << endl;
+    cout << TIME_LABEL_DEC << latency_dec << "ms" << endl;
+    //test_packedconv();
 }
