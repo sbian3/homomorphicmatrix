@@ -51,11 +51,11 @@ namespace seal
         // assume kernel_L is reversed( indexes is also )
         // offsetは0が中心．
         vector<uint64_t> matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> kernel_L, vector<uint64_t> kernel_L_indexes, vector<uint64_t> list_R, Modulus & modulus){
-            // RはL以上を想定
+            // assert list_R is larger than kernel
             assert(kernel_L_indexes.size() <= list_R.size());
         
-            // 要素積を計算
-            // kernelの非ゼロ要素の場所を覚えることで計算時間を短縮
+            // calculate element wise product
+            // optimize complexity remembering kernel nonzero elements
             //uint64_t wise_prod_len = kernel_L.size() <= list_R.size()? kernel_L.size(): list_R.size();
             uint64_t wise_prod_len;
             if(offset >= 0){
@@ -67,40 +67,80 @@ namespace seal
             }else{
                 wise_prod_len = kernel_L.size() + offset;
             }
+            cout << "wise_prod_len: " << wise_prod_len << endl;
             vector<uint64_t> wise_prod(wise_prod_len);
+            // non-zero index
+            vector<uint64_t> wise_prod_index;
             for(uint64_t i = 0;i < kernel_L_indexes.size();i++){
                 uint64_t prod;
                 if(offset >= 0){
                     // boarder check and mul
                     if(kernel_L_indexes[i]+offset >= list_R.size() || kernel_L_indexes[i] >= kernel_L.size()) break;
                     prod = util::multiply_uint_mod(kernel_L[kernel_L_indexes[i]], list_R[kernel_L_indexes[i]+offset], modulus);
+                    wise_prod[kernel_L_indexes[i]] = prod;
+                    wise_prod_index.push_back(kernel_L_indexes[i]);
                 }else{
                     // boarder check and mul
                     if(kernel_L_indexes[i] <= -offset-1) continue;
                     if(kernel_L_indexes[i] >= kernel_L.size() || kernel_L_indexes[i]+offset >= list_R.size()) break;
                     prod = util::multiply_uint_mod(kernel_L[kernel_L_indexes[i]], list_R[kernel_L_indexes[i]+offset], modulus);
-                }
-                if(offset < 0){
                     wise_prod[kernel_L_indexes[i]+offset] = prod;
-                }else{
-                    wise_prod[kernel_L_indexes[i]] = prod;
+                    wise_prod_index.push_back(kernel_L_indexes[i] + offset);
                 }
             }
-            vector<uint64_t> diagonal;
-            uint64_t partial_sum = 0;
             uint64_t prod_times = colsize_R;
-            // 最初の内積を計算
-            for(uint64_t i = 0;i < prod_times;i++){
-                partial_sum = util::add_uint_mod(partial_sum, wise_prod[i], modulus);
+            vector<uint64_t> diagonal(wise_prod_len - prod_times + 1);
+            uint64_t partial_sum = 0;
+            uint64_t index_of_index = 0;
+            // calculate first inner prod
+            for(uint64_t i = 0; i < wise_prod_index.size() && wise_prod_index[i] < prod_times;i++){
+                partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[i]], modulus);
+                index_of_index++;
             }
-            diagonal.reserve(rowsize_R);
-            diagonal.push_back(partial_sum);
-            // 次の対角成分はO(1)で計算
+            diagonal[0] = partial_sum;
+            //uint64_t partial_sum_expect = partial_sum;
+            //cout << "wise_prod.size: " << wise_prod.size() << endl;;
+            //cout << "wise_prodwise_prod_index: "  << endl;
+            //for(uint64_t i = 0; i < wise_prod_index.size();i++){
+            //    cout << "index " << wise_prod_index[i] << ": " << wise_prod[wise_prod_index[i]] << endl;;
+            //}
+            //cout << endl;
+            //cout << "prod_times: " << prod_times << endl;
+            //cout << "----actual----" << endl;
+            // we need O(1) to calc a next diagonal element
             for(uint64_t i = 0;i < wise_prod.size() - prod_times;i++){
+                //cout << "i: " << i << endl;
+                //cout << "index of index: " << index_of_index << endl;
+                if(partial_sum == 0){
+                    if(index_of_index == wise_prod_index.size() - 1){
+                        //cout << "index of index: out" << endl;
+                        break;
+                    }
+                    if(wise_prod_index[index_of_index] - i > prod_times ){
+                        i = wise_prod_index[index_of_index] - prod_times;
+                        //cout << "jumped" << endl;
+                    }
+                }
+                // move window to right
+                if(wise_prod[i+prod_times] != 0){
+                    index_of_index++;
+                }
                 partial_sum = util::add_uint_mod(partial_sum, wise_prod[i+prod_times], modulus);
                 partial_sum = util::sub_uint_mod(partial_sum, wise_prod[i], modulus);
-                diagonal.push_back(partial_sum);
+                //cout << "partial sum: " << partial_sum << endl;
+                diagonal[i+1] = partial_sum;
             }
+            //cout << "------expected-----" << endl;
+            //// expected loop
+            //for(uint64_t i = 0;i < wise_prod.size() - prod_times;i++){
+            //    cout << "i: " << i << endl;
+            //    // move window to right
+            //    partial_sum_expect = util::add_uint_mod(partial_sum_expect, wise_prod[i+prod_times], modulus);
+            //    partial_sum_expect = util::sub_uint_mod(partial_sum_expect, wise_prod[i], modulus);
+            //    cout << "partial sum: " << partial_sum_expect << endl;
+            //    diagonal[i+1] = partial_sum_expect;
+            //}
+            //cout << endl;
             return diagonal;
         }
         
@@ -226,12 +266,16 @@ namespace seal
                 uint64_t index = 0;
                 int64_t k = static_cast<int64_t>(colsize_K);
                 k = -k+1;
+                auto lt_start = chrono::high_resolution_clock::now();
                 for(;k<static_cast<int64_t>(submat_rowsize);k++){
                     vector<uint64_t> diagonal_vec;
                     diagonal_vec = util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus);
                     matrix_product_diagonals[index] = diagonal_vec;
                     index++;
                 }
+                auto lt_end = chrono::high_resolution_clock::now();
+                auto lt_diff = chrono::duration_cast<chrono::milliseconds>(lt_end - lt_start);
+                cout << "calc diagonals: " << lt_diff.count() << " ms" <<endl;
 
                 // write diagonals to result matrix
                 util::diagonallist_to_matrix(matrix_product_diagonals, submat_startcol, submat_startrow, colsize_K, submat_rowsize, result);
