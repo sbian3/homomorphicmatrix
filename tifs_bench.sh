@@ -5,7 +5,7 @@ input_dims=()
 kernel_dim=4
 poly_degrees=(1024 2048 4096 8192 16384 32768)
 poly_degree=16384
-pack_num=2
+pack_num=1
 inputdim_multipoly=16
 err=tifs_result/err.log
 
@@ -22,7 +22,7 @@ function directconv_multiinput(){
     for input_dim in ${input_dims[@]}
     do
         echo "Direct Convolution: (input, kernel) = ($input_dim, $kernel_dim)"
-        output_path="tifs_result/direct_conv/multiinput/direct$input_dim.txt"
+        output_path="tifs_result/direct_conv/multiinput/direct_conv$input_dim.txt"
         env build/bin/direct_conv $input_dim $kernel_dim $poly_degree 2>$err  > $output_path
     done
 }
@@ -33,7 +33,7 @@ function directconv_multipoly(){
     for poly_degree in ${poly_degrees[@]}
     do
         echo "Direct Convolution: (input, kernel, poly_degree) = ($input_dim, $kernel_dim, $poly_degree)"
-        output_path="tifs_result/direct_conv/multipoly/direct$poly_degree.txt"
+        output_path="tifs_result/direct_conv/multipoly/direct_conv$poly_degree.txt"
         env build/bin/direct_conv $input_dim $kernel_dim $poly_degree 2>$err  > $output_path
     done
 }
@@ -44,7 +44,7 @@ function packedconv_multiinput(){
     do
         echo "Packed Convolution: (input, kernel, pack_num) = ($input_dim, $kernel_dim, $pack_num)"
         echo "Polynomial Length: $poly_degree"
-        output_path="tifs_result/packed_conv/multiinput/pack$input_dim.txt"
+        output_path="tifs_result/packed_conv/multiinput/packed_conv$input_dim.txt"
         env build/bin/packed_conv $input_dim $kernel_dim $poly_degree $pack_num 2>$err > $output_path
     done
 }
@@ -55,7 +55,7 @@ function packedconv_multipoly(){
     for poly_degree in ${poly_degrees[@]}
     do
         echo "Packed Convolution: (input, kernel, poly_degree, pack_num) = ($input_dim, $kernel_dim, $poly_degree,  $pack_num)"
-        output_path="tifs_result/packed_conv/multipoly/pack$poly_degree.txt"
+        output_path="tifs_result/packed_conv/multipoly/packed_conv$poly_degree.txt"
         env build/bin/packed_conv $input_dim $kernel_dim $poly_degree $pack_num 2>$err > $output_path
     done
 }
@@ -76,6 +76,7 @@ function clean(){
     rm -rf tifs_result/*
 }
 
+#clean
 directconv_multipoly
-#packedconv_multipoly
+packedconv_multipoly
 #general_lt

@@ -74,8 +74,8 @@ void conv_cipher_direct(vector<uint64_t> input, vector<uint64_t> kernel, uint64_
     latency_dec = dec_diff.count();
 
     if(print_data){
-        cout << TIME_LABEL_LT << lt_diff.count() << "us" << endl;
-        cout << TIME_LABEL_DEC << dec_diff.count() << "us" << endl;
+        cout << TIME_LABEL_LT << lt_diff.count() << US << endl;
+        cout << TIME_LABEL_DEC << dec_diff.count() << US << endl;
         print_plain(x_conved_decrypted, input.size() + kernel.size() - 1);
     }
     decrypted.assign(x_conved_decrypted.data(), x_conved_decrypted.data() + output_dim);
@@ -102,7 +102,7 @@ void test_directconv(){
 }
 
 int main(int argc, char* argv[]){
-    uint64_t bench_times = 50;
+    uint64_t bench_times = 10;
     uint64_t input_dim, kernel_dim, poly_degree;
     int ret = check_args(argc, argv, input_dim, kernel_dim, poly_degree);
     if(ret == 0){
@@ -130,6 +130,6 @@ int main(int argc, char* argv[]){
     }
     double latency_lt = latency_lt_sum/static_cast<double>(bench_times);
     double latency_dec = latency_dec_sum/static_cast<double>(bench_times);
-    cout << TIME_LABEL_LT << latency_lt << " us" << endl;
-    cout << TIME_LABEL_DEC << latency_dec << " us" << endl;
+    cout << TIME_LABEL_LT << latency_lt << US << endl;
+    cout << TIME_LABEL_DEC << latency_dec << US << endl;
 }

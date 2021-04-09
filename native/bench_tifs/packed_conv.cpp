@@ -16,9 +16,7 @@ void print_input_kernel(vector<vector<uint64_t>> input, vector<vector<uint64_t>>
 }
 
 // Benchmark
-void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> kernel, uint64_t pack_num, uint64_t poly_modulus_degree, vector<uint64_t> &decrypted, int64_t &latency_lt, int64_t &latency_dec){
-    bool print_data = false;
-
+void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> kernel, uint64_t pack_num, uint64_t poly_modulus_degree, vector<uint64_t> &decrypted, int64_t &latency_lt, int64_t &latency_dec, bool print_data){
     if(print_data){
         print_input_kernel(input, kernel);
     }
@@ -80,6 +78,9 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     make_packedconv_matrixproduct(kernelinfos, x_encrypted, poly_modulus_degree, matrix_conved, parms.coeff_modulus()[0]);
     decryptor.lt_packedconv(x_encrypted, kernelinfos, x_enc_lin);
     auto lt_end = chrono::high_resolution_clock::now();
+    //if(print_data){
+        //util::print_matrix(matrix_conved);
+    //}
 
     // decrypt
     Plaintext x_decrypted;
@@ -93,8 +94,10 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     auto dec_diff = chrono::duration_cast<chrono::milliseconds>(dec_end - dec_start);
     latency_lt = lt_diff.count();
     latency_dec = dec_diff.count();
-    cout << TIME_LABEL_LT << lt_diff.count() << "ms" << endl;
-    cout << TIME_LABEL_DEC << dec_diff.count() << "ms" << endl;
+    if(print_data){
+        cout << TIME_LABEL_LT << lt_diff.count() << MS << endl;
+        cout << TIME_LABEL_DEC << dec_diff.count() << MS << endl;
+    }
 
     // plaintext check
     if(print_data){
@@ -106,7 +109,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     decrypted.assign(x_decrypted.data(), x_decrypted.data() + block_size * pack_num);
 }
 
-void test_packedconv(){
+bool pass_test_packedconv(){
     cout << "packedconv test" << endl;
     uint64_t pack_num = 2;
     uint64_t poly_degree = 1024;
@@ -114,7 +117,7 @@ void test_packedconv(){
     vector<vector<uint64_t>> kernel = { {3, 2, 1}, {3, 2, 5} };
     vector<uint64_t> decrypted(10);
     int64_t time_lt, time_dec;
-    bench_packed_conv(input, kernel, pack_num, poly_degree , decrypted, time_lt, time_dec);
+    bench_packed_conv(input, kernel, pack_num, poly_degree , decrypted, time_lt, time_dec, false);
 
     // decrypted shold be [3, 0, 1, 1, 2, 1, 6, 1, 4, 1]
     vector<uint64_t> expect = {3, 0, 1, 1, 2, 1, 6, 1, 4, 1};
@@ -123,10 +126,11 @@ void test_packedconv(){
             cerr << "test failed: " << i << "th number" << endl;
             cerr << "expected: " << expect[i] << endl;
             cerr << "actual: " << decrypted[i] << endl;
-            return;
+            return false;
         }
     }
     cout << "test passed!!" << endl;
+    return true;
 }
 
 
@@ -134,6 +138,10 @@ void test_packedconv(){
 // main
 /////////////////
 int main(int argc, char* argv[]){
+    if(!pass_test_packedconv()){
+        cerr << "test failed!" << endl;
+        return 1;
+    }
     uint64_t input_dim, kernel_dim, pack_num, poly_degree;
     if(argc != 5){
         cerr << "please input two numbers.argc: " << argc << endl;
@@ -152,7 +160,7 @@ int main(int argc, char* argv[]){
 
     uint64_t latency_lt_sum = 0;
     uint64_t latency_dec_sum = 0;
-    uint64_t bench_times = 50;
+    uint64_t bench_times = 10;
 
     // benchmark impl
     for(uint64_t i = 0;i < bench_times;i++){
@@ -160,14 +168,13 @@ int main(int argc, char* argv[]){
         vector<vector<uint64_t>> input = sample_rn(pack_num, input_dim, sample_mod);
         vector<vector<uint64_t>> kernel = sample_rn(pack_num, kernel_dim, sample_mod);
         int64_t latency_lt, latency_dec;
-        bench_packed_conv(input, kernel, pack_num, poly_degree, decrypted, latency_lt, latency_dec);
+        bench_packed_conv(input, kernel, pack_num, poly_degree, decrypted, latency_lt, latency_dec, true);
         latency_lt_sum += static_cast<uint64_t>(latency_lt);
         latency_dec_sum += static_cast<uint64_t>(latency_dec);
     }
 
     double latency_lt = latency_lt_sum/static_cast<double>(bench_times);
     double latency_dec = latency_dec_sum/static_cast<double>(bench_times);
-    cout << TIME_LABEL_LT << latency_lt << "ms" << endl;
-    cout << TIME_LABEL_DEC << latency_dec << "ms" << endl;
-    //test_packedconv();
+    cout << TIME_LABEL_LT << latency_lt << MS << endl;
+    cout << TIME_LABEL_DEC << latency_dec << MS << endl;
 }

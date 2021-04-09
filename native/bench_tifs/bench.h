@@ -25,6 +25,8 @@
 
 #define TIME_LABEL_LT "LinearTransformation: "
 #define TIME_LABEL_DEC "Decryption: "
+#define MS " ms"
+#define US " us"
 
 using namespace std;
 using namespace seal;

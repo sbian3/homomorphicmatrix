@@ -90,8 +90,8 @@ void test_decrypt_separate(uint64_t input_dim, uint64_t kernel_dim, uint64_t pol
     // time result
     auto lt_diff = chrono::duration_cast<chrono::milliseconds>(lt_end - lt_start);
     auto dec_diff = chrono::duration_cast<chrono::milliseconds>(dec_end - dec_start);
-    cout << TIME_LABEL_LT << lt_diff.count() << "ms" << endl;
-    cout << TIME_LABEL_DEC << dec_diff.count() << "ms" << endl;
+    cout << TIME_LABEL_LT << lt_diff.count() << MS << endl;
+    cout << TIME_LABEL_DEC << dec_diff.count() << MS << endl;
 
     // compare converted plain and decryption of x_converted
     //cout << "Converted plain: " << endl;
