@@ -3,8 +3,10 @@
 input_n=(4 8 16 32 64 128)
 input_dims=()
 kernel_dim=4
+kernel_dims=(2 4 8 16 32 64 128)
 poly_degrees=(1024 2048 4096 8192 16384 32768)
-poly_degree=16384
+poly_degree=1024
+poly_degree_multikernel=1024
 pack_num=1
 inputdim_multipoly=16
 err=tifs_result/err.log
@@ -38,6 +40,18 @@ function directconv_multipoly(){
     done
 }
 
+function directconv_multikernel(){
+    mkdir -p tifs_result/direct_conv/multikernel
+    input_dim=$inputdim_multipoly
+    poly_degree=$poly_degree_multikernel
+    for kernel_dim in ${kernel_dims[@]}
+    do
+        echo "Direct Convolution: (input, kernel, poly_degree) = ($input_dim, $kernel_dim, $poly_degree)"
+        output_path="tifs_result/direct_conv/multikernel/direct_conv$kernel_dim.txt"
+        env build/bin/direct_conv $input_dim $kernel_dim $poly_degree 2>$err  > $output_path
+    done
+}
+
 function packedconv_multiinput(){
     mkdir -p tifs_result/packed_conv/multiinput
     for input_dim in ${input_dims[@]}
@@ -60,6 +74,18 @@ function packedconv_multipoly(){
     done
 }
 
+function packedconv_multikernel(){
+    mkdir -p tifs_result/packed_conv/multikernel
+    input_dim=$inputdim_multipoly
+    poly_degree=$poly_degree_multikernel
+    for kernel_dim in ${kernel_dims[@]}
+    do
+        echo "Packed Convolution: (input, kernel, poly_degree, pack_num) = ($input_dim, $kernel_dim, $poly_degree,  $pack_num)"
+        output_path="tifs_result/packed_conv/multikernel/packed_conv$kernel_dim.txt"
+        env build/bin/packed_conv $input_dim $kernel_dim $poly_degree $pack_num 2>$err > $output_path
+    done
+}
+
 function general_lt_multiinput(){
     mkdir -p tifs_result/general_lt/multiinput
     # In general_lt, poly_degree 4096 or longer is too long to measure
@@ -77,6 +103,8 @@ function clean(){
 }
 
 #clean
-directconv_multipoly
-packedconv_multipoly
+#directconv_multipoly
+#packedconv_multipoly
+directconv_multikernel
+packedconv_multikernel
 #general_lt

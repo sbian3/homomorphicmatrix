@@ -168,7 +168,7 @@ int main(int argc, char* argv[]){
         vector<vector<uint64_t>> input = sample_rn(pack_num, input_dim, sample_mod);
         vector<vector<uint64_t>> kernel = sample_rn(pack_num, kernel_dim, sample_mod);
         int64_t latency_lt, latency_dec;
-        bench_packed_conv(input, kernel, pack_num, poly_degree, decrypted, latency_lt, latency_dec, true);
+        bench_packed_conv(input, kernel, pack_num, poly_degree, decrypted, latency_lt, latency_dec, false);
         latency_lt_sum += static_cast<uint64_t>(latency_lt);
         latency_dec_sum += static_cast<uint64_t>(latency_dec);
     }

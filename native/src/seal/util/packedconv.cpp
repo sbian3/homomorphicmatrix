@@ -67,7 +67,7 @@ namespace seal
             }else{
                 wise_prod_len = kernel_L.size() + offset;
             }
-            cout << "wise_prod_len: " << wise_prod_len << endl;
+            //cout << "wise_prod_len: " << wise_prod_len << endl;
             vector<uint64_t> wise_prod(wise_prod_len);
             // non-zero index
             vector<uint64_t> wise_prod_index;
@@ -275,7 +275,7 @@ namespace seal
                 }
                 auto lt_end = chrono::high_resolution_clock::now();
                 auto lt_diff = chrono::duration_cast<chrono::milliseconds>(lt_end - lt_start);
-                cout << "calc diagonals: " << lt_diff.count() << " ms" <<endl;
+                //cout << "calc diagonals: " << lt_diff.count() << " ms" <<endl;
 
                 // write diagonals to result matrix
                 util::diagonallist_to_matrix(matrix_product_diagonals, submat_startcol, submat_startrow, colsize_K, submat_rowsize, result);
