@@ -31,6 +31,17 @@ namespace seal
         // print function
         // 
 
+        inline void print_vector(vector<uint64_t> vec,uint64_t count){
+            if(count > vec.size()){
+                cerr << "print_vector: Warn: count(" << count << ") is larger than vector size(" << vec.size() << ")" << endl;;
+                count = vec.size();
+            }
+            for(uint64_t i = 0;i < count ;i++){
+                auto endnote = (i == count-1)? "\n": " ";
+                cout << vec[i] << endnote;
+            }
+        }
+
         void print_matrix(vector<vector<uint64_t>>& matrix);
         void print_iter(CoeffIter operand1, uint64_t coeff_count);
 

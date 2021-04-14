@@ -50,7 +50,9 @@ namespace seal
 
         // assume kernel_L is reversed( indexes is also )
         // offsetは0が中心．
-        vector<uint64_t> matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> kernel_L, vector<uint64_t> kernel_L_indexes, vector<uint64_t> list_R, Modulus & modulus){
+        vector<uint64_t> matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> kernel_L, vector<uint64_t> kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus){
+            bool print_debug = false;
+            bool print_time = false;
             // assert list_R is larger than kernel
             assert(kernel_L_indexes.size() <= list_R.size());
         
@@ -71,6 +73,7 @@ namespace seal
             vector<uint64_t> wise_prod(wise_prod_len);
             // non-zero index
             vector<uint64_t> wise_prod_index;
+            //auto mul_start = chrono::high_resolution_clock::now();
             for(uint64_t i = 0;i < kernel_L_indexes.size();i++){
                 uint64_t prod;
                 if(offset >= 0){
@@ -88,8 +91,8 @@ namespace seal
                     wise_prod_index.push_back(kernel_L_indexes[i] + offset);
                 }
             }
+            //auto mul_end = chrono::high_resolution_clock::now();
             uint64_t prod_times = colsize_R;
-            vector<uint64_t> diagonal(wise_prod_len - prod_times + 1);
             uint64_t partial_sum = 0;
             uint64_t index_of_index = 0;
             // calculate first inner prod
@@ -97,17 +100,29 @@ namespace seal
                 partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[i]], modulus);
                 index_of_index++;
             }
+            //auto innerp_end = chrono::high_resolution_clock::now();
+            if(print_debug){
+                cout << "---------calculating a diagonal-----" << endl;
+                cout << "index_of_index: " << index_of_index << endl;
+                cout << "wise_prod.size: " << wise_prod.size() << endl;;
+                for(uint64_t i = 0; i < wise_prod_index.size();i++){
+                    cout << "index " << wise_prod_index[i] << ": " << wise_prod[wise_prod_index[i]] << endl;;
+                }
+                cout << "prod_times: " << prod_times << endl;
+                cout << "end index of nonzero wise_prod: " << wise_prod_index[wise_prod_index.size()- 1] << endl;
+            }
+            // all elements end in first inner prod(constant vector)
+            if(index_of_index  == wise_prod_index.size() && wise_prod_index[wise_prod_index.size()-1] < prod_times){
+                if(print_debug){
+                    cout << "end in first inner prod: return" << endl;
+                }
+                vector<uint64_t> diagonal(wise_prod_len - prod_times + 1, partial_sum);
+                return diagonal;
+            }
+            vector<uint64_t> diagonal(wise_prod_len - prod_times + 1);
             diagonal[0] = partial_sum;
-            //uint64_t partial_sum_expect = partial_sum;
-            //cout << "wise_prod.size: " << wise_prod.size() << endl;;
-            //cout << "wise_prodwise_prod_index: "  << endl;
-            //for(uint64_t i = 0; i < wise_prod_index.size();i++){
-            //    cout << "index " << wise_prod_index[i] << ": " << wise_prod[wise_prod_index[i]] << endl;;
-            //}
-            //cout << endl;
-            //cout << "prod_times: " << prod_times << endl;
-            //cout << "----actual----" << endl;
             // we need O(1) to calc a next diagonal element
+            // TODO: skip constant slide
             for(uint64_t i = 0;i < wise_prod.size() - prod_times;i++){
                 //cout << "i: " << i << endl;
                 //cout << "index of index: " << index_of_index << endl;
@@ -130,6 +145,11 @@ namespace seal
                 //cout << "partial sum: " << partial_sum << endl;
                 diagonal[i+1] = partial_sum;
             }
+            //auto slide_end = chrono::high_resolution_clock::now();
+            //auto mul_diff = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
+            //auto innerp_diff = chrono::duration_cast<chrono::nanoseconds>(innerp_end - mul_end);
+            //auto slide_diff = chrono::duration_cast<chrono::nanoseconds>(slide_end - innerp_end);
+            //cout << "mul : " << mul_diff.count() << " innerp: " << innerp_diff.count() << " slide: " << slide_diff.count() << " sum: " << mul_diff.count() + innerp_diff.count() + slide_diff.count() << endl;
             //cout << "------expected-----" << endl;
             //// expected loop
             //for(uint64_t i = 0;i < wise_prod.size() - prod_times;i++){
@@ -141,6 +161,9 @@ namespace seal
             //    diagonal[i+1] = partial_sum_expect;
             //}
             //cout << endl;
+            if(print_debug){
+                util::print_vector(diagonal, diagonal.size());
+            }
             return diagonal;
         }
         
@@ -266,15 +289,16 @@ namespace seal
                 uint64_t index = 0;
                 int64_t k = static_cast<int64_t>(colsize_K);
                 k = -k+1;
-                auto lt_start = chrono::high_resolution_clock::now();
                 for(;k<static_cast<int64_t>(submat_rowsize);k++){
                     vector<uint64_t> diagonal_vec;
+                    //auto diagonal_start = chrono::high_resolution_clock::now();
                     diagonal_vec = util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus);
+                    //auto diagonal_end = chrono::high_resolution_clock::now();
+                    //auto diagonal_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_end - diagonal_start);
+                    //cout << "calc one diagonal vector: " << diagonal_diff.count() << endl;
                     matrix_product_diagonals[index] = diagonal_vec;
                     index++;
                 }
-                auto lt_end = chrono::high_resolution_clock::now();
-                auto lt_diff = chrono::duration_cast<chrono::milliseconds>(lt_end - lt_start);
                 //cout << "calc diagonals: " << lt_diff.count() << " ms" <<endl;
 
                 // write diagonals to result matrix

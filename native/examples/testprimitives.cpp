@@ -134,10 +134,17 @@ void test_kernel_matrix_dot_vector(){
     print_iter(result_actual, matrix_size);
 }
 
+void test_print_vector(){
+    vector<uint64_t> vec = {1, 3, 2, 4, 5, 2, 10, 2};
+    util::print_vector(vec, 3);
+    util::print_vector(vec, 30);
+}
+
 // 行列操作など基礎的な関数のテストや実験のためのもの
 int main(){
     cout << "test_primitives" << endl;
     //test_scalars_to_diagonallist();
     //test_delete_cipher(5, 0, 2048);
-    test_kernel_matrix_dot_vector();
+    //test_kernel_matrix_dot_vector();
+    test_print_vector();
 }

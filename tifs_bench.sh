@@ -5,7 +5,7 @@ input_dims=()
 kernel_dim=4
 kernel_dims=(2 4 8 16 32 64 128)
 poly_degrees=(1024 2048 4096 8192 16384 32768)
-poly_degree=1024
+poly_degree=2048
 poly_degree_multikernel=1024
 pack_num=1
 inputdim_multipoly=16
@@ -98,13 +98,26 @@ function general_lt_multiinput(){
     done
 }
 
+function general_lt_multipoly(){
+    mkdir -p tifs_result/general_lt/multipoly
+    input_dim=$inputdim_multipoly
+    for poly_degree in ${poly_degrees[@]}
+    do
+        echo "General Linear Transformation: (input, kernel, poly_degree) = ($input_dim, $kernel_dim, $poly_degree)"
+        output_path="tifs_result/general_lt/multipoly/general_lt$poly_degree.txt"
+        env build/bin/direct_conv $input_dim $kernel_dim $poly_degree 2>$err  > $output_path
+    done
+}
+
 function clean(){
     rm -rf tifs_result/*
 }
 
 #clean
-#directconv_multipoly
+directconv_multipoly
 #packedconv_multipoly
-directconv_multikernel
-packedconv_multikernel
+#directconv_multiinput
+#packedconv_multiinput
+#directconv_multikernel
+#packedconv_multikernel
 #general_lt

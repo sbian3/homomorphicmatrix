@@ -138,6 +138,7 @@ bool pass_test_packedconv(){
 // main
 /////////////////
 int main(int argc, char* argv[]){
+    uint64_t bench_times = 3;
     if(!pass_test_packedconv()){
         cerr << "test failed!" << endl;
         return 1;
@@ -160,7 +161,6 @@ int main(int argc, char* argv[]){
 
     uint64_t latency_lt_sum = 0;
     uint64_t latency_dec_sum = 0;
-    uint64_t bench_times = 10;
 
     // benchmark impl
     for(uint64_t i = 0;i < bench_times;i++){
