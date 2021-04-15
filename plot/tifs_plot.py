@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from enum import Enum
 
-#poly_degrees = [ 1024, 2048, 4096, 8192, 16384]
-poly_degrees = [ 1024, 2048, 4096, 8192, 16384, 32768]
+poly_degrees = [ 1024, 2048, 4096, 8192, 16384]
+#poly_degrees = [ 1024, 2048, 4096, 8192, 16384, 32768]
 kernel_dims = [2, 4, 8, 16, 32, 64, 128]
 input_dims = [16, 64, 256, 1024]
 
@@ -26,14 +26,25 @@ class BenchType(Enum):
     multi_kernel="multikernel"
     multi_input="multiinput"
 
+class TimeUnit(Enum):
+    ms="ms"
+    us="us"
+    ns="ns"
+
 lt_prefix = "LinearTransformation:"
 dec_prefix = "Decryption:"
 
 def read_latency(filepath):
     for line in open(filepath):
+        line = line.rstrip()
         line = line.split(" ")
         if(line[0] == lt_prefix):
-            time_lt = float(line[1])
+            # current unit is [ms]
+            if(line[2] == TimeUnit.ms.value):
+                time_lt = float(line[1])
+            elif(line[2] == TimeUnit.us.value):
+                # if [us] in result txt, devide by 1000
+                time_lt = float(line[1])/1000
         if(line[0] == dec_prefix):
             time_dec = float(line[1])
     return time_lt, time_dec
@@ -60,10 +71,7 @@ def read_bench(prefix, benchtype):
 
 def read_data(benchtype):
     time_direct = read_bench("direct_conv", benchtype)
-    time_direct_f = []
-    # direct time is [us] in result txt, so devide by 1000
-    for direct_lt in time_direct:
-        time_direct_f.append(direct_lt/1000)
+    time_direct_f = time_direct
     time_packed = read_bench("packed_conv", benchtype)
     # time_general is too long: put result directly
     time_general=[52570, 462696, 3234320]
