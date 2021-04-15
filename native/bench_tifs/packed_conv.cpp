@@ -1,7 +1,7 @@
 #include "bench.h"
 #include "seal/util/packedconv.h"
 
-void make_packedconv_matrixproduct(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus modulus){
+void make_packedconv_matrixproduct(vector<KernelInfo> &kernel_infos, Ciphertext &encrypted, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus modulus){
     PolyIter cipher_poly(encrypted);
     cipher_poly++;
     util::matrix_dot_matrix_toeplitz_mod(kernel_infos, **cipher_poly, poly_degree, result, modulus);
@@ -90,13 +90,13 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     auto dec_end = chrono::high_resolution_clock::now();
 
     // time result
-    auto lt_diff = chrono::duration_cast<chrono::milliseconds>(lt_end - lt_start);
-    auto dec_diff = chrono::duration_cast<chrono::milliseconds>(dec_end - dec_start);
+    auto lt_diff = chrono::duration_cast<chrono::microseconds>(lt_end - lt_start);
+    auto dec_diff = chrono::duration_cast<chrono::microseconds>(dec_end - dec_start);
     latency_lt = lt_diff.count();
     latency_dec = dec_diff.count();
     if(print_data){
-        cout << TIME_LABEL_LT << lt_diff.count() << MS << endl;
-        cout << TIME_LABEL_DEC << dec_diff.count() << MS << endl;
+        cout << TIME_LABEL_LT << lt_diff.count() << US << endl;
+        cout << TIME_LABEL_DEC << dec_diff.count() << US << endl;
     }
 
     // plaintext check
@@ -138,7 +138,7 @@ bool pass_test_packedconv(){
 // main
 /////////////////
 int main(int argc, char* argv[]){
-    uint64_t bench_times = 3;
+    uint64_t bench_times = 10;
     if(!pass_test_packedconv()){
         cerr << "test failed!" << endl;
         return 1;
@@ -175,6 +175,6 @@ int main(int argc, char* argv[]){
 
     double latency_lt = latency_lt_sum/static_cast<double>(bench_times);
     double latency_dec = latency_dec_sum/static_cast<double>(bench_times);
-    cout << TIME_LABEL_LT << latency_lt << MS << endl;
-    cout << TIME_LABEL_DEC << latency_dec << MS << endl;
+    cout << TIME_LABEL_LT << latency_lt << US << endl;
+    cout << TIME_LABEL_DEC << latency_dec << US << endl;
 }

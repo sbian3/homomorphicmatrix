@@ -50,7 +50,7 @@ namespace seal
 
         // assume kernel_L is reversed( indexes is also )
         // offsetは0が中心．
-        vector<uint64_t> matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> kernel_L, vector<uint64_t> kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus){
+        vector<uint64_t> matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> &kernel_L, vector<uint64_t> &kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus){
             bool print_debug = false;
             bool print_time = false;
             // assert list_R is larger than kernel
@@ -170,7 +170,7 @@ namespace seal
         // 対角成分ベクトルを行列に書き込む
         // diagonallist: 左端からの対角成分ベクトル
         // resultは長方形を仮定
-        void diagonallist_to_matrix(vector<vector<uint64_t>> diagonallist, uint64_t start_col, uint64_t start_row, uint64_t colsize, uint64_t rowsize, vector<vector<uint64_t>> &result){
+        void diagonallist_to_matrix(vector<vector<uint64_t>> &diagonallist, uint64_t start_col, uint64_t start_row, uint64_t colsize, uint64_t rowsize, vector<vector<uint64_t>> &result){
             assert(start_col + colsize <= result.size());
             assert(start_row + rowsize <= result[0].size()); 
             assert(diagonallist.size() == colsize + rowsize - 1);
@@ -268,7 +268,7 @@ namespace seal
         }
 
         // 行列積結果を対角成分のみから計算する．
-        void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus &modulus){
+        void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> &kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus &modulus){
             // for each block
             for(uint64_t i = 0;i < kernel_infos.size();i++){
                 // get diagonal lists for kernel

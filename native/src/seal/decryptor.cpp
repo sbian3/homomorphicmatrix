@@ -214,7 +214,7 @@ namespace seal
     }
 
     // Decrypt linear transformed ciphertext
-    void Decryptor::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> matrix_conved, Plaintext &destination){
+    void Decryptor::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, Plaintext &destination){
         // Verify that encrypted is valid.
         if (!is_valid_for(encrypted, context_))
         {

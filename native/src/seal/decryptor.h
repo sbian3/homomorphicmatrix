@@ -89,7 +89,7 @@ namespace seal
 
         void dot_product_with_kernel(Ciphertext &encrypted, util::RNSIter destination, std::vector<uint64_t> kernel,  MemoryPoolHandle pool);
 
-        void decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> matrix_conved, Plaintext &destination);
+        void decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, Plaintext &destination);
         // 
         // end of added function
         //
