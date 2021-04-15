@@ -24,3 +24,5 @@ void test_create_diagonal();
 void test_diagonal_partial();
 void test_diagonal_from_submat();
 void test_write_pairdiagonal_to_matrix();
+void test_prod_diagonal_pair();
+void test_prod_diagonal();

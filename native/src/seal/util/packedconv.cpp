@@ -167,6 +167,130 @@ namespace seal
             return diagonal;
         }
         
+        void matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> &kernel_L, vector<uint64_t> &kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus, vector<pair<uint64_t, uint64_t>> &diagonalpairlist){
+            bool print_debug = false;
+            bool print_time = false;
+            // assert list_R is larger than kernel
+            assert(kernel_L_indexes.size() <= list_R.size());
+        
+            // calculate element wise product
+            // optimize complexity remembering kernel nonzero elements
+            //uint64_t wise_prod_len = kernel_L.size() <= list_R.size()? kernel_L.size(): list_R.size();
+            uint64_t wise_prod_len;
+            if(offset >= 0){
+                if(offset + kernel_L.size() > list_R.size()){
+                    wise_prod_len = list_R.size() - offset;
+                }else{
+                    wise_prod_len = kernel_L.size(); 
+                }
+            }else{
+                wise_prod_len = kernel_L.size() + offset;
+            }
+            vector<uint64_t> wise_prod(wise_prod_len);
+            // non-zero index list of wise_prod
+            vector<uint64_t> wise_prod_index;
+            //auto mul_start = chrono::high_resolution_clock::now();
+            for(uint64_t i = 0;i < kernel_L_indexes.size();i++){
+                uint64_t prod;
+                if(offset >= 0){
+                    // boarder check and mul
+                    if(kernel_L_indexes[i]+offset >= list_R.size() || kernel_L_indexes[i] >= kernel_L.size()) break;
+                    prod = util::multiply_uint_mod(kernel_L[kernel_L_indexes[i]], list_R[kernel_L_indexes[i]+offset], modulus);
+                    wise_prod[kernel_L_indexes[i]] = prod;
+                    wise_prod_index.push_back(kernel_L_indexes[i]);
+                }else{
+                    // boarder check and mul
+                    if(kernel_L_indexes[i] <= -offset-1) continue;
+                    if(kernel_L_indexes[i] >= kernel_L.size() || kernel_L_indexes[i]+offset >= list_R.size()) break;
+                    prod = util::multiply_uint_mod(kernel_L[kernel_L_indexes[i]], list_R[kernel_L_indexes[i]+offset], modulus);
+                    wise_prod[kernel_L_indexes[i]+offset] = prod;
+                    wise_prod_index.push_back(kernel_L_indexes[i] + offset);
+                }
+            }
+            //auto mul_end = chrono::high_resolution_clock::now();
+            uint64_t prod_times = colsize_R;
+            uint64_t partial_sum = 0;
+            uint64_t index_of_index_right = 0;
+            // calculate first inner prod
+            for(uint64_t i = 0; i < wise_prod_index.size() && wise_prod_index[i] < prod_times;i++){
+                partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[i]], modulus);
+                index_of_index_right++;
+            }
+            //auto innerp_end = chrono::high_resolution_clock::now();
+            if(print_debug){
+                cout << "---------calculating a diagonal-----" << endl;
+                cout << "index_of_index: " << index_of_index_right << endl;
+                cout << "wise_prod.size: " << wise_prod.size() << endl;;
+                for(uint64_t i = 0; i < wise_prod_index.size();i++){
+                    cout << "index " << wise_prod_index[i] << ": " << wise_prod[wise_prod_index[i]] << endl;;
+                }
+                cout << "prod_times: " << prod_times << endl;
+                cout << "end index of nonzero wise_prod: " << wise_prod_index[wise_prod_index.size()- 1] << endl;
+            }
+            uint64_t return_len = wise_prod_len - prod_times + 1;
+            // all elements end in first inner prod(constant vector)
+            if(index_of_index_right  == wise_prod_index.size() && wise_prod_index[wise_prod_index.size()-1] < prod_times){
+                if(print_debug){
+                    cout << "end in first inner prod: return" << endl;
+                }
+                diagonalpairlist.push_back(make_pair(partial_sum, return_len));
+                return;
+            }
+            uint64_t index_of_index_left = 0;
+            // slide window
+            // we need O(1) to calc a next diagonal element
+            uint64_t jump_upper;
+            uint64_t jump_bottom;
+            bool nonzeroleft_over = false;
+            uint64_t pair_num = 0;
+            for(uint64_t i = 0;i < wise_prod.size() - prod_times+1;i++){
+                // how many index should we jump to calc next partial_sum?
+                jump_upper = wise_prod_index[index_of_index_right] - (i+prod_times-1);
+                jump_bottom = wise_prod_index[index_of_index_left] - i + 1;
+                if(nonzeroleft_over){
+                    jump_upper = wise_prod.size() - (i + prod_times - 1);
+                }
+                uint64_t jump_len = min(jump_upper, jump_bottom);
+                if(print_debug){
+                    cout << "--loop: i=" << i << "--" << endl;
+                    cout << "index_of_index: (" << index_of_index_left << ", " << index_of_index_right << ") " << endl;
+                    cout << "windows: (" << i << ", " << i + prod_times - 1 << ")" << endl;
+                    cout << "jump_upper: " << jump_upper << endl;
+                    cout << "jump_bottom: " << jump_bottom << endl;
+                    cout << "jump_len: " << jump_len << endl;
+                    cout << "partial_sum: " << partial_sum << endl;
+                    cout << "make pair: " << partial_sum << ", " << jump_len << endl;
+                }
+                auto pair = make_pair(partial_sum, jump_len);
+                pair_num++;
+                diagonalpairlist.push_back(pair);
+                if(jump_len == jump_upper){
+                    partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[index_of_index_right]], modulus);
+                    if(index_of_index_right == wise_prod_index.size()-1){
+                        if(print_debug) cout << "index_right is edge!" << endl;
+                        nonzeroleft_over = true;
+                    }else{
+                        index_of_index_right++;
+                    }
+                }
+                if(jump_len == jump_bottom){
+                    partial_sum = util::sub_uint_mod(partial_sum, wise_prod[wise_prod_index[index_of_index_left]], modulus);
+                    index_of_index_left++;
+                }
+                i = i + jump_len - 1;
+            }
+            //cout << "pair_num: " << pair_num << endl;
+            //auto slide_end = chrono::high_resolution_clock::now();
+            //auto mul_diff = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
+            //auto innerp_diff = chrono::duration_cast<chrono::nanoseconds>(innerp_end - mul_end);
+            //auto slide_diff = chrono::duration_cast<chrono::nanoseconds>(slide_end - innerp_end);
+            //cout << "mul : " << mul_diff.count() << " innerp: " << innerp_diff.count() << " slide: " << slide_diff.count() << " sum: " << mul_diff.count() + innerp_diff.count() + slide_diff.count() << endl;
+            //cout << endl;
+            //if(print_debug){
+            //    util::print_vector(diagonal, diagonal.size());
+            // }
+        }
+
         // 対角成分ベクトルを行列に書き込む
         // diagonallist: 左端からの対角成分ベクトル
         // resultは長方形を仮定
@@ -329,18 +453,18 @@ namespace seal
                 vector<uint64_t> diagonal_c1 = util::create_diagonal_from_submatrix(c1, poly_degree , submat_startcol, submat_colsize, modulus);
 
                 // calc diagonal of product
-                vector<vector<uint64_t>> matrix_product_diagonals(colsize_K + submat_rowsize - 1);
+                vector<vector<pair<uint64_t, uint64_t>>> matrix_product_diagonals(colsize_K + submat_rowsize - 1);
                 uint64_t index = 0;
                 int64_t k = static_cast<int64_t>(colsize_K);
                 k = -k+1;
                 for(;k<static_cast<int64_t>(submat_rowsize);k++){
-                    vector<uint64_t> diagonal_vec;
+                    vector<pair<uint64_t, uint64_t>> diagonal_pairs;
                     //auto diagonal_start = chrono::high_resolution_clock::now();
-                    diagonal_vec = util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus);
+                    util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus, diagonal_pairs);
                     //auto diagonal_end = chrono::high_resolution_clock::now();
                     //auto diagonal_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_end - diagonal_start);
                     //cout << "calc one diagonal vector: " << diagonal_diff.count() << endl;
-                    matrix_product_diagonals[index] = diagonal_vec;
+                    matrix_product_diagonals[index] = diagonal_pairs;
                     index++;
                 }
                 //cout << "calc diagonals: " << lt_diff.count() << " ms" <<endl;

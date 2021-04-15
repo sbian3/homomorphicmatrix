@@ -487,10 +487,10 @@ void test_diagonal_from_submat(){
 void test_prod_diagonal(){
     vector<uint64_t> kernel = {1, 2, 4};
     uint64_t colsize_K = 4;
-    uint64_t rowsize_K = 5;
-    uint64_t colsize_R = 5;
+    uint64_t rowsize_K = 4;
+    uint64_t colsize_R = 4;
     uint64_t rowsize_R = 6;
-    vector<uint64_t> diagonallist_R = {3, 2, 1, 5, 3, 8, 3, 4, 7, 1};
+    vector<uint64_t> diagonallist_R = {3, 2, 1, 5, 3, 8, 3, 4, 7};
     Modulus modulus(11);
     vector<uint64_t> kernel_diagonallist(colsize_K + rowsize_K - 1);
     vector<uint64_t> indexes = create_diagonal_list(kernel, colsize_K, rowsize_K, modulus, kernel_diagonallist);
@@ -505,6 +505,49 @@ void test_prod_diagonal(){
         util::print_iter(diagonal_vec, diagonal_vec.size());
         matrix_product_diagonals[index] = diagonal_vec;
         index++;
+    }
+    cout << "result matrix" << endl;
+    vector<vector<uint64_t>> result(colsize_K , vector<uint64_t>(rowsize_R));
+    util::diagonallist_to_matrix(matrix_product_diagonals, 0, 0, colsize_K, rowsize_R, result);
+    util::print_matrix(result);
+}
+
+void test_prod_diagonal_pair(){
+    vector<uint64_t> kernel = {1, 2, 4};
+    uint64_t colsize_K = 4;
+    uint64_t rowsize_K = 4;
+    uint64_t colsize_R = 4;
+    uint64_t rowsize_R = 6;
+    vector<uint64_t> diagonallist_R = {3, 2, 1, 5, 3, 8, 3, 4, 7};
+    Modulus modulus(11);
+    vector<uint64_t> kernel_diagonallist(colsize_K + rowsize_K - 1);
+    vector<uint64_t> indexes = create_diagonal_list(kernel, colsize_K, rowsize_K, modulus, kernel_diagonallist);
+    int64_t k = static_cast<int64_t>(colsize_K);
+    k  = -k + 1;
+    vector<vector<pair<uint64_t, uint64_t>>> matrix_product_diagonals(colsize_K + rowsize_R-1);
+    uint64_t index = 0;
+    for(;k < static_cast<int64_t>(rowsize_R);k++){
+        vector<pair<uint64_t, uint64_t>> diagonal_pairs;
+        util::matrix_product_diagonal(k, colsize_R, rowsize_R, kernel_diagonallist, indexes, diagonallist_R, modulus, diagonal_pairs);
+        cout << "offset: " << k << endl;
+        for(uint64_t i = 0;i < diagonal_pairs.size();i++){
+            cout << "pair " << i << ": " << diagonal_pairs[i].first << ", " << diagonal_pairs[i].second << endl;
+        }
+        //util::print_iter(diagonal_vec, diagonal_vec.size());
+        matrix_product_diagonals[index] = diagonal_pairs;
+        index++;
+    }
+    cout << "pairs: " << endl;
+    for(uint64_t i = 0;i < matrix_product_diagonals.size();i++){
+        for(uint64_t j = 0;j < matrix_product_diagonals[i].size();j++){
+            auto pair = matrix_product_diagonals[i][j];
+            cout << "(" << pair.first << ", " << pair.second << ") ";
+            if(j == matrix_product_diagonals[i].size()-1){
+                cout << endl;
+            }else{
+                cout << " ";
+            }
+        }
     }
     cout << "result matrix" << endl;
     vector<vector<uint64_t>> result(colsize_K , vector<uint64_t>(rowsize_R));

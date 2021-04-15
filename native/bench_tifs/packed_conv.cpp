@@ -138,7 +138,7 @@ bool pass_test_packedconv(){
 // main
 /////////////////
 int main(int argc, char* argv[]){
-    uint64_t bench_times = 10;
+    uint64_t bench_times = 3;
     if(!pass_test_packedconv()){
         cerr << "test failed!" << endl;
         return 1;
