@@ -174,7 +174,7 @@ namespace seal
             assert(start_col + colsize <= result.size());
             assert(start_row + rowsize <= result[0].size()); 
             assert(diagonallist.size() == colsize + rowsize - 1);
-            // (0, 0)までの対角成分
+            // from (start_col + colsize - 1, start_row ) to (start_col, start_row)
             for(uint64_t i = 0;i < colsize-1;i++){
                 for(uint64_t j = 0;j < diagonallist[i].size();j++){
                     if(start_col + colsize - 1 -i + j >= result.size() || start_row + j >= result[0].size()){
@@ -184,7 +184,7 @@ namespace seal
                     result[start_col + colsize - 1 -i + j][start_row + j] = diagonallist[i][j];
                 }
             }
-            // (0, 0)から右の成分
+            // from (start_col, start_row) to (start_col, start_row + rowsize - 1)
             for(uint64_t i=colsize-1;i<diagonallist.size();i++){
                 for(uint64_t j = 0;j < diagonallist[i].size();j++){
                     if(start_col + j >= result.size() || start_row + (i-colsize+1) + j >= result[0].size()){
@@ -194,6 +194,50 @@ namespace seal
                     result[start_col + j][start_row + (i-colsize+1) + j] = diagonallist[i][j];
                 }
             }
+        }
+
+        void diagonallist_to_matrix(vector<vector<pair<uint64_t, uint64_t>>> &diagonallist, uint64_t start_col, uint64_t start_row , uint64_t colsize, uint64_t rowsize, vector<vector<uint64_t>> &result){
+            assert(start_col + colsize <= result.size());
+            assert(start_row + rowsize <= result[0].size()); 
+            assert(diagonallist.size() == colsize + rowsize - 1);
+            // from (start_col + colsize - 1, start_row ) to (start_col, start_row)
+            for(uint64_t i = 0;i < colsize-1;i++){
+                // iterate all pairs in vector[i]
+                uint64_t index_resultdiagonal = 0;
+                for(uint64_t j = 0;j < diagonallist[i].size();j++){
+                    // pair to result matrix
+                    auto pair = diagonallist[i][j];
+                    auto pair_value = pair.first;
+                    auto pair_valuelen = pair.second;
+                    for(uint64_t k = 0;k < pair_valuelen;k++){
+                        if(start_col + colsize - 1 -i + index_resultdiagonal >= result.size() || start_row + index_resultdiagonal >= result[0].size()){
+                            cerr << "Error: diagonallist_to_matrix: out of range" << endl;
+                            return;
+                        }
+                        result[start_col + colsize - 1 -i + index_resultdiagonal][start_row + index_resultdiagonal] = pair_value;
+                        index_resultdiagonal++;
+                    }
+                }
+            }
+            // from (start_col, start_row) to (start_col, start_row + rowsize - 1)
+            for(uint64_t i=colsize-1;i<diagonallist.size();i++){
+                uint64_t index_resultdiagonal = 0;
+                for(uint64_t j = 0;j < diagonallist[i].size();j++){
+                    // pair to result matrix
+                    auto pair = diagonallist[i][j];
+                    auto pair_value = pair.first;
+                    auto pair_valuelen = pair.second;
+                    for(uint64_t k = 0;k < pair_valuelen;k++){
+                        if(start_col + index_resultdiagonal >= result.size() || start_row + (i-colsize+1)+ index_resultdiagonal >= result[0].size()){
+                            cerr << "Error: diagonallist_to_matrix: out of range" << endl;
+                            return;
+                        }
+                        result[start_col + index_resultdiagonal][start_row + (i-colsize+1)+ index_resultdiagonal] = pair_value;
+                        index_resultdiagonal++;
+                    }
+                }
+            }
+
         }
 
         vector<vector<uint64_t>> scalars_to_diagonallist(vector<uint64_t> scalars, uint64_t colsize, uint64_t rowsize){

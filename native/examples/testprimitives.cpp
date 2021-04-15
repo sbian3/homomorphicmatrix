@@ -146,5 +146,6 @@ int main(){
     //test_scalars_to_diagonallist();
     //test_delete_cipher(5, 0, 2048);
     //test_kernel_matrix_dot_vector();
-    test_print_vector();
+    //test_print_vector();
+    test_write_pairdiagonal_to_matrix();
 }

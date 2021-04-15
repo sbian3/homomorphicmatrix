@@ -471,14 +471,14 @@ void test_diagonal_from_submat(){
     uint64_t a_size = 10;
     Modulus modulus(15);
     vector<uint64_t> a(a_size);
-    for(auto i = 0L;i < a.size();i++){
+    for(uint64_t i = 0L;i < a.size();i++){
         a[i] = i;
     }
     vector<uint64_t> diagonal;
     diagonal = create_diagonal_from_submatrix(a, a_size, start_col, colsize, modulus);
     cout << "start_col: " << start_col << " " << "colsize: " << colsize << endl;
     cout << "diagonal list of submatrix: ";
-    for(auto i =0L;i < diagonal.size();i++){
+    for(uint64_t i =0L;i < diagonal.size();i++){
         cout << diagonal[i] << " ";
     }
     cout << endl;
@@ -510,6 +510,19 @@ void test_prod_diagonal(){
     vector<vector<uint64_t>> result(colsize_K , vector<uint64_t>(rowsize_R));
     util::diagonallist_to_matrix(matrix_product_diagonals, 0, 0, colsize_K, rowsize_R, result);
     util::print_matrix(result);
+}
+
+void test_write_pairdiagonal_to_matrix(){
+    // test for 3 x 3 matrix
+    vector<vector<pair<uint64_t, uint64_t>>> diagonallist(5);
+    diagonallist[0]= {make_pair(2, 1)};
+    diagonallist[1] = {make_pair(3, 2)};
+    diagonallist[2] = {make_pair(4, 2), make_pair(5, 1)};
+    diagonallist[3] = {make_pair(6, 2)};
+    diagonallist[4] = {make_pair(7, 1)};
+    vector<vector<uint64_t>> result(4, vector<uint64_t>(3));
+    util::diagonallist_to_matrix(diagonallist, 0, 0, 3, 3, result);
+    print_matrix(result);
 }
 
 /////////////////
