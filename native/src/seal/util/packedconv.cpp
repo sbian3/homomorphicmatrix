@@ -73,7 +73,7 @@ namespace seal
             vector<uint64_t> wise_prod(wise_prod_len);
             // non-zero index
             vector<uint64_t> wise_prod_index;
-            //auto mul_start = chrono::high_resolution_clock::now();
+            auto mul_start = chrono::high_resolution_clock::now();
             for(uint64_t i = 0;i < kernel_L_indexes.size();i++){
                 uint64_t prod;
                 if(offset >= 0){
@@ -91,7 +91,7 @@ namespace seal
                     wise_prod_index.push_back(kernel_L_indexes[i] + offset);
                 }
             }
-            //auto mul_end = chrono::high_resolution_clock::now();
+            auto mul_end = chrono::high_resolution_clock::now();
             uint64_t prod_times = colsize_R;
             uint64_t partial_sum = 0;
             uint64_t index_of_index = 0;
@@ -100,7 +100,7 @@ namespace seal
                 partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[i]], modulus);
                 index_of_index++;
             }
-            //auto innerp_end = chrono::high_resolution_clock::now();
+            auto innerp_end = chrono::high_resolution_clock::now();
             if(print_debug){
                 cout << "---------calculating a diagonal-----" << endl;
                 cout << "index_of_index: " << index_of_index << endl;
@@ -145,11 +145,11 @@ namespace seal
                 //cout << "partial sum: " << partial_sum << endl;
                 diagonal[i+1] = partial_sum;
             }
-            //auto slide_end = chrono::high_resolution_clock::now();
-            //auto mul_diff = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
-            //auto innerp_diff = chrono::duration_cast<chrono::nanoseconds>(innerp_end - mul_end);
-            //auto slide_diff = chrono::duration_cast<chrono::nanoseconds>(slide_end - innerp_end);
-            //cout << "mul : " << mul_diff.count() << " innerp: " << innerp_diff.count() << " slide: " << slide_diff.count() << " sum: " << mul_diff.count() + innerp_diff.count() + slide_diff.count() << endl;
+            auto slide_end = chrono::high_resolution_clock::now();
+            auto mul_diff = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
+            auto innerp_diff = chrono::duration_cast<chrono::nanoseconds>(innerp_end - mul_end);
+            auto slide_diff = chrono::duration_cast<chrono::nanoseconds>(slide_end - innerp_end);
+            cout << "mul : " << mul_diff.count() << " innerp: " << innerp_diff.count() << " slide: " << slide_diff.count() << " sum: " << mul_diff.count() + innerp_diff.count() + slide_diff.count() << endl;
             //cout << "------expected-----" << endl;
             //// expected loop
             //for(uint64_t i = 0;i < wise_prod.size() - prod_times;i++){
@@ -189,7 +189,7 @@ namespace seal
             vector<uint64_t> wise_prod(wise_prod_len);
             // non-zero index list of wise_prod
             vector<uint64_t> wise_prod_index;
-            //auto mul_start = chrono::high_resolution_clock::now();
+            auto mul_start = chrono::high_resolution_clock::now();
             for(uint64_t i = 0;i < kernel_L_indexes.size();i++){
                 uint64_t prod;
                 if(offset >= 0){
@@ -207,7 +207,7 @@ namespace seal
                     wise_prod_index.push_back(kernel_L_indexes[i] + offset);
                 }
             }
-            //auto mul_end = chrono::high_resolution_clock::now();
+            auto mul_end = chrono::high_resolution_clock::now();
             uint64_t prod_times = colsize_R;
             uint64_t partial_sum = 0;
             uint64_t index_of_index_right = 0;
@@ -216,7 +216,7 @@ namespace seal
                 partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[i]], modulus);
                 index_of_index_right++;
             }
-            //auto innerp_end = chrono::high_resolution_clock::now();
+            auto innerp_end = chrono::high_resolution_clock::now();
             if(print_debug){
                 cout << "---------calculating a diagonal-----" << endl;
                 cout << "index_of_index: " << index_of_index_right << endl;
@@ -280,11 +280,11 @@ namespace seal
                 i = i + jump_len - 1;
             }
             //cout << "pair_num: " << pair_num << endl;
-            //auto slide_end = chrono::high_resolution_clock::now();
-            //auto mul_diff = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
-            //auto innerp_diff = chrono::duration_cast<chrono::nanoseconds>(innerp_end - mul_end);
-            //auto slide_diff = chrono::duration_cast<chrono::nanoseconds>(slide_end - innerp_end);
-            //cout << "mul : " << mul_diff.count() << " innerp: " << innerp_diff.count() << " slide: " << slide_diff.count() << " sum: " << mul_diff.count() + innerp_diff.count() + slide_diff.count() << endl;
+            auto slide_end = chrono::high_resolution_clock::now();
+            auto mul_diff = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
+            auto innerp_diff = chrono::duration_cast<chrono::nanoseconds>(innerp_end - mul_end);
+            auto slide_diff = chrono::duration_cast<chrono::nanoseconds>(slide_end - innerp_end);
+            cout << "mul : " << mul_diff.count() << " innerp: " << innerp_diff.count() << " slide: " << slide_diff.count() << " sum: " << mul_diff.count() + innerp_diff.count() + slide_diff.count() << endl;
             //cout << endl;
             //if(print_debug){
             //    util::print_vector(diagonal, diagonal.size());
