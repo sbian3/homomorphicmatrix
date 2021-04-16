@@ -269,5 +269,6 @@ namespace seal
 // Conditionally select the former if true and the latter if false
 // This is a temporary solution that generates constant-time code with all compilers on all platforms.
 #define SEAL_COND_SELECT(cond, if_true, if_false) (cond ? if_true : if_false)
+
 #define TIFS_DEBUG 0
 #define TIFS_DEBUG_TIME 1

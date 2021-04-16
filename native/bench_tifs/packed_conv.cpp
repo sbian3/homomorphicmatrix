@@ -78,9 +78,6 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     make_packedconv_matrixproduct(kernelinfos, x_encrypted, poly_modulus_degree, matrix_conved, parms.coeff_modulus()[0]);
     decryptor.lt_packedconv(x_encrypted, kernelinfos, x_enc_lin);
     auto lt_end = chrono::high_resolution_clock::now();
-    //if(print_data){
-        //util::print_matrix(matrix_conved);
-    //}
 
     // decrypt
     Plaintext x_decrypted;

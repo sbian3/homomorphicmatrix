@@ -24,6 +24,8 @@
 
 #define TIME_LABEL_LT "LinearTransformation: "
 #define TIME_LABEL_DEC "Decryption: "
+#define BENCHTIMES_PACK 10
+#define BENCHTIMES_DIRECT 10
 #define MS " ms "
 #define US " us "
 

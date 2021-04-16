@@ -458,15 +458,18 @@ namespace seal
 
                 // calc diagonal of product
                 vector<vector<pair<uint64_t, uint64_t>>> matrix_product_diagonals(colsize_K + submat_rowsize - 1);
+                //vector<vector<uint64_t>> matrix_product_diagonals(colsize_K + submat_rowsize - 1);
                 uint64_t index = 0;
                 int64_t k = static_cast<int64_t>(colsize_K);
                 k = -k+1;
                 for(;k<static_cast<int64_t>(submat_rowsize);k++){
-                    vector<pair<uint64_t, uint64_t>> diagonal_pairs;
 #if TIFS_DEBUG_TIME == 1
                     auto diagonal_start = chrono::high_resolution_clock::now();
 #endif
+                    vector<pair<uint64_t, uint64_t>> diagonal_pairs;
+                    //vector<uint64_t> diagonal_pairs;
                     util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus, diagonal_pairs);
+                    // digaonal_pairs = util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus, diagonal_pairs);
 #if TIFS_DEBUG_TIME == 1
                     auto diagonal_end = chrono::high_resolution_clock::now();
                     auto diagonal_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_end - diagonal_start);
@@ -475,7 +478,6 @@ namespace seal
                     matrix_product_diagonals[index] = diagonal_pairs;
                     index++;
                 }
-                //cout << "calc diagonals: " << lt_diff.count() << " ms" <<endl;
 
                 // write diagonals to result matrix
                 util::diagonallist_to_matrix(matrix_product_diagonals, submat_startcol, submat_startrow, colsize_K, submat_rowsize, result);
