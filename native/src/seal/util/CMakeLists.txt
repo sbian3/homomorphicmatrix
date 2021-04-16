@@ -69,6 +69,7 @@ install(
         ${CMAKE_CURRENT_LIST_DIR}/linarith.h
         ${CMAKE_CURRENT_LIST_DIR}/uintlinarith.h
         ${CMAKE_CURRENT_LIST_DIR}/packedconv.h
+        ${CMAKE_CURRENT_LIST_DIR}/define_tifs.h
     DESTINATION
         ${SEAL_INCLUDES_INSTALL_DIR}/seal/util
 )

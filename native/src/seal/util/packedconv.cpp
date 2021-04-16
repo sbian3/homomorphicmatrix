@@ -1,4 +1,5 @@
 #include "packedconv.h"
+#include "define_tifs.h"
 
 namespace seal
 {
