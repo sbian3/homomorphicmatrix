@@ -81,7 +81,6 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
 
     // decrypt
     Plaintext x_decrypted;
-    decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, x_decrypted);
     auto dec_start = chrono::high_resolution_clock::now();
     decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, x_decrypted);
     auto dec_end = chrono::high_resolution_clock::now();

@@ -186,7 +186,9 @@ namespace seal
             }
             vector<uint64_t> wise_prod(wise_prod_len);
             // non-zero index list of wise_prod
-            vector<uint64_t> wise_prod_index;
+            vector<uint64_t> wise_prod_index(kernel_L_indexes.size());
+            uint64_t index_nonzero = 0;
+            //wise_prod_index.reserve(kernel_L_indexes.size());
 #if TIFS_DEBUG_TIME == 1
             auto mul_start = chrono::high_resolution_clock::now();
 #endif
@@ -197,16 +199,19 @@ namespace seal
                     if(kernel_L_indexes[i]+offset >= list_R.size() || kernel_L_indexes[i] >= kernel_L.size()) break;
                     prod = util::multiply_uint_mod(kernel_L[kernel_L_indexes[i]], list_R[kernel_L_indexes[i]+offset], modulus);
                     wise_prod[kernel_L_indexes[i]] = prod;
-                    wise_prod_index.push_back(kernel_L_indexes[i]);
+                    wise_prod_index[index_nonzero] = kernel_L_indexes[i];
+                    index_nonzero++;
                 }else{
                     // boarder check and mul
                     if(kernel_L_indexes[i] <= -offset-1) continue;
                     if(kernel_L_indexes[i] >= kernel_L.size() || kernel_L_indexes[i]+offset >= list_R.size()) break;
                     prod = util::multiply_uint_mod(kernel_L[kernel_L_indexes[i]], list_R[kernel_L_indexes[i]+offset], modulus);
                     wise_prod[kernel_L_indexes[i]+offset] = prod;
-                    wise_prod_index.push_back(kernel_L_indexes[i] + offset);
+                    wise_prod_index[index_nonzero] = kernel_L_indexes[i] + offset;
+                    index_nonzero++;
                 }
             }
+            wise_prod_index.resize(index_nonzero);
 #if TIFS_DEBUG_TIME
             auto mul_end = chrono::high_resolution_clock::now();
 #endif
@@ -266,8 +271,8 @@ namespace seal
                 cout << "make pair: " << partial_sum << ", " << jump_len << endl;
 #endif
                 auto pair = make_pair(partial_sum, jump_len);
-                pair_num++;
                 diagonalpairlist.push_back(pair);
+                pair_num++;
                 if(jump_len == jump_upper){
                     partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[index_of_index_right]], modulus);
                     if(index_of_index_right == wise_prod_index.size()-1){
@@ -467,6 +472,7 @@ namespace seal
                     auto diagonal_start = chrono::high_resolution_clock::now();
 #endif
                     vector<pair<uint64_t, uint64_t>> diagonal_pairs;
+                    diagonal_pairs.reserve(kernel_index.size());
                     //vector<uint64_t> diagonal_pairs;
                     util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus, diagonal_pairs);
                     // digaonal_pairs = util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus, diagonal_pairs);
