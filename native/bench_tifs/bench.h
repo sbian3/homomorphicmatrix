@@ -18,7 +18,6 @@
 #include <thread>
 #include <vector>
 #include "seal/util/defines.h"
-#include "seal/util/linarith.h"
 #include "seal/util/uintlinarith.h"
 #include "seal/util/uintarithmod.h"
 #include "seal/util/packedconv.h"
@@ -246,6 +245,7 @@ inline vector<vector<uint64_t>> sample_rn(uint64_t size_col, uint64_t size_row, 
 }
 
 void print_plain(Plaintext plain, uint64_t num);
+
 inline vector<Modulus> select_modchain(uint64_t poly_degree){
     vector<Modulus> mod_chain;
     switch(poly_degree){

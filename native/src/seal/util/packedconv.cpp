@@ -168,8 +168,6 @@ namespace seal
         }
         
         void matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> &kernel_L, vector<uint64_t> &kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus, vector<pair<uint64_t, uint64_t>> &diagonalpairlist){
-            bool print_debug = false;
-            bool print_time = false;
             // assert list_R is larger than kernel
             assert(kernel_L_indexes.size() <= list_R.size());
         
@@ -189,7 +187,9 @@ namespace seal
             vector<uint64_t> wise_prod(wise_prod_len);
             // non-zero index list of wise_prod
             vector<uint64_t> wise_prod_index;
+#if TIFS_DEBUG_TIME == 1
             auto mul_start = chrono::high_resolution_clock::now();
+#endif
             for(uint64_t i = 0;i < kernel_L_indexes.size();i++){
                 uint64_t prod;
                 if(offset >= 0){
@@ -207,7 +207,9 @@ namespace seal
                     wise_prod_index.push_back(kernel_L_indexes[i] + offset);
                 }
             }
+#if TIFS_DEBUG_TIME
             auto mul_end = chrono::high_resolution_clock::now();
+#endif
             uint64_t prod_times = colsize_R;
             uint64_t partial_sum = 0;
             uint64_t index_of_index_right = 0;
@@ -216,23 +218,25 @@ namespace seal
                 partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[i]], modulus);
                 index_of_index_right++;
             }
+#if TIFS_DEBUG_TIME
             auto innerp_end = chrono::high_resolution_clock::now();
-            if(print_debug){
-                cout << "---------calculating a diagonal-----" << endl;
-                cout << "index_of_index: " << index_of_index_right << endl;
-                cout << "wise_prod.size: " << wise_prod.size() << endl;;
-                for(uint64_t i = 0; i < wise_prod_index.size();i++){
-                    cout << "index " << wise_prod_index[i] << ": " << wise_prod[wise_prod_index[i]] << endl;;
-                }
-                cout << "prod_times: " << prod_times << endl;
-                cout << "end index of nonzero wise_prod: " << wise_prod_index[wise_prod_index.size()- 1] << endl;
+#endif
+#if TIFS_DEBUG
+            cout << "---------calculating a diagonal-----" << endl;
+            cout << "index_of_index: " << index_of_index_right << endl;
+            cout << "wise_prod.size: " << wise_prod.size() << endl;;
+            for(uint64_t i = 0; i < wise_prod_index.size();i++){
+                cout << "index " << wise_prod_index[i] << ": " << wise_prod[wise_prod_index[i]] << endl;;
             }
+            cout << "prod_times: " << prod_times << endl;
+            cout << "end index of nonzero wise_prod: " << wise_prod_index[wise_prod_index.size()- 1] << endl;
+#endif
             uint64_t return_len = wise_prod_len - prod_times + 1;
             // all elements end in first inner prod(constant vector)
             if(index_of_index_right  == wise_prod_index.size() && wise_prod_index[wise_prod_index.size()-1] < prod_times){
-                if(print_debug){
-                    cout << "end in first inner prod: return" << endl;
-                }
+#if TIFS_DEBUG
+                cout << "end in first inner prod: return" << endl;
+#endif
                 diagonalpairlist.push_back(make_pair(partial_sum, return_len));
                 return;
             }
@@ -251,23 +255,25 @@ namespace seal
                     jump_upper = wise_prod.size() - (i + prod_times - 1);
                 }
                 uint64_t jump_len = min(jump_upper, jump_bottom);
-                if(print_debug){
-                    cout << "--loop: i=" << i << "--" << endl;
-                    cout << "index_of_index: (" << index_of_index_left << ", " << index_of_index_right << ") " << endl;
-                    cout << "windows: (" << i << ", " << i + prod_times - 1 << ")" << endl;
-                    cout << "jump_upper: " << jump_upper << endl;
-                    cout << "jump_bottom: " << jump_bottom << endl;
-                    cout << "jump_len: " << jump_len << endl;
-                    cout << "partial_sum: " << partial_sum << endl;
-                    cout << "make pair: " << partial_sum << ", " << jump_len << endl;
-                }
+#if TIFS_DEBUG == 1
+                cout << "--loop: i=" << i << "--" << endl;
+                cout << "index_of_index: (" << index_of_index_left << ", " << index_of_index_right << ") " << endl;
+                cout << "windows: (" << i << ", " << i + prod_times - 1 << ")" << endl;
+                cout << "jump_upper: " << jump_upper << endl;
+                cout << "jump_bottom: " << jump_bottom << endl;
+                cout << "jump_len: " << jump_len << endl;
+                cout << "partial_sum: " << partial_sum << endl;
+                cout << "make pair: " << partial_sum << ", " << jump_len << endl;
+#endif
                 auto pair = make_pair(partial_sum, jump_len);
                 pair_num++;
                 diagonalpairlist.push_back(pair);
                 if(jump_len == jump_upper){
                     partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[index_of_index_right]], modulus);
                     if(index_of_index_right == wise_prod_index.size()-1){
-                        if(print_debug) cout << "index_right is edge!" << endl;
+#if TIFS_DEBUG == 1
+                        cout << "index_right is edge!" << endl;
+#endif
                         nonzeroleft_over = true;
                     }else{
                         index_of_index_right++;
@@ -280,15 +286,13 @@ namespace seal
                 i = i + jump_len - 1;
             }
             //cout << "pair_num: " << pair_num << endl;
+#if TIFS_DEBUG_TIME
             auto slide_end = chrono::high_resolution_clock::now();
             auto mul_diff = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
             auto innerp_diff = chrono::duration_cast<chrono::nanoseconds>(innerp_end - mul_end);
             auto slide_diff = chrono::duration_cast<chrono::nanoseconds>(slide_end - innerp_end);
             cout << "mul : " << mul_diff.count() << " innerp: " << innerp_diff.count() << " slide: " << slide_diff.count() << " sum: " << mul_diff.count() + innerp_diff.count() + slide_diff.count() << endl;
-            //cout << endl;
-            //if(print_debug){
-            //    util::print_vector(diagonal, diagonal.size());
-            // }
+#endif
         }
 
         // 対角成分ベクトルを行列に書き込む
@@ -435,7 +439,7 @@ namespace seal
             }
         }
 
-        // 行列積結果を対角成分のみから計算する．
+        // matrix dot matrix product using toeplitz algorithm
         void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> &kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus &modulus){
             // for each block
             for(uint64_t i = 0;i < kernel_infos.size();i++){
@@ -459,11 +463,15 @@ namespace seal
                 k = -k+1;
                 for(;k<static_cast<int64_t>(submat_rowsize);k++){
                     vector<pair<uint64_t, uint64_t>> diagonal_pairs;
-                    //auto diagonal_start = chrono::high_resolution_clock::now();
+#if TIFS_DEBUG_TIME == 1
+                    auto diagonal_start = chrono::high_resolution_clock::now();
+#endif
                     util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus, diagonal_pairs);
-                    //auto diagonal_end = chrono::high_resolution_clock::now();
-                    //auto diagonal_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_end - diagonal_start);
-                    //cout << "calc one diagonal vector: " << diagonal_diff.count() << endl;
+#if TIFS_DEBUG_TIME == 1
+                    auto diagonal_end = chrono::high_resolution_clock::now();
+                    auto diagonal_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_end - diagonal_start);
+                    cout << "calc one diagonal vector: " << diagonal_diff.count() << endl;
+#endif
                     matrix_product_diagonals[index] = diagonal_pairs;
                     index++;
                 }
