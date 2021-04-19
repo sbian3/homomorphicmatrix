@@ -351,7 +351,7 @@ namespace seal
         // calculate W dot c0
         //cout << "polyiter(before)" << endl;
         //print_iter(cipher_polyiter, 1);
-        util::matrix_dot_vector(matrix, coeff_modulus_size, *cipher_polyiter, coeff_modulus, destination);
+        util::matrix_dot_vector(matrix,coeff_count,  coeff_modulus_size, *cipher_polyiter, coeff_modulus, destination);
         //cout << "polyiter(after)" << endl;
         //print_iter(destination, coeff_modulus_size);
         // calculate W dot c1
@@ -391,7 +391,7 @@ namespace seal
         cipher_polyiter++;
         SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s, coeff_count,coeff_modulus_size, pool);
         SEAL_ITERATE(iter(*cipher_polyiter, secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
-                matrix_dot_vector(matrix_conved, get<1>(I), get<2>(I), coeff_count, get<3>(I));
+                matrix_dot_vector(matrix_conved, coeff_count, get<1>(I), get<2>(I), coeff_count, get<3>(I));
             });
         // add c0 and c1
         add_poly_coeffmod(destination, C1_s, coeff_modulus_size, coeff_modulus, destination);
@@ -401,11 +401,12 @@ namespace seal
             auto &context_data = *context_.get_context_data(encrypted.parms_id());
             auto &parms = context_data.parms();
             auto &coeff_modulus = parms.coeff_modulus();
+            auto coeff_degree = parms.poly_modulus_degree();
             size_t coeff_modulus_size = coeff_modulus.size();
 
             PolyIter cipher_polyiter(encrypted);
             PolyIter lt_cipher_polyiter(lt_cipher);
-            util::matrix_dot_vector(lt_matrix, coeff_modulus_size, *cipher_polyiter, coeff_modulus, *lt_cipher_polyiter);
+            util::matrix_dot_vector(lt_matrix, coeff_degree, coeff_modulus_size, *cipher_polyiter, coeff_modulus, *lt_cipher_polyiter);
         }
 
     // WIP

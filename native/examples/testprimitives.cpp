@@ -124,7 +124,7 @@ void test_kernel_matrix_dot_vector(){
     print_iter(vec_right, matrix_size);
 
     // expect result
-    util::matrix_dot_vector(kernel_matrix, vec_right, modulus, matrix_size, result_expected);
+    util::matrix_dot_vector(kernel_matrix,matrix_size, vec_right, modulus, matrix_size, result_expected);
     cout << "expect" << endl;
     print_iter(result_expected, matrix_size);
 

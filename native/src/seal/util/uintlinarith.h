@@ -103,18 +103,18 @@ namespace seal
                     });
         }
 
-        inline void matrix_dot_vector(vector<vector<uint64_t>> matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
+        inline void matrix_dot_vector(vector<vector<uint64_t>> matrix,uint64_t colsize, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
             // TODO: parameter validation
 
-            SEAL_ITERATE(iter(matrix, result), coeff_count, [&](auto I){
+            SEAL_ITERATE(iter(matrix, result), colsize, [&](auto I){
                     get<1>(I) = inner_product_coeffmod(get<0>(I), poly_vector, coeff_count, modulus);
                     });
         }
 
-        inline void matrix_dot_vector(vector<vector<uint64_t>> matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
+        inline void matrix_dot_vector(vector<vector<uint64_t>> matrix, uint64_t colsize, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
             uint64_t coeff_count = poly_rns.poly_modulus_degree();
             SEAL_ITERATE(iter(poly_rns, mod_chain, result), coeff_modulus_size, [&](auto I){
-                    matrix_dot_vector(matrix, get<0>(I), get<1>(I), coeff_count, get<2>(I));
+                    matrix_dot_vector(matrix, colsize, get<0>(I), get<1>(I), coeff_count, get<2>(I));
                     });
         }
 
@@ -174,7 +174,7 @@ namespace seal
                     auto time_c1 = chrono::high_resolution_clock::now();
                     auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_c1 - time_start);
                     cout << "c1 generation: " << time_diff.count() << "ms" << endl;
-                    matrix_dot_vector(c1_transformed, get<1>(I), get<2>(I), coeff_degree, get<3>(I));
+                    matrix_dot_vector(c1_transformed, coeff_degree, get<1>(I), get<2>(I), coeff_degree, get<3>(I));
                     });
         }
 
@@ -187,7 +187,7 @@ namespace seal
                     auto time_c1 = chrono::high_resolution_clock::now();
                     auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_c1 - time_start);
                     cout << "c1 generation: " << time_diff.count() << "ms" << endl;
-                    matrix_dot_vector(new_c1, get<1>(I), get<2>(I), coeff_degree, get<3>(I));
+                    matrix_dot_vector(new_c1, coeff_degree,  get<1>(I), get<2>(I), coeff_degree, get<3>(I));
                     });
         }
 

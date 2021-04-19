@@ -214,7 +214,7 @@ void test_matrix_conversion_with_coeffiter(){
     uint64_t coeff_degree = array_size;
     Modulus modulus(100);
     vector<std::uint64_t> arr(array_size);
-    vector<vector<int64_t>> matrix(coeff_degree, vector<int64_t>(coeff_degree));
+    vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
 
     for(uint64_t i = 0;i < array_size;i++){
         arr[i] = i+1;
@@ -225,7 +225,7 @@ void test_matrix_conversion_with_coeffiter(){
     SEAL_ALLOCATE_GET_COEFF_ITER(poly_vector, coeff_degree, pool_);
     SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(result, coeff_degree, pool_);
     util::set_poly(arr.data(), coeff_degree, 1, poly_vector);
-    util::matrix_dot_vector(matrix, poly_vector, modulus, coeff_degree, result);
+    util::matrix_dot_vector(matrix, coeff_degree, poly_vector, modulus, coeff_degree, result);
     util::print_iter(result, coeff_degree);
 }
 
@@ -259,7 +259,7 @@ void test_matrix_conversion_with_rnsiter(){
 
     uint64_t array_size = coeff_degree * coeff_mod_size;
     vector<std::uint64_t> arr(array_size);
-    vector<vector<int64_t>> matrix(coeff_degree, vector<int64_t>(coeff_degree));
+    vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
 
     for(uint64_t i = 0;i < coeff_mod_size;i++){
         for(uint64_t j=0;j < coeff_degree;j++){
@@ -273,7 +273,7 @@ void test_matrix_conversion_with_rnsiter(){
     cout << "print rns iter first" << endl;
     print_iter(rns_iter, coeff_mod_size);
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(result, coeff_degree, coeff_mod_size, pool_);
-    util::matrix_dot_vector(matrix, coeff_mod_size,  rns_iter, mod_chain, result);
+    util::matrix_dot_vector(matrix, coeff_degree, coeff_mod_size,  rns_iter, mod_chain, result);
     cout << "print converted rns iter " << endl;
     print_iter(result, coeff_mod_size);
 }
@@ -289,7 +289,7 @@ void test_kernel_matrix_conversion_with_rnsiter(){
 
     uint64_t array_size = coeff_degree * coeff_mod_size;
     vector<std::uint64_t> arr(array_size);
-    vector<vector<int64_t>> matrix(coeff_degree, vector<int64_t>(coeff_degree));
+    vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
 
     for(uint64_t i = 0;i < coeff_mod_size;i++){
         for(uint64_t j=0;j < coeff_degree;j++){
@@ -303,7 +303,7 @@ void test_kernel_matrix_conversion_with_rnsiter(){
     cout << "print rns iter first" << endl;
     print_iter(rns_iter, coeff_mod_size);
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(result, coeff_degree, coeff_mod_size, pool_);
-    util::matrix_dot_vector(matrix, coeff_mod_size,  rns_iter, mod_chain, result);
+    util::matrix_dot_vector(matrix, coeff_degree, coeff_mod_size,  rns_iter, mod_chain, result);
     cout << "print converted rns iter " << endl;
     print_iter(result, coeff_mod_size);
 }
