@@ -8,7 +8,7 @@ poly_degrees=(1024 2048 4096 8192 16384 32768)
 poly_degree=2048
 poly_degree_multikernel=1024
 pack_num=1
-inputdim_multipoly=16
+inputdim_multipoly=64
 err=tifs_result/err.log
 
 # calculate input dimensions (n^2)
@@ -20,22 +20,24 @@ done
 
 # assume executable file is build/bin/direct_conv
 function directconv_multiinput(){
-    mkdir -p tifs_result/direct_conv/multiinput
+    dirname=tifs_result/direct_conv/multiinput/k$kernel_dim
+    mkdir -p $dirname
     for input_dim in ${input_dims[@]}
     do
         echo "Direct Convolution: (input, kernel) = ($input_dim, $kernel_dim)"
-        output_path="tifs_result/direct_conv/multiinput/direct_conv$input_dim.txt"
+        output_path="$dirname/direct_conv$input_dim.txt"
         env build/bin/direct_conv $input_dim $kernel_dim $poly_degree 2>$err  > $output_path
     done
 }
 
 function directconv_multipoly(){
-    mkdir -p tifs_result/direct_conv/multipoly
+    dirname=tifs_result/direct_conv/multipoly/k$kernel_dim
+    mkdir -p $dirname
     input_dim=$inputdim_multipoly
     for poly_degree in ${poly_degrees[@]}
     do
         echo "Direct Convolution: (input, kernel, poly_degree) = ($input_dim, $kernel_dim, $poly_degree)"
-        output_path="tifs_result/direct_conv/multipoly/direct_conv$poly_degree.txt"
+        output_path="$dirname/direct_conv$poly_degree.txt"
         env build/bin/direct_conv $input_dim $kernel_dim $poly_degree 2>$err  > $output_path
     done
 }
@@ -64,12 +66,13 @@ function packedconv_multiinput(){
 }
 
 function packedconv_multipoly(){
-    mkdir -p tifs_result/packed_conv/multipoly
+    dirname=tifs_result/packed_conv/multipoly/k$kernel_dim
+    mkdir -p $dirname
     input_dim=$inputdim_multipoly
     for poly_degree in ${poly_degrees[@]}
     do
         echo "Packed Convolution: (input, kernel, poly_degree, pack_num) = ($input_dim, $kernel_dim, $poly_degree,  $pack_num)"
-        output_path="tifs_result/packed_conv/multipoly/packed_conv$poly_degree.txt"
+        output_path="$dirname/packed_conv$poly_degree.txt"
         env build/bin/packed_conv $input_dim $kernel_dim $poly_degree $pack_num 2>$err > $output_path
     done
 }
@@ -115,7 +118,7 @@ function clean(){
 
 #clean
 directconv_multipoly
-#packedconv_multipoly
+packedconv_multipoly
 #directconv_multiinput
 #packedconv_multiinput
 #directconv_multikernel

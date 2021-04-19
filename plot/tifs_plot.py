@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from enum import Enum
 
-poly_degrees = [ 1024, 2048, 4096, 8192, 16384]
+poly_degrees = [ 1024, 2048, 4096, 8192]
 #poly_degrees = [ 1024, 2048, 4096, 8192, 16384, 32768]
+kernel_d=25
 kernel_dims = [2, 4, 8, 16, 32, 64, 128]
 input_dims = [16, 64, 256, 1024]
 
@@ -50,34 +51,33 @@ def read_latency(filepath):
     return time_lt, time_dec
 
 # read bench data from /home/work/kazumasita/relu/SEAL/tifs_result
-def read_bench(prefix, benchtype):
+def read_bench(prefix, benchtype, kernel_dim):
     bench_lt = []
     if(benchtype == BenchType.multi_poly):
         for poly_degree in poly_degrees:
-            filepath = "../tifs_result/" + prefix +   "/"+ benchtype.value+ "/" + prefix + str(poly_degree) + ".txt"
+            filepath = "../tifs_result/" + prefix +   "/"+ benchtype.value+ "/" + "k" + str(kernel_dim) + "/" +  prefix + str(poly_degree) + ".txt"
             time_lt, time_dec = read_latency(filepath)
             bench_lt.append(time_lt)
     elif(benchtype == BenchType.multi_kernel):
         for kernel_dim in kernel_dims:
-            filepath = "../tifs_result/" + prefix +   "/"+ benchtype.value + "/" + prefix + str(kernel_dim) + ".txt"
+            filepath = "../tifs_result/" + prefix +   "/"+ benchtype.value + "/" + "k" + str(kernel_dim) + "/" + prefix + str(kernel_dim) + ".txt"
             time_lt, time_dec = read_latency(filepath)
             bench_lt.append(time_lt)
     elif(benchtype == BenchType.multi_input):
         for input_dim in input_dims:
-            filepath = "../tifs_result/" + prefix +   "/"+ benchtype.value + "/" + prefix + str(input_dim) + ".txt"
+            filepath = "../tifs_result/" + prefix +   "/"+ benchtype.value + "/" + "k" + str(kernel_dim) + "/" + prefix + str(input_dim) + ".txt"
             time_lt, time_dec = read_latency(filepath)
             bench_lt.append(time_lt)
     return bench_lt
 
-def read_data(benchtype):
-    time_direct = read_bench("direct_conv", benchtype)
-    time_direct_f = time_direct
-    time_packed = read_bench("packed_conv", benchtype)
+def read_data(benchtype, kernel_dim):
+    time_direct = read_bench("direct_conv", benchtype, kernel_dim)
+    time_packed = read_bench("packed_conv", benchtype, kernel_dim)
     # time_general is too long: put result directly
     time_general=[52570, 462696, 3234320]
-    return time_direct_f,time_packed, time_general
+    return time_direct,time_packed, time_general
 
-def plot(x, x_label, time_direct, time_packed, time_general, benchtype):
+def plot(x, x_label, time_direct, time_packed, time_general, benchtype, kernel_dim):
     fig, ax = plt.subplots()
     ax.set_xscale('log', basex=2)
     ax.set_yscale('log', basey=10)
@@ -94,11 +94,11 @@ def plot(x, x_label, time_direct, time_packed, time_general, benchtype):
     ax.set_xlabel(x_label)
     ax.set_xticks(x)
     ax.set_ylabel("latency [ms]")
-    fig.savefig(benchtype.value + ".pdf", format="pdf")
+    fig.savefig(benchtype.value + str(kernel_dim) + ".pdf", format="pdf")
 
 def plot_tifs():
-    time_direct,time_packed, time_general = read_data(BenchType.multi_poly)
-    plot(poly_degrees, "polynomial degree", time_direct, time_packed, time_general, BenchType.multi_poly)
+    time_direct,time_packed, time_general = read_data(BenchType.multi_poly, kernel_d)
+    plot(poly_degrees, "polynomial degree", time_direct, time_packed, time_general, BenchType.multi_poly, kernel_d)
     #time_direct,time_packed, time_general = read_data(BenchType.multi_kernel)
     #plot(kernel_dims, "kernel dimensions", time_direct, time_packed, time_general, BenchType.multi_kernel)
     #time_direct,time_packed, time_general = read_data(BenchType.multi_input)
