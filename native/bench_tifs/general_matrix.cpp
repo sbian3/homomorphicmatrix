@@ -84,7 +84,7 @@ void test_decrypt_separate(uint64_t input_dim, uint64_t kernel_dim, uint64_t pol
     // decrypt
     Plaintext x_decrypted;
     auto dec_start = chrono::high_resolution_clock::now();
-    decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, x_decrypted);
+    decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, poly_modulus_degree, x_decrypted);
     auto dec_end = chrono::high_resolution_clock::now();
 
     // time result

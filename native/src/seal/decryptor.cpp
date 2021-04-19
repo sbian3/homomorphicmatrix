@@ -214,7 +214,7 @@ namespace seal
     }
 
     // Decrypt linear transformed ciphertext
-    void Decryptor::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, Plaintext &destination){
+    void Decryptor::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t colsize, Plaintext &destination){
         // Verify that encrypted is valid.
         if (!is_valid_for(encrypted, context_))
         {
@@ -251,7 +251,7 @@ namespace seal
 
         // original dot_product function.
         //dot_product_with_matrix(encrypted, tmp_dest_modq, matrix, pool_);
-        dot_product_with_secret_lt(encrypted, matrix_conved, tmp_dest_modq, pool_);
+        dot_product_with_secret_lt(encrypted, matrix_conved, colsize, tmp_dest_modq, pool_);
 
         // Allocate a full size destination to write to
         destination.parms_id() = parms_id_zero;
@@ -364,7 +364,7 @@ namespace seal
     }
 
     // for linear transformation
-    void Decryptor::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> matrix_conved, util::RNSIter destination, MemoryPoolHandle pool){
+    void Decryptor::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> matrix_conved, uint64_t colsize, util::RNSIter destination, MemoryPoolHandle pool){
         auto &context_data = *context_.get_context_data(encrypted.parms_id());
         auto &parms = context_data.parms();
         auto &coeff_modulus = parms.coeff_modulus();
@@ -391,7 +391,7 @@ namespace seal
         cipher_polyiter++;
         SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s, coeff_count,coeff_modulus_size, pool);
         SEAL_ITERATE(iter(*cipher_polyiter, secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
-                matrix_dot_vector(matrix_conved, coeff_count, get<1>(I), get<2>(I), coeff_count, get<3>(I));
+                matrix_dot_vector(matrix_conved, colsize, get<1>(I), get<2>(I), coeff_count, get<3>(I));
             });
         // add c0 and c1
         add_poly_coeffmod(destination, C1_s, coeff_modulus_size, coeff_modulus, destination);
