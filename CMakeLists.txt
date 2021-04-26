@@ -576,10 +576,10 @@ if(SEAL_BUILD_EXAMPLES)
 endif()
 
 #####################
-# SEAL C++ benches for tifs #
+# SEAL C++ benches for HLT #
 #####################
 
-add_subdirectory(native/bench_tifs)
+add_subdirectory(native/bench_hlt)
 
 ##################
 # SEAL C++ tests #

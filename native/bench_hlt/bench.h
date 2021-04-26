@@ -218,7 +218,7 @@ inline void print_line(int line_number)
 
 inline int check_args(int argc, char* argv[], uint64_t &input_dim, uint64_t &kernel_dim, uint64_t &poly_degree){
     if(argc != 4){
-        cerr << "please input two numbers (input_dim, kernel_dim, poly_degree)" << argc << endl;
+        cerr << "Please specify the input dimension, kernel size, and lattice dimension separated by spaces (e.g, " << argv[0] << " 1024 9 2048)" << endl;
         return 0;
     }
     input_dim = stoull(argv[1]);
