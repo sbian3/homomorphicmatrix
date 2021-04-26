@@ -28,9 +28,10 @@ for running a direct convolution with input dimension 1024, filter dimension
 
  You can also run 
 ```sh
-./linear_bench.sh
+./hlt_bench.sh
 ```
-to benchmark a set of pre-defined computations.
+to benchmark a set of pre-defined computations, where the benchmarked results
+will be in the folder hlt_result/
 
 
 ## Directory Layout
