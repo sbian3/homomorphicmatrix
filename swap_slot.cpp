@@ -1,5 +1,4 @@
 #include "bench.h"
-#include "seal/util/packedconv.h"
 
 void make_circ_matrix(Ciphertext &encrypted, uint64_t poly_modulus_degree, Modulus modulus, vector<vector<uint64_t>> &circ){
     PolyIter polyiter(encrypted);
@@ -48,7 +47,7 @@ void bench_swap_slot(vector<uint64_t> &input, uint64_t poly_modulus_degree, vect
     keygen.create_public_key(public_key);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
-    Decryptor decryptor(context, secret_key);
+    Decryptor_LT decryptor(context, secret_key);
 
     // generate plaintext x
     Plaintext x_plain(input);
@@ -59,7 +58,7 @@ void bench_swap_slot(vector<uint64_t> &input, uint64_t poly_modulus_degree, vect
     encryptor.encrypt(x_plain, x_encrypted);
     if(print_data){
         cout << "----Encrypt x_plain to x_encrypted.----" << endl;
-        cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+        //cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
     }
 
     // generate transform matrix

@@ -1,6 +1,4 @@
 #include "bench.h"
-#include "seal/util/packedconv.h"
-
 
 void print_input_kernel(vector<vector<uint64_t>> input, vector<vector<uint64_t>> kernel){
     cout << "inputs: " << endl;
@@ -38,7 +36,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     keygen.create_public_key(public_key);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
-    Decryptor decryptor(context, secret_key);
+    Decryptor_LT decryptor(context, secret_key);
 
     // generate plaintext x
     uint64_t block_size = get_blocksize(input[0].size(), kernel[0].size(), 0);
@@ -60,7 +58,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     encryptor.encrypt(x_plain, x_encrypted);
     if(print_data){
         cout << "----Encrypt x_plain to x_encrypted.----" << endl;
-        cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+        //cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
     }
 
     // lt

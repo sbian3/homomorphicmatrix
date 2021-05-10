@@ -18,10 +18,11 @@
 #include <thread>
 #include <vector>
 #include "seal/util/defines.h"
-#include "seal/util/uintlinarith.h"
 #include "seal/util/uintarithmod.h"
-#include "seal/util/packedconv.h"
-#include "seal/util/convolution.h"
+#include "src/decryptor_lt.h"
+#include "src/util/packedconv.h"
+#include "src/util/convolution.h"
+#include "src/util/uintlinarith.h"
 
 #define TIME_LABEL_LT "LinearTransformation: "
 #define TIME_LABEL_DEC "Decryption: "

@@ -41,7 +41,7 @@ void test_decrypt_separate(uint64_t input_dim, uint64_t kernel_dim, uint64_t pol
     keygen.create_public_key(public_key);
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
-    Decryptor decryptor(context, secret_key);
+    Decryptor_LT decryptor(context, secret_key);
 
     // generate plaintext x
     print_line(__LINE__);
@@ -69,7 +69,7 @@ void test_decrypt_separate(uint64_t input_dim, uint64_t kernel_dim, uint64_t pol
     cout << "Coeff modulus size: " << x_encrypted.coeff_modulus_size() << endl;
     //uint64_t cipher_coeffsize = x_encrypted.size() * x_encrypted.poly_modulus_degree() * x_encrypted.coeff_modulus_size();
     //cout << "Coeff size: " << cipher_coeffsize << endl;
-    cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
+    //cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
 
     // lt
     Ciphertext x_enc_lin(x_encrypted);
