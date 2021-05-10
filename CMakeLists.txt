@@ -20,7 +20,7 @@ set(LT_INCLUDES_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR}/seal_lt)
 add_subdirectory(src)
 add_library(seal_lt STATIC ${LT_SOURCE_FILES})
 set_property(TARGET seal_lt PROPERTY CXX_STANDARD 17)
-target_include_directories(seal_lt PRIVATE /home/kazumasita/local/include/SEAL-3.6)
+target_include_directories(seal_lt PRIVATE ${CMAKE_INSTALL_PREFIX}/include/SEAL-3.6)
 
 ### direct_conv
 add_executable(direct_conv)
