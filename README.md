@@ -3,7 +3,7 @@ This is an example implementation of homomorphic linear transformation over
 RLWE-based ciphertexts based on the SEAL library.
 
 ## Requirements
-Note that on linux, a cmake of version >= 3.16.3 is needed to build SEAL v3.6.0
+Note that on linux, a cmake of version >= 3.16.3 ,a SEAL library version >= 3.6.0 and C++ compiler with C++17 features
 
 ## Quick Start
 Please also refer to READSEAL.md for building the SEAL library. Here, we only

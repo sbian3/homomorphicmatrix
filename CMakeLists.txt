@@ -1,19 +1,16 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT license.
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.16)
 
-project(BenchTIFS VERSION 3.6.4 LANGUAGES CXX)
+project(BenchTIFS VERSION 1.0 LANGUAGES CXX)
 
-# If not called from root CMakeLists.txt
-if(NOT DEFINED SEAL_BUILD_EXAMPLES)
-    set(SEAL_BUILD_EXAMPLES ON)
+set(SEAL_BUILD_EXAMPLES ON)
 
-    # Import Microsoft SEAL
-    find_package(SEAL 3.6.4 EXACT REQUIRED)
+# Import Microsoft SEAL
+find_package(SEAL 3.6 REQUIRED)
 
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
-endif()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(LT_SOURCE_FILES "")
 set(LT_INCLUDES_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR}/seal_lt)
