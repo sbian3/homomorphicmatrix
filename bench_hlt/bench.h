@@ -19,10 +19,10 @@
 #include <vector>
 #include "seal/util/defines.h"
 #include "seal/util/uintarithmod.h"
-#include "src/decryptor_lt.h"
-#include "src/util/packedconv.h"
-#include "src/util/convolution.h"
-#include "src/util/uintlinarith.h"
+#include "decryptor_lt.h"
+#include "util/packedconv.h"
+#include "util/convolution.h"
+#include "util/uintlinarith.h"
 
 #define TIME_LABEL_LT "LinearTransformation: "
 #define TIME_LABEL_DEC "Decryption: "
