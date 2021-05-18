@@ -36,6 +36,6 @@ will be in the folder hlt_result/
 
 ## Directory Layout
 - Benchmarks
-  - native/src/bench_hlt: Benchmark primitives
+  - bench_hlt: Benchmark primitives
 - Custom library routines
-  - native/src/seal/util: Direct and packed convolution
+  - src/util: Direct and packed convolution
