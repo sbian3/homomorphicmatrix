@@ -168,6 +168,49 @@ namespace seal
 
         ///////////////////////////////
         // 
+        // matrix and vector arithmetic
+        //
+        ///////////////////////////////
+        void toeplitz_to_circ(vector<uint64_t> &toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, vector<uint64_t> &circ, Modulus modulus){
+            assert(toeplitz.size() == toeplitz_rowsize + toeplitz_colsize - 1);
+            assert(circ.size() == toeplitz_colsize * 2);
+            uint64_t circ_size = toeplitz_colsize * 2;
+            uint64_t iter_toep = toeplitz_rowsize - 1;
+            for(uint64_t i = 0;i < toeplitz_rowsize;i++){
+                circ[i] = toeplitz[iter_toep];
+                iter_toep--;
+            }
+            iter_toep = toeplitz_rowsize;
+            for(uint64_t i = circ_size - 1;i > toeplitz_colsize;i--){
+                circ[i] = negate_uint_mod(toeplitz[iter_toep], modulus);
+                iter_toep++;
+            }
+        }
+
+        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus modulus, CoeffIter result){
+            uint64_t right_vec_coeff_size = toeplitz_colsize;
+            // get circ size
+            uint64_t circ_size = get_bigger_poweroftwo(toeplitz_colsize) * 2;
+            vector<uint64_t> circ(circ_size);
+            // adjust right_vector size
+            vector<uint64_t> right_vec(circ_size);
+            right_vec.assign(right_vec_coeff, right_vec_coeff+right_vec_coeff_size);
+
+            toeplitz_to_circ(toeplitz, toeplitz_rowsize, toeplitz_colsize, circ, modulus);
+            right_vec.resize(circ_size);
+            assert(circ.size() == right_vec.size());
+
+            // NTT circ and right_vec
+            uint64_t coeff_count_power = get_power_of_two(circ_size);
+            MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
+            NTTTables ntt_tables(coeff_count_power, modulus, pool_);
+            ntt_negacyclic_harvey(circ.data(), ntt_tables);
+            ntt_negacyclic_harvey(right_vec.data(), ntt_tables);
+            dyadic_product_coeffmod(circ.data(), right_vec.data(), circ_size, modulus, result);
+            inverse_ntt_negacyclic_harvey(result, ntt_tables);
+        }
+        ///////////////////////////////
+        // 
         // matrix and matrix arithmetic
         //
         ///////////////////////////////

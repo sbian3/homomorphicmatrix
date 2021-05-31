@@ -6,6 +6,7 @@
 #include "seal/util/pointer.h"
 #include "seal/util/iterator.h"
 #include "seal/util/uintarithmod.h"
+#include "seal/util/polyarithsmallmod.h"
 #include "convolution.h"
 #include "seal/ciphertext.h"
 #include <algorithm>
@@ -87,6 +88,21 @@ namespace seal
         //
         // matrix and vector arithmetic
         //
+        //
+        //
+        inline uint64_t get_bigger_poweroftwo(uint64_t value){
+            uint64_t power_of_two = 2;
+            while(power_of_two < value){
+                power_of_two *= 2;
+            }
+            return power_of_two;
+        }
+
+        // row: horizontal
+        // col: vertical
+        void toeplitz_to_circ(vector<uint64_t> &toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, vector<uint64_t> &circ, Modulus modulus);
+
+        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus modulus, CoeffIter result);
 
         inline void matrix_dot_vector(ConstRNSIter matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
             // TODO: parameter validation

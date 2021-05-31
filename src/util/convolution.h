@@ -48,6 +48,7 @@ namespace seal
                 conv_negacyclic(kernel, get<0>(I), rns_count, mod_chain, get<1>(I));
                     });
         }
+
         ////////////////////
         // 2D Convolution
         ////////////////////
