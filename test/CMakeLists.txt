@@ -4,7 +4,6 @@ add_executable(hlt_test "")
 
 target_sources(hlt_test
     PRIVATE
-    sum.cpp
     ntt.cpp
     testmain.cpp
 )
