@@ -209,6 +209,7 @@ namespace seal
             dyadic_product_coeffmod(circ.data(), right_vec.data(), circ_size, modulus, result);
             inverse_ntt_negacyclic_harvey(result, ntt_tables);
         }
+
         ///////////////////////////////
         // 
         // matrix and matrix arithmetic

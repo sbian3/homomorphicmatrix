@@ -5,6 +5,7 @@
 #include "seal/util/ntt.h"
 #include "seal/util/polyarithsmallmod.h"
 #include "util/uintlinarith.h"
+#include "util/packedconv.h"
 #include <iostream>
 #include <vector>
 #include <cstdint>

@@ -86,9 +86,10 @@ TEST(NTTtest, toeplitz_vector_mult){
     uint64_t poly_degree = 8;
     uint64_t toeplitz_rowsize = 5;
     uint64_t toeplitz_colsize = poly_degree;
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     vector<uint64_t> toeplitz(toeplitz_rowsize + toeplitz_colsize - 1);
     vector<uint64_t> right_vec(poly_degree);
-    vector<uint64_t> result(poly_degree);
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(result, poly_degree, pool_)
     auto modulus = Modulus(0x7e00001);
 
     for(uint64_t i = 0;i < toeplitz.size();i++){
@@ -97,6 +98,7 @@ TEST(NTTtest, toeplitz_vector_mult){
     for(uint64_t i = 0;i < right_vec.size();i++){
         right_vec[i] = i + 2;
     }
-    toeplitz_dot_vector(toeplitz, right_vec.data(), toeplitz_rowsize, toeplitz_colsize, modulus, result.data()); 
-    print_vector(result, result.size());
+    toeplitz_dot_vector(toeplitz, right_vec.data(), toeplitz_rowsize, toeplitz_colsize, modulus, result); 
+    //print_vector(result, result.size());
+    ASSERT_TRUE(true);
 }
