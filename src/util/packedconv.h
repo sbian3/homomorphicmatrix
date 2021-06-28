@@ -34,11 +34,14 @@ namespace seal
 
         class KernelInfo{
             public:
+                uint64_t input_size;
+                uint64_t block_size;
+                vector<uint64_t> toeplitz;
                 KernelInfo(){
 
                 }
-                KernelInfo(uint64_t st_c,uint64_t  st_r,uint64_t si_c,uint64_t si_r,vector<uint64_t> dat, Modulus mod):
-                    start_col(st_c), start_row(st_r), size_col(si_c), size_row(si_r), data(dat), modulus(mod){
+                KernelInfo(uint64_t input_s, uint64_t block_s, uint64_t st_c,uint64_t  st_r,uint64_t si_c,uint64_t si_r,vector<uint64_t> dat, Modulus mod):
+                    input_size(input_s), block_size(block_s), start_col(st_c), start_row(st_r), size_col(si_c), size_row(si_r), data(dat), modulus(mod){
                         diagonal_list = vector<uint64_t>(size_col + size_row - 1);
                         index = create_diagonal_list(data, size_col, size_row, modulus, diagonal_list);
                         //util::print_vector(diagonal_list, diagonal_list.size());
@@ -94,6 +97,15 @@ namespace seal
                         }
                         pair_kernel[i] = make_pair(next_index, next_value);
                     }
+                }
+
+                void get_toeplitz(vector<vector<pair<uint64_t, uint64_t>>>& pairs, uint64_t poly_degree){
+                    uint64_t toeplitz_len = input_size + poly_degree - 1;
+                    vector<uint64_t> toeplitz_tmp(toeplitz_len);
+                    for(uint64_t i = 0;i < toeplitz_len;i++){
+                        toeplitz_tmp[i] = pairs[i].back().first;
+                    }
+                    toeplitz = toeplitz_tmp;
                 }
 
                 void print(){

@@ -102,3 +102,13 @@ TEST(NTTtest, toeplitz_vector_mult){
     //print_vector(result, result.size());
     ASSERT_TRUE(true);
 }
+
+TEST(kerneltest, init){
+    vector<vector<uint64_t>> kernels = { {1 , 2, 3}, {4, 5, 6} };
+    uint64_t block_size = 32;
+    Modulus modulus(7);
+    vector<KernelInfo> kernel_infos = pack_kernel(kernels, block_size, modulus);
+    for(uint64_t i = 0;i < kernel_infos.size();i++){
+        kernel_infos[i].print();
+    }
+}

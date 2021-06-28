@@ -467,6 +467,7 @@ namespace seal
                 vector<uint64_t> diagonal_c1 = util::create_diagonal_from_submatrix(c1, poly_degree , submat_startcol, submat_colsize, modulus);
 
                 // calc diagonal of product
+                // pair(value, value_len)
                 vector<vector<pair<uint64_t, uint64_t>>> matrix_product_diagonals(colsize_K + submat_rowsize - 1);
                 //vector<vector<uint64_t>> matrix_product_diagonals(colsize_K + submat_rowsize - 1);
                 uint64_t index = 0;
@@ -491,6 +492,7 @@ namespace seal
                     matrix_product_diagonals[index] = diagonal_pairs;
                     index++;
                 }
+                //kinfo.get_toeplitz(matrix_product_diagonals, poly_degree);
 
                 // write diagonals to result matrix
                 util::diagonallist_to_matrix(matrix_product_diagonals, submat_startcol, submat_startrow, colsize_K, submat_rowsize, result);

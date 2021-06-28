@@ -5,6 +5,7 @@ add_executable(hlt_test "")
 target_sources(hlt_test
     PRIVATE
     ntt.cpp
+    kernelInfo.cpp
     experiment.cpp
     testmain.cpp
 )
