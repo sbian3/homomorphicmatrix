@@ -430,7 +430,8 @@ namespace seal
             uint64_t start_col = 0;
             uint64_t start_row = 0;
             for(uint64_t i = 0;i < packing_num;i++){
-                KernelInfo kinfo(start_col, start_row, block_size, block_size, kernels[i], modulus);
+                //uint64_t block_size = get_blocksize(input_size, kernels[i].size(), 0 );
+                KernelInfo kinfo(0, block_size, start_col, start_row, block_size, block_size, kernels[i], modulus);
                 kernel_info[i] = kinfo;
                 start_col += block_size;
                 start_row += block_size;
