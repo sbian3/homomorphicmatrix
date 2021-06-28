@@ -47,7 +47,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     Plaintext x_plain(packed_input);
 
     // pack kernels
-    vector<KernelInfo> kernelinfos = pack_kernel(kernel, block_size, parms.coeff_modulus()[0]);
+    vector<KernelInfo> kernelinfos = pack_kernel(kernel, input[0].size(), parms.coeff_modulus()[0]);
 
     // generate transform matrix
     vector<vector<uint64_t>> matrix(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));

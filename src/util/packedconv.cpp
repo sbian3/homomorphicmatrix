@@ -424,14 +424,14 @@ namespace seal
         // kernel: 初期化したkernel vectorのvector. 長さはpack_num個
         // block_size: 1ブロックの大きさ．
         // return: KernelInfoのベクトルを生成して返す
-        vector<KernelInfo> pack_kernel(vector<vector<uint64_t>> kernels, uint64_t block_size, Modulus modulus){
+        vector<KernelInfo> pack_kernel(vector<vector<uint64_t>> kernels, uint64_t input_size, Modulus modulus){
             uint64_t packing_num = kernels.size();
             vector<KernelInfo> kernel_info(packing_num);
             uint64_t start_col = 0;
             uint64_t start_row = 0;
             for(uint64_t i = 0;i < packing_num;i++){
-                //uint64_t block_size = get_blocksize(input_size, kernels[i].size(), 0 );
-                KernelInfo kinfo(0, block_size, start_col, start_row, block_size, block_size, kernels[i], modulus);
+                uint64_t block_size = get_blocksize(input_size, kernels[i].size(), 0 );
+                KernelInfo kinfo(input_size, block_size, start_col, start_row, block_size, block_size, kernels[i], modulus);
                 kernel_info[i] = kinfo;
                 start_col += block_size;
                 start_row += block_size;
