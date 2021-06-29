@@ -14,7 +14,7 @@ set(LT_SOURCE_FILES "")
 set(LT_INCLUDES_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR}/seal_lt)
 add_subdirectory(src)
 
-option(HLT_FETCH_THIRDPARTY "Download SEAL" ON)
+option(HLT_FETCH_THIRDPARTY "Download Thirdparty Library" ON)
 if(HLT_FETCH_THIRDPARTY)
     include(FetchContent)
     mark_as_advanced(FETCHCONTENT_BASE_DIR)

@@ -3,7 +3,7 @@ This is an example implementation of homomorphic linear transformation over
 RLWE-based ciphertexts based on the SEAL library.
 
 ## Requirements
-Note that on linux, a cmake of version >= 3.16.3 ,a SEAL library version >= 3.6.0 and C++ compiler with C++17 features
+Note that on linux, a cmake of version >= 3.16.3 and C++ compiler with C++17 features
 
 ## Quick Start
 Please also refer to READSEAL.md for building the SEAL library. Here, we only
@@ -33,9 +33,14 @@ for running a direct convolution with input dimension 1024, filter dimension
 to benchmark a set of pre-defined computations, where the benchmarked results
 will be in the folder hlt_result/
 
+## CMake Options
+
+| CMake option | Values | Information |
+| --- | --- | --- |
+| HLT_FETCH_THIRDPARTY | **ON**/OFF | automatically download and build dependecies
 
 ## Directory Layout
 - Benchmarks
   - bench_hlt: Benchmark primitives
 - Custom library routines
-  - src/util: Direct and packed convolution
+  - src/util: Direct and packed convolution implementation
