@@ -126,3 +126,49 @@ TEST(kerneltest, init){
         kernel_infos[i].print();
     }
 }
+
+TEST(Matrixtest, matrix_dot_vector){
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
+    uint64_t array_size = 10;
+    uint64_t coeff_degree = array_size;
+    auto modulus = Modulus(0x7e00001ULL);
+    vector<std::uint64_t> arr(array_size);
+    vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
+
+    for(uint64_t i = 0;i < array_size;i++){
+        arr[i] = i+1;
+    }
+    util::init_matrix_identity(matrix, coeff_degree, 2);
+    matrix[0][1] = 1;
+
+    SEAL_ALLOCATE_GET_COEFF_ITER(poly_vector, coeff_degree, pool_);
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(result, coeff_degree, pool_);
+    util::set_poly(arr.data(), coeff_degree, 1, poly_vector);
+    util::matrix_dot_vector(matrix, coeff_degree, poly_vector, modulus, coeff_degree, result);
+    util::print_iter(result, coeff_degree);
+}
+
+TEST(Matrixtest, matrix_dot_vector_time){
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
+    uint64_t coeff_degree = 1024;
+    uint64_t matrix_valid_rowsize = 16;
+    Modulus modulus(100);
+    vector<std::uint64_t> arr(matrix_valid_rowsize);
+    vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
+
+    for(uint64_t i = 0;i < arr.size();i++){
+        arr[i] = i+1;
+    }
+    util::init_matrix_identity(matrix, coeff_degree, 2);
+    matrix[0][1] = 1;
+
+    SEAL_ALLOCATE_GET_COEFF_ITER(poly_vector, coeff_degree, pool_);
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(result, coeff_degree, pool_);
+    util::set_poly(arr.data(), coeff_degree, 1, poly_vector);
+    auto time_s = chrono::high_resolution_clock::now();
+    util::matrix_dot_vector(matrix, matrix_valid_rowsize, poly_vector, modulus, coeff_degree, result);
+    auto time_e = chrono::high_resolution_clock::now();
+    auto time_diff = chrono::duration_cast<chrono::microseconds>(time_e - time_s);
+    cout << "time: " << time_diff.count() << " us" << endl;
+    //util::print_iter(result, matrix_valid_rowsize);
+}

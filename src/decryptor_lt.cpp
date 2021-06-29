@@ -106,9 +106,13 @@ void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector
     set_poly(cipher_polyiter, coeff_count, coeff_modulus_size, destination);
     cipher_polyiter++;
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s, coeff_count,coeff_modulus_size, pool);
+    auto matrix_s = chrono::high_resolution_clock::now();
     SEAL_ITERATE(iter(*cipher_polyiter, secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
             matrix_dot_vector(matrix_conved, colsize, get<1>(I), get<2>(I), coeff_count, get<3>(I));
             });
+    auto matrix_e = chrono::high_resolution_clock::now();
+    auto matrix_diff = chrono::duration_cast<chrono::microseconds>(matrix_e - matrix_s);
+    cout << "decrypt: matrix_dot_vector: " << matrix_diff.count() << " us" << endl;
     // add c0 and c1
     add_poly_coeffmod(destination, C1_s, coeff_modulus_size, coeff_modulus, destination);
 }
