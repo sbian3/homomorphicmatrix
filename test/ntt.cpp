@@ -4,7 +4,8 @@
 TEST(NTTtest, multiply_poly){
     uint64_t poly_degree = 1024;
     uint64_t coeff_count_power = get_power_of_two(poly_degree);
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
+    //MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
+    MemoryPoolHandle pool_ = MemoryPoolHandle::Global();
     auto modulus = Modulus(0x7e00001);
     NTTTables ntt_tables_(coeff_count_power, modulus, pool_);
 
@@ -26,7 +27,7 @@ TEST(NTTtest, multiply_poly){
 TEST(NTTtest, multiply_poly_negacyclic){
     uint64_t poly_degree = 2;
     uint64_t coeff_count_power = get_power_of_two(poly_degree);
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
+    MemoryPoolHandle pool_ = MemoryPoolHandle::Global();
     auto modulus = Modulus(0x7e00001);
     NTTTables ntt_tables_(coeff_count_power, modulus, pool_);
 
@@ -82,25 +83,38 @@ TEST(NTTtest, toeplitz_to_circ){
     }
 }
 
-TEST(NTTtest, toeplitz_vector_mult){
-    uint64_t poly_degree = 8;
-    uint64_t toeplitz_rowsize = 5;
+TEST(NTTtest, toeplitz_dot_vector){
+    uint64_t poly_degree = 1024;
+    uint64_t toeplitz_rowsize = 16;
     uint64_t toeplitz_colsize = poly_degree;
-    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
+    MemoryPoolHandle pool_ = MemoryPoolHandle::Global();
+    //MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
     vector<uint64_t> toeplitz(toeplitz_rowsize + toeplitz_colsize - 1);
+    //auto toeplitz_matrix = toeplitz_to_matrix(toeplitz, toeplitz_rowsize, toeplitz_colsize);
     vector<uint64_t> right_vec(poly_degree);
-    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(result, poly_degree, pool_)
-    auto modulus = Modulus(0x7e00001);
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(result, poly_degree*2, pool_);
+    auto modulus = Modulus(0x7e00001ULL);
+    uint64_t circ_size = get_bigger_poweroftwo(toeplitz_colsize) * 2;
+    uint64_t coeff_count_power = get_power_of_two(circ_size);
+    Pointer<NTTTables> ntt_tables = allocate<NTTTables>(pool_, coeff_count_power, modulus, pool_);
+    //const NTTTables ntt_tables(coeff_count_power, modulus, pool_);
+    //ASSERT_NO_THROW(ntt_tables = allocate<NTTTables>(pool_, coeff_count_power, modulus, pool_));
 
     for(uint64_t i = 0;i < toeplitz.size();i++){
         toeplitz[i] = i + 1;
     }
+    cout << "toeplitz: " << endl;
+    //print_vector(toeplitz, toeplitz.size());
     for(uint64_t i = 0;i < right_vec.size();i++){
         right_vec[i] = i + 2;
     }
-    toeplitz_dot_vector(toeplitz, right_vec.data(), toeplitz_rowsize, toeplitz_colsize, modulus, result); 
-    //print_vector(result, result.size());
-    ASSERT_TRUE(true);
+    auto time_s = chrono::high_resolution_clock::now();
+    toeplitz_dot_vector(toeplitz, right_vec.data(), toeplitz_rowsize, toeplitz_colsize, modulus, result, pool_, *ntt_tables); 
+    auto time_e = chrono::high_resolution_clock::now();
+    auto time_diff = chrono::duration_cast<chrono::microseconds>(time_e - time_s);
+    cout << "time: " << time_diff.count() << " us" << endl;
+    //print_iter(result, toeplitz_rowsize);
+    //ASSERT_TRUE(true);
 }
 
 TEST(kerneltest, init){

@@ -100,9 +100,19 @@ namespace seal
 
         // row: horizontal
         // col: vertical
-        void toeplitz_to_circ(vector<uint64_t> &toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, vector<uint64_t> &circ, Modulus modulus);
+        void toeplitz_to_circ(vector<uint64_t> &toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize,  CoeffIter circ, Modulus modulus);
 
-        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus modulus, CoeffIter result);
+        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus &modulus, CoeffIter result, MemoryPoolHandle pool_,const NTTTables &ntt_tables);
+
+        // WIP
+        inline vector<vector<uint64_t>> toeplitz_to_matrix(vector<uint64_t> toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize){
+            vector<vector<uint64_t>> matrix(toeplitz_rowsize, vector<uint64_t>(toeplitz_colsize));
+            assert(toeplitz.size() == toeplitz_rowsize + toeplitz_colsize - 1);
+            for(uint64_t i = 0;i < toeplitz.size();i++){
+                
+            }
+            return matrix;
+        }
 
         inline void matrix_dot_vector(ConstRNSIter matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
             // TODO: parameter validation

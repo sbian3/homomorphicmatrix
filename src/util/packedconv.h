@@ -99,6 +99,7 @@ namespace seal
                     }
                 }
 
+                // pair(value, valuelen)
                 void get_toeplitz(vector<vector<pair<uint64_t, uint64_t>>>& pairs, uint64_t poly_degree){
                     uint64_t toeplitz_len = input_size + poly_degree - 1;
                     vector<uint64_t> toeplitz_tmp(toeplitz_len);

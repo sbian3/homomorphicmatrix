@@ -171,9 +171,9 @@ namespace seal
         // matrix and vector arithmetic
         //
         ///////////////////////////////
-        void toeplitz_to_circ(vector<uint64_t> &toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, vector<uint64_t> &circ, Modulus modulus){
+        void toeplitz_to_circ(vector<uint64_t> &toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, CoeffIter circ, Modulus modulus){
             assert(toeplitz.size() == toeplitz_rowsize + toeplitz_colsize - 1);
-            assert(circ.size() == toeplitz_colsize * 2);
+            //assert(circ.size() == toeplitz_colsize * 2);
             uint64_t circ_size = toeplitz_colsize * 2;
             uint64_t iter_toep = toeplitz_rowsize - 1;
             for(uint64_t i = 0;i < toeplitz_rowsize;i++){
@@ -187,27 +187,34 @@ namespace seal
             }
         }
 
-        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus modulus, CoeffIter result){
+        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus &modulus, CoeffIter result, MemoryPoolHandle pool_, const NTTTables &ntt_tables){
             uint64_t right_vec_coeff_size = toeplitz_colsize;
             // get circ size
             uint64_t circ_size = get_bigger_poweroftwo(toeplitz_colsize) * 2;
-            vector<uint64_t> circ(circ_size);
+            //cout << "circ_size: " << circ_size << endl;
+            SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(circ, circ_size, pool_);
             // adjust right_vector size
-            vector<uint64_t> right_vec(circ_size);
-            right_vec.assign(right_vec_coeff, right_vec_coeff+right_vec_coeff_size);
+            SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(right_vec, circ_size, pool_);
+            util::set_poly(right_vec_coeff, right_vec_coeff_size, 1, right_vec);
+            //cout << "right_vec: " << endl;
+            //print_iter(right_vec, right_vec_coeff_size);
+            //right_vec.assign(right_vec_coeff, right_vec_coeff+right_vec_coeff_size);
 
             toeplitz_to_circ(toeplitz, toeplitz_rowsize, toeplitz_colsize, circ, modulus);
-            right_vec.resize(circ_size);
-            assert(circ.size() == right_vec.size());
+            //cout << "circ: " << endl;
+            //print_iter(circ, circ_size);
+            //right_vec.resize(circ_size);
+            //assert(circ.size() == right_vec.size());
 
             // NTT circ and right_vec
-            uint64_t coeff_count_power = get_power_of_two(circ_size);
-            MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
-            NTTTables ntt_tables(coeff_count_power, modulus, pool_);
-            ntt_negacyclic_harvey(circ.data(), ntt_tables);
-            ntt_negacyclic_harvey(right_vec.data(), ntt_tables);
-            dyadic_product_coeffmod(circ.data(), right_vec.data(), circ_size, modulus, result);
+            ntt_negacyclic_harvey(circ, ntt_tables);
+            ntt_negacyclic_harvey(right_vec, ntt_tables);
+            dyadic_product_coeffmod(circ, right_vec, circ_size, modulus, result);
+            //cout << "result(ntt): " << endl;
+            //print_iter(result, circ_size);
             inverse_ntt_negacyclic_harvey(result, ntt_tables);
+            //cout << "result: " << endl;
+            //print_iter(result, circ_size);
         }
 
         ///////////////////////////////
@@ -244,7 +251,7 @@ namespace seal
                 for(auto j = 0U;j < matrixtR.size();j++){
                     uint64_t tmp_sum = 0;
                     for(auto k = 0U;k < matrixtR[j].size();k++){
-                       tmp_sum = multiply_add_uint_mod(matrixL[i][k], matrixtR[j][k], tmp_sum, modulus);
+                        tmp_sum = multiply_add_uint_mod(matrixL[i][k], matrixtR[j][k], tmp_sum, modulus);
                     }
                     result[i][j] = tmp_sum;
                 }
@@ -253,7 +260,7 @@ namespace seal
             auto time_diff = chrono::duration_cast<chrono::milliseconds>(time_end - time_start);
             cout << "matrix dot product: " << time_diff.count() << "milliseconds" << endl;
         }
-        
+
         ///////////////////////
         //
         // Convolution
