@@ -1,12 +1,12 @@
 # Homomorphic Linear Transformation
 This is an example implementation of homomorphic linear transformation over
-RLWE-based ciphertexts based on the SEAL library.
+RLWE-based ciphertexts based on the [SEAL library](https://github.com/microsoft/SEAL "SEAL").
 
 ## Requirements
 Note that on linux, a cmake of version >= 3.16.3 and C++ compiler with C++17 features
 
 ## Quick Start
-Please also refer to READSEAL.md for building the SEAL library. Here, we only
+Please also refer to README.md for building the SEAL library. Here, we only
 provide a simplified version of the build process on Ubuntu 20.04.2 LTS.
 
 First, build SEAL by running
