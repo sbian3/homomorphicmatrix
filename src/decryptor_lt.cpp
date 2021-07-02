@@ -80,7 +80,7 @@ void Decryptor_LT::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector
 }
 
 // for linear transformation
-void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> matrix_conved, uint64_t colsize, util::RNSIter destination, MemoryPoolHandle pool){
+void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t colsize, util::RNSIter destination, MemoryPoolHandle pool){
     auto &context_data = *context_.get_context_data(encrypted.parms_id());
     auto &parms = context_data.parms();
     auto &coeff_modulus = parms.coeff_modulus();
@@ -100,7 +100,9 @@ void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector
     SEAL_ALLOCATE_GET_RNS_ITER(secret_key_array, coeff_count, coeff_modulus_size, pool);
     set_poly(secret_key_array_.get(), coeff_count, coeff_modulus_size, secret_key_array);
     // transform secret key array into non-NTT form
+    auto intt_s = chrono::high_resolution_clock::now();
     inverse_ntt_negacyclic_harvey(secret_key_array, coeff_modulus_size, ntt_tables);
+    auto intt_e = chrono::high_resolution_clock::now();
 
     PolyIter cipher_polyiter(encrypted);
     set_poly(cipher_polyiter, coeff_count, coeff_modulus_size, destination);
@@ -111,10 +113,15 @@ void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector
             matrix_dot_vector(matrix_conved, colsize, get<1>(I), get<2>(I), coeff_count, get<3>(I));
             });
     auto matrix_e = chrono::high_resolution_clock::now();
-    auto matrix_diff = chrono::duration_cast<chrono::microseconds>(matrix_e - matrix_s);
-    cout << "decrypt: matrix_dot_vector: " << matrix_diff.count() << " us" << endl;
     // add c0 and c1
     add_poly_coeffmod(destination, C1_s, coeff_modulus_size, coeff_modulus, destination);
+    auto add_c0_c1 = chrono::high_resolution_clock::now();
+    auto matrix_diff = chrono::duration_cast<chrono::microseconds>(matrix_e - matrix_s);
+    auto add_diff = chrono::duration_cast<chrono::microseconds>(add_c0_c1 - matrix_e);
+    auto intt_diff = chrono::duration_cast<chrono::microseconds>(intt_e - intt_s);
+    cout << "decrypt: intt: " << intt_diff.count() << " us" << endl;
+    cout << "decrypt: matrix_dot_vector: " << matrix_diff.count() << " us" << endl;
+    cout << "decrypt: add c0 + c1: " << add_diff.count() << " us" << endl;
 }
 
 void Decryptor_LT::linear_trans(Ciphertext &encrypted, vector<std::vector<uint64_t>> lt_matrix, Ciphertext &lt_cipher){

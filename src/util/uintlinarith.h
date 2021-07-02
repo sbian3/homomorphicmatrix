@@ -104,15 +104,7 @@ namespace seal
 
         void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus &modulus, CoeffIter result, MemoryPoolHandle pool_,const NTTTables &ntt_tables);
 
-        // WIP
-        inline vector<vector<uint64_t>> toeplitz_to_matrix(vector<uint64_t> toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize){
-            vector<vector<uint64_t>> matrix(toeplitz_rowsize, vector<uint64_t>(toeplitz_colsize));
-            assert(toeplitz.size() == toeplitz_rowsize + toeplitz_colsize - 1);
-            for(uint64_t i = 0;i < toeplitz.size();i++){
-                
-            }
-            return matrix;
-        }
+        vector<vector<uint64_t>> toeplitz_to_matrix(vector<uint64_t> toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize);
 
         inline void matrix_dot_vector(ConstRNSIter matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
             // TODO: parameter validation
@@ -131,15 +123,15 @@ namespace seal
                     });
         }
 
-        inline void matrix_dot_vector(vector<vector<uint64_t>> matrix,uint64_t colsize, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
+        inline void matrix_dot_vector(vector<vector<uint64_t>>& matrix,uint64_t validrowsize, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t colsize, CoeffIter result){
             // TODO: parameter validation
 
-            SEAL_ITERATE(iter(matrix, result), colsize, [&](auto I){
-                    get<1>(I) = inner_product_coeffmod(get<0>(I), poly_vector, coeff_count, modulus);
+            SEAL_ITERATE(iter(matrix, result), validrowsize, [&](auto I){
+                    get<1>(I) = inner_product_coeffmod(get<0>(I), poly_vector, colsize, modulus);
                     });
         }
 
-        inline void matrix_dot_vector(vector<vector<uint64_t>> matrix, uint64_t colsize, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
+        inline void matrix_dot_vector(vector<vector<uint64_t>>& matrix, uint64_t colsize, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
             uint64_t coeff_count = poly_rns.poly_modulus_degree();
             SEAL_ITERATE(iter(poly_rns, mod_chain, result), coeff_modulus_size, [&](auto I){
                     matrix_dot_vector(matrix, colsize, get<0>(I), get<1>(I), coeff_count, get<2>(I));

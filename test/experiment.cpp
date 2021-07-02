@@ -11,7 +11,7 @@ TEST(Packing, kernel_dot_c1){
     vector<KernelInfo> kernel_info = pack_kernel(kernels, block_size, modulus);
     vector<vector<uint64_t>> result(poly_degree, vector<uint64_t>(poly_degree));
     matrix_dot_matrix_toeplitz_mod(kernel_info, c1.data(), poly_degree, result, modulus);
-    util::print_matrix(result);
+    //util::print_matrix(result);
     //cout << "negacyclic: " << endl;
     //SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(nega_result, poly_degree, pool_);
     //conv_negacyclic(kernels[0], c1.data(), poly_degree, modulus, nega_result);

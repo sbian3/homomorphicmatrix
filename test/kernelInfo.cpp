@@ -5,9 +5,9 @@ TEST(KernelInfotest, init){
     uint64_t input_size = 32 - kernels[0].size()+ 1;
     Modulus modulus(7);
     vector<KernelInfo> kernel_infos = pack_kernel(kernels, input_size, modulus);
-    for(uint64_t i = 0;i < kernel_infos.size();i++){
-        kernel_infos[i].print();
-    }
+    //for(uint64_t i = 0;i < kernel_infos.size();i++){
+    //    kernel_infos[i].print();
+    //}
     ASSERT_EQ(input_size, kernel_infos[0].input_size);
     ASSERT_EQ(32, kernel_infos[0].block_size);
 }

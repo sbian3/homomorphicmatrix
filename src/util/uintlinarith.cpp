@@ -93,6 +93,39 @@ namespace seal
             }
         }
 
+        vector<vector<uint64_t>> toeplitz_to_matrix(vector<uint64_t> toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize){
+            vector<vector<uint64_t>> matrix(toeplitz_rowsize, vector<uint64_t>(toeplitz_colsize));
+            assert(toeplitz.size() == toeplitz_rowsize + toeplitz_colsize - 1);
+            uint64_t max_diagonal_len = toeplitz_rowsize;
+            uint64_t maxdiagonal_count;
+            if(toeplitz_rowsize > toeplitz_colsize){
+                maxdiagonal_count = toeplitz_rowsize - toeplitz_colsize + 1;
+            }else{
+                maxdiagonal_count = toeplitz_colsize - toeplitz_rowsize + 1;
+            }
+            // start from lower left
+            uint64_t counter = 1;
+            for(;counter < max_diagonal_len;counter++){
+                for(uint64_t i = 0;i < counter;i++){
+                    matrix[toeplitz_rowsize+i-counter][i] = toeplitz[counter-1];
+                }
+            }
+            // diagonal len is max
+            for(uint64_t i = 0;i < maxdiagonal_count;i++){
+                for(uint64_t j = 0;j < max_diagonal_len;j++){
+                    matrix[j][i+j] = toeplitz[max_diagonal_len + i- 1];
+                }
+            }
+            // end to upper right
+            counter--;
+            for(uint64_t k = 0;counter > 0;k++,counter--){
+                for(uint64_t i = 0;i < counter;i++){
+                    matrix[i][maxdiagonal_count+i+k] = toeplitz[max_diagonal_len + maxdiagonal_count + k - 1];
+                }
+            }
+            return matrix;
+        }
+
         void init_matrix_2dconv(vector<vector<uint64_t>> &matrix, uint64_t input_size, vector<vector<uint64_t>> kernel){
             // assert that....
             // matrix is square
