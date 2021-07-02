@@ -10,4 +10,4 @@ target_sources(hlt_test
     testmain.cpp
 )
 
-target_link_libraries(hlt_test PRIVATE SEAL::seal seal_lt GTest::gtest)
+target_link_libraries(hlt_test PRIVATE SEAL::seal seal_lt GTest::GTest)
