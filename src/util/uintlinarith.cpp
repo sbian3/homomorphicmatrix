@@ -220,10 +220,12 @@ namespace seal
             }
         }
 
-        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus &modulus, CoeffIter result, MemoryPoolHandle pool_, const NTTTables &ntt_tables){
+        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus &modulus, CoeffIter result, MemoryPoolHandle pool_){
             uint64_t right_vec_coeff_size = toeplitz_colsize;
             // get circ size
             uint64_t circ_size = get_bigger_poweroftwo(toeplitz_colsize) * 2;
+            uint64_t coeff_count_power = get_power_of_two(circ_size);
+            Pointer<NTTTables> ntt_tables = allocate<NTTTables>(pool_, coeff_count_power, modulus, pool_);
             //cout << "circ_size: " << circ_size << endl;
             SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(circ, circ_size, pool_);
             // adjust right_vector size
@@ -240,12 +242,12 @@ namespace seal
             //assert(circ.size() == right_vec.size());
 
             // NTT circ and right_vec
-            ntt_negacyclic_harvey(circ, ntt_tables);
-            ntt_negacyclic_harvey(right_vec, ntt_tables);
+            ntt_negacyclic_harvey(circ, *ntt_tables);
+            ntt_negacyclic_harvey(right_vec, *ntt_tables);
             dyadic_product_coeffmod(circ, right_vec, circ_size, modulus, result);
             //cout << "result(ntt): " << endl;
             //print_iter(result, circ_size);
-            inverse_ntt_negacyclic_harvey(result, ntt_tables);
+            inverse_ntt_negacyclic_harvey(result, *ntt_tables);
             //cout << "result: " << endl;
             //print_iter(result, circ_size);
         }

@@ -102,7 +102,7 @@ namespace seal
         // col: vertical
         void toeplitz_to_circ(vector<uint64_t> &toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize,  CoeffIter circ, Modulus modulus);
 
-        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus &modulus, CoeffIter result, MemoryPoolHandle pool_,const NTTTables &ntt_tables);
+        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus &modulus, CoeffIter result, MemoryPoolHandle pool_);
 
         vector<vector<uint64_t>> toeplitz_to_matrix(vector<uint64_t> toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize);
 

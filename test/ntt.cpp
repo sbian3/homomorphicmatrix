@@ -79,9 +79,6 @@ TEST(NTTtest, toeplitz_dot_vector){
     uint64_t toeplitz_rowsize = 16;
     uint64_t toeplitz_colsize = poly_degree;
     auto modulus = Modulus(0x7e00001ULL);
-    uint64_t circ_size = get_bigger_poweroftwo(toeplitz_colsize) * 2;
-    uint64_t coeff_count_power = get_power_of_two(circ_size);
-    Pointer<NTTTables> ntt_tables = allocate<NTTTables>(pool_, coeff_count_power, modulus, pool_);
 
     vector<uint64_t> toeplitz(toeplitz_rowsize + toeplitz_colsize - 1);
     vector<uint64_t> right_vec(poly_degree);
@@ -91,7 +88,7 @@ TEST(NTTtest, toeplitz_dot_vector){
 
     // actual
     auto time_s = chrono::high_resolution_clock::now();
-    toeplitz_dot_vector(toeplitz, right_vec.data(), toeplitz_rowsize, toeplitz_colsize, modulus, actual, pool_, *ntt_tables); 
+    toeplitz_dot_vector(toeplitz, right_vec.data(), toeplitz_rowsize, toeplitz_colsize, modulus, actual, pool_);
     auto time_e = chrono::high_resolution_clock::now();
     auto time_diff = chrono::duration_cast<chrono::microseconds>(time_e - time_s);
     cout << "time: " << time_diff.count() << " us" << endl;
