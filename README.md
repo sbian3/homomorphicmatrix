@@ -5,7 +5,6 @@ RLWE-based ciphertexts based on the [SEAL library](https://github.com/microsoft/
 ## Requirements
 - cmake (>= 3.16.3) 
 - C++ compiler with C++17 compatibility
-- libgtest-dev (==1.10.0-2)
 
 ## Quick Start
 Please also refer to README.md for building the SEAL library. Here, we only
