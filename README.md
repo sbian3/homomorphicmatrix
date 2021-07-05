@@ -39,7 +39,8 @@ will be in the folder hlt_result/
 
 | CMake option | Values | Information |
 | --- | --- | --- |
-| HLT_FETCH_THIRDPARTY | **ON**/OFF | automatically download and build dependecies
+| HLT_FETCH_THIRDPARTY | **ON**/OFF | Automatically download and build dependecies
+| HLT_BUILD_TEST | ON/**OFF** | Build test to make sure our routines works
 
 ## Directory Layout
 - Benchmarks

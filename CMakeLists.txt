@@ -27,6 +27,7 @@ if(HLT_FETCH_THIRDPARTY)
     set(HLT_THIRDPARTY_DIR ${CMAKE_CURRENT_LIST_DIR}/thirdparty)
     message(${HLT_THIRDPARTY_DIR})
     set(FETCHCONTENT_BASE_DIR ${HLT_THIRDPARTY_DIR} CACHE STRING "" FORCE)
+    set(THIRDPARTY_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/thirdparty)
     message(STATUS "SEAL: download ...")
     FetchContent_Declare(
         seal
@@ -82,4 +83,7 @@ else()
 endif()
 
 add_subdirectory(bench_hlt)
-add_subdirectory(test)
+option(HLT_BUILD_TEST "build test" OFF)
+if(HLT_BUILD_TEST)
+    add_subdirectory(test)
+endif()
