@@ -206,8 +206,6 @@ void Decryptor_LT::dot_product_with_secret_lt_toeplitz(Ciphertext &encrypted, st
     auto add_c0_c1 = chrono::high_resolution_clock::now();
     auto matrix_diff = chrono::duration_cast<chrono::microseconds>(matrix_e - matrix_s);
     auto add_diff = chrono::duration_cast<chrono::microseconds>(add_c0_c1 - matrix_e);
-    auto intt_diff = chrono::duration_cast<chrono::microseconds>(intt_e - intt_s);
-    cout << "decrypt: intt: " << intt_diff.count() << " us" << endl;
     cout << "decrypt: matrix_dot_vector: " << matrix_diff.count() << " us" << endl;
     cout << "decrypt: add c0 + c1: " << add_diff.count() << " us" << endl;
 }
