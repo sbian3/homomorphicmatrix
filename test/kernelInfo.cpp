@@ -2,14 +2,15 @@
 
 TEST(KernelInfotest, init){
     vector<vector<uint64_t>> kernels = { {1 , 2, 3}, {4, 5, 6} };
+    uint64_t pack_num = kernels.size();
     uint64_t input_size = 32 - kernels[0].size()+ 1;
     Modulus modulus(7);
     vector<KernelInfo> kernel_infos = pack_kernel(kernels, input_size, modulus);
-    //for(uint64_t i = 0;i < kernel_infos.size();i++){
-    //    kernel_infos[i].print();
-    //}
-    ASSERT_EQ(input_size, kernel_infos[0].input_size);
-    ASSERT_EQ(32, kernel_infos[0].block_size);
+    for(uint64_t i = 0; i < pack_num;i++){
+        ASSERT_EQ(kernels[i].size(), kernel_infos[i].kernel_size);
+        ASSERT_EQ(input_size, kernel_infos[i].input_size);
+        ASSERT_EQ(32, kernel_infos[i].block_size);
+    }
 }
 
 TEST(KernelInfotest, get_toeplitz){

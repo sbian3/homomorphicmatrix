@@ -35,13 +35,16 @@ namespace seal
         class KernelInfo{
             public:
                 uint64_t input_size;
+                uint64_t kernel_size;
                 uint64_t block_size;
+                // toeplitz part of multiplied matrix
                 vector<uint64_t> toeplitz;
                 KernelInfo(){
 
                 }
                 KernelInfo(uint64_t input_s, uint64_t block_s, uint64_t st_c,uint64_t  st_r,uint64_t si_c,uint64_t si_r,vector<uint64_t> dat, Modulus mod):
                     input_size(input_s), block_size(block_s), start_col(st_c), start_row(st_r), size_col(si_c), size_row(si_r), data(dat), modulus(mod){
+                        kernel_size = dat.size();
                         diagonal_list = vector<uint64_t>(size_col + size_row - 1);
                         index = create_diagonal_list(data, size_col, size_row, modulus, diagonal_list);
                         //util::print_vector(diagonal_list, diagonal_list.size());
