@@ -220,36 +220,25 @@ namespace seal
             }
         }
 
-        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus &modulus, CoeffIter result, MemoryPoolHandle pool_){
+        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus &modulus, CoeffIter destination, MemoryPoolHandle pool_){
             uint64_t right_vec_coeff_size = toeplitz_colsize;
-            // get circ size
             uint64_t circ_size = get_bigger_poweroftwo(toeplitz_colsize) * 2;
             uint64_t coeff_count_power = get_power_of_two(circ_size);
             Pointer<NTTTables> ntt_tables = allocate<NTTTables>(pool_, coeff_count_power, modulus, pool_);
-            //cout << "circ_size: " << circ_size << endl;
             SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(circ, circ_size, pool_);
-            // adjust right_vector size
             SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(right_vec, circ_size, pool_);
             util::set_poly(right_vec_coeff, right_vec_coeff_size, 1, right_vec);
-            //cout << "right_vec: " << endl;
-            //print_iter(right_vec, right_vec_coeff_size);
-            //right_vec.assign(right_vec_coeff, right_vec_coeff+right_vec_coeff_size);
+            SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(dest_tmp, circ_size, pool_);
 
             toeplitz_to_circ(toeplitz, toeplitz_rowsize, toeplitz_colsize, circ, modulus);
-            //cout << "circ: " << endl;
-            //print_iter(circ, circ_size);
-            //right_vec.resize(circ_size);
             //assert(circ.size() == right_vec.size());
 
-            // NTT circ and right_vec
+            // multiply circ and right_vec
             ntt_negacyclic_harvey(circ, *ntt_tables);
             ntt_negacyclic_harvey(right_vec, *ntt_tables);
-            dyadic_product_coeffmod(circ, right_vec, circ_size, modulus, result);
-            //cout << "result(ntt): " << endl;
-            //print_iter(result, circ_size);
-            inverse_ntt_negacyclic_harvey(result, *ntt_tables);
-            //cout << "result: " << endl;
-            //print_iter(result, circ_size);
+            dyadic_product_coeffmod(circ, right_vec, circ_size, modulus, dest_tmp);
+            inverse_ntt_negacyclic_harvey(dest_tmp, *ntt_tables);
+            util::set_poly(dest_tmp, toeplitz_rowsize, 1, destination);
         }
 
         ///////////////////////////////

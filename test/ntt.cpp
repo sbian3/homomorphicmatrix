@@ -84,7 +84,7 @@ TEST(NTTtest, toeplitz_dot_vector){
     vector<uint64_t> right_vec(poly_degree);
     sample_rn(toeplitz.data(), toeplitz.size(), modulus);
     sample_rn(right_vec.data(), right_vec.size(), modulus);
-    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, poly_degree*2, pool_);
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, toeplitz_rowsize, pool_);
 
     // actual
     auto time_s = chrono::high_resolution_clock::now();
