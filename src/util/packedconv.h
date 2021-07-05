@@ -70,13 +70,12 @@ namespace seal
                     submat_colsize = size_row;
                 }
 
-                // 行列ベクトル積計算に用いる
-                // pair<index, value>のベクトルを返す
+                // for matrix-vector multiplication routine
+                // return vector<pair<index, value>>
                 vector<pair<uint64_t, uint64_t>> make_rowpair(Modulus mod){
                     vector<pair<uint64_t, uint64_t>> ret(data.size());
-                    // 最初は通常の値
                     ret[0] = make_pair(start_row, data[0]);
-                    // 2つ目以降はnegateして右端へ
+                    // negate seconds data and later
                     for(uint64_t i = 1;i< data.size();i++){
                         ret[i] = make_pair(start_row + size_row - i, negate_uint_mod(data[i], mod));
                     }

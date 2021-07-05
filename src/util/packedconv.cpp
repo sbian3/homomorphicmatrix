@@ -32,17 +32,18 @@ namespace seal
             uint64_t n = poly_degree;
             int64_t index = start_col + colsize-1;
             ret.reserve(n + colsize);
-            // 縦へ移動
+            // get elements from lower left
             for(;index > start_col;index--){
                 ret.push_back(a[index]);
             }
-            // 0へ移動
+            // go to diagonal element
             uint64_t counter = 0;
             while(index >= 0){
                 ret.push_back(a[index]);
                 index--;
                 counter++;
             }
+            // go to upper right
             for(uint64_t i = 0;i< n-counter;i++){
                 ret.push_back(util::negate_uint_mod(a[n-1-i], modulus));
             }
@@ -50,7 +51,7 @@ namespace seal
         }
 
         // assume kernel_L is reversed( indexes is also )
-        // offsetは0が中心．
+        // offset: 0 is center of diagonal
         vector<uint64_t> matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> &kernel_L, vector<uint64_t> &kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus){
             bool print_debug = false;
             // assert list_R is larger than kernel
@@ -306,9 +307,9 @@ namespace seal
 #endif
         }
 
-        // 対角成分ベクトルを行列に書き込む
-        // diagonallist: 左端からの対角成分ベクトル
-        // resultは長方形を仮定
+        // convert diagonal value vectors to matrix
+        // diagonallist: diagonal element vectors(first element is lower left)
+        // assume: all rowsize of result is same
         void diagonallist_to_matrix(vector<vector<uint64_t>> &diagonallist, uint64_t start_col, uint64_t start_row, uint64_t colsize, uint64_t rowsize, vector<vector<uint64_t>> &result){
             assert(start_col + colsize <= result.size());
             assert(start_row + rowsize <= result[0].size()); 
@@ -379,25 +380,25 @@ namespace seal
 
         }
 
+        // convert scalar list to diagonal vectors
         vector<vector<uint64_t>> scalars_to_diagonallist(vector<uint64_t> scalars, uint64_t colsize, uint64_t rowsize){
             vector<vector<uint64_t>> diagonals(colsize + rowsize - 1);
-            // 小さいほうの長さがmax
             uint64_t maxlength = colsize >= rowsize? rowsize: colsize;
             uint64_t keeplength = colsize >= rowsize? colsize-rowsize: rowsize-colsize;
-            // 縦(最上も含む)
+            // lower left to uppwer left
             uint64_t i = 0;
             for(;i < colsize;i++){
                 for(uint64_t j = 0;j < i+1;j++){
                     diagonals[i].push_back(scalars[i]);
                 }
             }
-            // キープ
+            // move right
             for(;i < colsize + keeplength;i++){
                 for(uint64_t j = 0;j < maxlength;j++){
                     diagonals[i].push_back(scalars[i]);
                 }
             }
-            // しぼむ
+            // diagonal size decreases
             while(maxlength > 0){
                 maxlength--;
                 for(uint64_t j = 0;j < maxlength;j++){
@@ -421,9 +422,8 @@ namespace seal
             return packed_input;
         }
 
-        // kernel: 初期化したkernel vectorのvector. 長さはpack_num個
-        // block_size: 1ブロックの大きさ．
-        // return: KernelInfoのベクトルを生成して返す
+        // kernel: vectors of filter weights.
+        // block_size: size of 1d convolution result
         vector<KernelInfo> pack_kernel(vector<vector<uint64_t>> kernels, uint64_t input_size, Modulus modulus){
             uint64_t packing_num = kernels.size();
             vector<KernelInfo> kernel_info(packing_num);
