@@ -123,18 +123,18 @@ namespace seal
                     });
         }
 
-        inline void matrix_dot_vector(vector<vector<uint64_t>>& matrix,uint64_t validrowsize, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t colsize, CoeffIter result){
+        inline void matrix_dot_vector(vector<vector<uint64_t>>& matrix,uint64_t validrowsize, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t colsize, CoeffIter destination){
             // TODO: parameter validation
 
-            SEAL_ITERATE(iter(matrix, result), validrowsize, [&](auto I){
+            SEAL_ITERATE(iter(matrix, destination), validrowsize, [&](auto I){
                     get<1>(I) = inner_product_coeffmod(get<0>(I), poly_vector, colsize, modulus);
                     });
         }
 
-        inline void matrix_dot_vector(vector<vector<uint64_t>>& matrix, uint64_t colsize, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
+        inline void matrix_dot_vector(vector<vector<uint64_t>>& matrix, uint64_t validrowsize, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter destination){
             uint64_t coeff_count = poly_rns.poly_modulus_degree();
-            SEAL_ITERATE(iter(poly_rns, mod_chain, result), coeff_modulus_size, [&](auto I){
-                    matrix_dot_vector(matrix, colsize, get<0>(I), get<1>(I), coeff_count, get<2>(I));
+            SEAL_ITERATE(iter(poly_rns, mod_chain, destination), coeff_modulus_size, [&](auto I){
+                    matrix_dot_vector(matrix, validrowsize, get<0>(I), get<1>(I), coeff_count, get<2>(I));
                     });
         }
 

@@ -493,7 +493,7 @@ namespace seal
                     matrix_product_diagonals[index] = diagonal_pairs;
                     index++;
                 }
-                //kinfo.get_toeplitz(matrix_product_diagonals, poly_degree);
+                kernel_infos[i].get_toeplitz(matrix_product_diagonals, poly_degree);
 
                 // write diagonals to result matrix
                 util::diagonallist_to_matrix(matrix_product_diagonals, submat_startcol, submat_startrow, colsize_K, submat_rowsize, result);

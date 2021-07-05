@@ -309,7 +309,7 @@ namespace seal
             for(auto i = 0U;i < matrix.size();i++){
                 auto row = matrix[i];
                 for( auto j = 0U;j < row.size();j++ ){
-                    cout << std::setw(3) << row.at(j);
+                    cout << " " << row.at(j);
                 }
                 cout << endl;
             } 

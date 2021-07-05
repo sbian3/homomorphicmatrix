@@ -115,3 +115,33 @@ TEST(Matrixtest, matrix_dot_vector_time){
     auto time_diff = chrono::duration_cast<chrono::microseconds>(time_e - time_s);
     cout << "time: " << time_diff.count() << " us" << endl;
 }
+
+TEST(Matrixtest, packedconv_matrix_dot_vector){
+    MemoryPoolHandle pool_ = MemoryPoolHandle::Global();
+    uint64_t poly_degree = 16; // should be power of two
+    auto modulus = Modulus(0x7e00001ULL);
+    vector<vector<uint64_t>> kernels = { {3, 1, 2}};
+    uint64_t input_dim = 7;
+    uint64_t block_size = get_blocksize(input_dim, kernels[0].size(), 0);
+    vector<uint64_t> c1(poly_degree);
+    sample_rn(c1.data(), c1.size(), modulus);
+    vector<KernelInfo> kernel_info = pack_kernel(kernels, block_size, modulus);
+    vector<vector<uint64_t>> conved_C1(poly_degree, vector<uint64_t>(poly_degree));
+    matrix_dot_matrix_toeplitz_mod(kernel_info, c1.data(), poly_degree, conved_C1, modulus);
+    vector<uint64_t> right_vec(poly_degree);
+    sample_rn(right_vec.data(), right_vec.size(), modulus);
+    ASSERT_EQ(poly_degree, right_vec.size());
+
+    // actual
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, poly_degree, pool_);
+    util::matrix_dot_vector(conved_C1, kernel_info[0].kernel_size-1, right_vec.data(), modulus, poly_degree, actual);
+    print_iter(actual, poly_degree);
+    CoeffIter actual_toeplitz = actual + kernel_info[0].kernel_size-1;
+    util::toeplitz_dot_vector(kernel_info[0].toeplitz, right_vec.data(), block_size, poly_degree, modulus, actual_toeplitz, pool_);
+
+    // expected
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(expected, poly_degree, pool_);
+    util::matrix_dot_vector(conved_C1, poly_degree, right_vec.data(), modulus, poly_degree, expected);
+
+    ASSERT_ARR(expected, actual, poly_degree);
+}
