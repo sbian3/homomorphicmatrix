@@ -53,7 +53,7 @@ void Decryptor_LT::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector
     size_t coeff_count = parms.poly_modulus_degree();
     size_t coeff_modulus_size = coeff_modulus.size();
 
-    // Firstly find c_0 + c_1 *s + ... + c_{count-1} * s^{count-1} mod q
+    // Firstly find c_0 + C_1 * s mod q
     // This is equal to Delta m + v where ||v|| < Delta/2.
     // Add Delta / 2 and now we have something which is Delta * (m + epsilon) where epsilon < 1
     // Therefore, we can (integer) divide by Delta and the answer will round down to m.
@@ -61,8 +61,7 @@ void Decryptor_LT::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector
     // Make a temp destination for all the arithmetic mod qi before calling FastBConverse
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(tmp_dest_modq, coeff_count, coeff_modulus_size, pool_);
 
-    // original dot_product function.
-    //dot_product_with_matrix(encrypted, tmp_dest_modq, matrix, pool_);
+    // compute c_0 + C_1 * s
     dot_product_with_secret_lt(encrypted, matrix_conved, colsize, tmp_dest_modq, pool_);
 
     // Allocate a full size destination to write to
@@ -104,11 +103,10 @@ void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector
 
     PolyIter cipher_polyiter(encrypted);
     set_poly(cipher_polyiter, coeff_count, coeff_modulus_size, destination);
-    cipher_polyiter++;
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s, coeff_count,coeff_modulus_size, pool);
     auto matrix_s = chrono::high_resolution_clock::now();
-    SEAL_ITERATE(iter(*cipher_polyiter, secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
-            matrix_dot_vector(matrix_conved, colsize, get<1>(I), get<2>(I), coeff_count, get<3>(I));
+    SEAL_ITERATE(iter(secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
+            matrix_dot_vector(matrix_conved, colsize, get<0>(I), get<1>(I), coeff_count, get<2>(I));
             });
     auto matrix_e = chrono::high_resolution_clock::now();
     auto matrix_diff = chrono::duration_cast<chrono::microseconds>(matrix_e - matrix_s);
