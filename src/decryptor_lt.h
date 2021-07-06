@@ -30,14 +30,14 @@ class Decryptor_LT
 
         void lt_packedconv(Ciphertext &encrypted, std::vector<util::KernelInfo> kernel_infos, Ciphertext &lt_cipher);
 
-        void decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t colsize, Plaintext &destination);
+        void decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, Plaintext &destination);
 
-        void decrypt_bfv_lt_toeplitz(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t colsize, Plaintext &destination);
+        void decrypt_bfv_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, Plaintext &destination);
 
     private:
-        void dot_product_with_secret_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t colsize, util::RNSIter destination, MemoryPoolHandle pool);
+        void dot_product_with_secret_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool);
 
-        void dot_product_with_secret_lt_toeplitz(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> matrix_conved, uint64_t colsize, util::RNSIter destination, MemoryPoolHandle pool);
+        void dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool);
 
         MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
 

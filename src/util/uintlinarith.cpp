@@ -220,7 +220,7 @@ namespace seal
             }
         }
 
-        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, Modulus &modulus, CoeffIter destination, MemoryPoolHandle pool_){
+        void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, const Modulus &modulus, CoeffIter destination, MemoryPoolHandle pool_){
             uint64_t right_vec_coeff_size = toeplitz_colsize;
             uint64_t circ_size = get_bigger_poweroftwo(toeplitz_colsize) * 2;
             uint64_t coeff_count_power = get_power_of_two(circ_size);

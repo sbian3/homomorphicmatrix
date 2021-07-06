@@ -26,7 +26,7 @@ Decryptor_LT::Decryptor_LT(const SEALContext &context, const SecretKey &secret_k
 }
 
 // Decrypt linear transformed ciphertext
-void Decryptor_LT::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t colsize, Plaintext &destination){
+void Decryptor_LT::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, Plaintext &destination){
     // Verify that encrypted is valid.
     if (!is_valid_for(encrypted, context_))
     {
@@ -62,7 +62,7 @@ void Decryptor_LT::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(tmp_dest_modq, coeff_count, coeff_modulus_size, pool_);
 
     // compute c_0 + C_1 * s
-    dot_product_with_secret_lt(encrypted, matrix_conved, colsize, tmp_dest_modq, pool_);
+    dot_product_with_secret_lt(encrypted, matrix_conved, validrowsize, tmp_dest_modq, pool_);
 
     // Allocate a full size destination to write to
     destination.parms_id() = parms_id_zero;
@@ -79,7 +79,7 @@ void Decryptor_LT::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector
 }
 
 // Decrypt linear transformed ciphertext
-void Decryptor_LT::decrypt_bfv_lt_toeplitz(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t colsize, Plaintext &destination){
+void Decryptor_LT::decrypt_bfv_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, Plaintext &destination){
     // Verify that encrypted is valid.
     if (!is_valid_for(encrypted, context_))
     {
@@ -115,14 +115,23 @@ void Decryptor_LT::decrypt_bfv_lt_toeplitz(Ciphertext &encrypted, std::vector<st
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(tmp_dest_modq, coeff_count, coeff_modulus_size, pool_);
 
     // compute c_0 + C_1 * s
-    dot_product_with_secret_lt(encrypted, matrix_conved, colsize, tmp_dest_modq, pool_);
+    auto dot_s = chrono::high_resolution_clock::now();
+    dot_product_with_secret_lt_toeplitz(kernel_infos, encrypted, matrix_conved, validrowsize, tmp_dest_modq, pool_);
+    auto dot_e = chrono::high_resolution_clock::now();
+    auto dot_diff = chrono::duration_cast<chrono::microseconds>(dot_e - dot_s);
+    cout << "dot computation: " << dot_diff.count() << endl;
+
 
     // Allocate a full size destination to write to
     destination.parms_id() = parms_id_zero;
     destination.resize(coeff_count);
 
     // Divide scaling variant using BEHZ FullRNS techniques
+    auto div_s = chrono::high_resolution_clock::now();
     context_data.rns_tool()->decrypt_scale_and_round(tmp_dest_modq, destination.data(), pool_);
+    auto div_e = chrono::high_resolution_clock::now();
+    auto div_diff = chrono::duration_cast<chrono::microseconds>(div_e - div_s);
+    cout << "div computation: " << div_diff.count() << endl;
 
     // How many non-zero coefficients do we really have in the result?
     size_t plain_coeff_count = get_significant_uint64_count_uint(destination.data(), coeff_count);
@@ -132,7 +141,7 @@ void Decryptor_LT::decrypt_bfv_lt_toeplitz(Ciphertext &encrypted, std::vector<st
 }
 
 // for linear transformation
-void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t colsize, util::RNSIter destination, MemoryPoolHandle pool){
+void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool){
     auto &context_data = *context_.get_context_data(encrypted.parms_id());
     auto &parms = context_data.parms();
     auto &coeff_modulus = parms.coeff_modulus();
@@ -161,7 +170,7 @@ void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s, coeff_count,coeff_modulus_size, pool);
     auto matrix_s = chrono::high_resolution_clock::now();
     SEAL_ITERATE(iter(secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
-            matrix_dot_vector(matrix_conved, colsize, get<0>(I), get<1>(I), coeff_count, get<2>(I));
+            matrix_dot_vector(matrix_conved, validrowsize, get<0>(I), get<1>(I), coeff_count, get<2>(I));
             });
     auto matrix_e = chrono::high_resolution_clock::now();
     auto matrix_diff = chrono::duration_cast<chrono::microseconds>(matrix_e - matrix_s);
@@ -171,7 +180,7 @@ void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector
 }
 
 // for linear transformation
-void Decryptor_LT::dot_product_with_secret_lt_toeplitz(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> matrix_conved, uint64_t colsize, util::RNSIter destination, MemoryPoolHandle pool){
+void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool){
     auto &context_data = *context_.get_context_data(encrypted.parms_id());
     auto &parms = context_data.parms();
     auto &coeff_modulus = parms.coeff_modulus();
@@ -197,17 +206,23 @@ void Decryptor_LT::dot_product_with_secret_lt_toeplitz(Ciphertext &encrypted, st
     set_poly(cipher_polyiter, coeff_count, coeff_modulus_size, destination);
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s, coeff_count,coeff_modulus_size, pool);
     auto matrix_s = chrono::high_resolution_clock::now();
+    auto matrix_mid = chrono::high_resolution_clock::now();
     SEAL_ITERATE(iter(secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
-            matrix_dot_vector(matrix_conved, colsize, get<0>(I), get<1>(I), coeff_count, get<2>(I));
+            matrix_dot_vector(matrix_conved, kernel_infos[0].kernel_size-1, get<0>(I), get<1>(I), coeff_count, get<2>(I));
+            CoeffIter dest_for_toeplitz = get<2>(I)+kernel_infos[0].kernel_size-1;
+            matrix_mid = chrono::high_resolution_clock::now();
+            toeplitz_dot_vector(kernel_infos[0].toeplitz, get<0>(I), kernel_infos[0].input_size, coeff_count, get<1>(I), dest_for_toeplitz, pool);
             });
     auto matrix_e = chrono::high_resolution_clock::now();
     // add c0 and c1
     add_poly_coeffmod(destination, C1_s, coeff_modulus_size, coeff_modulus, destination);
     auto add_c0_c1 = chrono::high_resolution_clock::now();
     auto matrix_diff = chrono::duration_cast<chrono::microseconds>(matrix_e - matrix_s);
-    auto add_diff = chrono::duration_cast<chrono::microseconds>(add_c0_c1 - matrix_e);
+    auto matrix_innerp = chrono::duration_cast<chrono::microseconds>(matrix_mid - matrix_s);
+    auto matrix_toeplitz = chrono::duration_cast<chrono::microseconds>(matrix_e - matrix_mid);
     cout << "decrypt: matrix_dot_vector: " << matrix_diff.count() << " us" << endl;
-    cout << "decrypt: add c0 + c1: " << add_diff.count() << " us" << endl;
+    cout << "decrypt: matrix_innerp: " << matrix_innerp.count() << " us" << endl;
+    cout << "decrypt: matrix_toeplitz: " << matrix_toeplitz.count() << " us" << endl;
 }
 
 void Decryptor_LT::linear_trans(Ciphertext &encrypted, vector<std::vector<uint64_t>> lt_matrix, Ciphertext &lt_cipher){
