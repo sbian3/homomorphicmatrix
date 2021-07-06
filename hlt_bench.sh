@@ -89,6 +89,18 @@ function packedconv_multikernel(){
     done
 }
 
+function pc_toeplitz_multipoly(){
+    dirname=hlt_result/pc_toeplitz/multipoly/k$kernel_dim
+    mkdir -p $dirname
+    input_dim=$inputdim_multipoly
+    for poly_degree in ${poly_degrees[@]}
+    do
+        echo "Packed Convolution(toeplitz multiplication): (input, kernel, poly_degree, pack_num) = ($input_dim, $kernel_dim, $poly_degree,  $pack_num)"
+        output_path="$dirname/pc_toeplitz$poly_degree.txt"
+        env build/bin/pc_toeplitz $input_dim $kernel_dim $poly_degree $pack_num 2>$err > $output_path
+    done
+}
+
 function general_lt_multiinput(){
     mkdir -p hlt_result/general_lt/multiinput
     # In general_lt, poly_degree 4096 or longer is too long to measure
@@ -119,6 +131,7 @@ function clean(){
 #clean
 directconv_multipoly
 packedconv_multipoly
+pc_toeplitz_multipoly
 #directconv_multiinput
 #packedconv_multiinput
 #directconv_multikernel
