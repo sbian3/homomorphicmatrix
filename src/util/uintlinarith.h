@@ -68,10 +68,10 @@ namespace seal
 
         void init_matrix_identity(vector<vector<uint64_t>>& matrix, uint64_t poly_modulus_degree, uint64_t scale);
 
-        void init_matrix_rotate(vector<vector<uint64_t>>& matrix, uint64_t size, uint64_t left_rotate, uint64_t scale,const Modulus &modulus);
+        void init_matrix_negate(vector<vector<uint64_t>>& matrix, uint64_t size, uint64_t left_rotate, uint64_t scale,const Modulus &modulus);
 
-        void init_matrix_with_coeff(vector<vector<uint64_t>>& matrix, uint64_t size, ConstCoeffIter iter,const Modulus &modulus);
-        void init_matrix_with_coeff(vector<vector<uint64_t>>& matrix, uint64_t size_matrix, ConstCoeffIter iter, uint64_t size_kernel, const Modulus &modulus);
+        void init_matrix_circ(vector<vector<uint64_t>>& matrix, uint64_t size, ConstCoeffIter iter,const Modulus &modulus);
+        void init_matrix_circ(vector<vector<uint64_t>>& matrix, uint64_t size_matrix, ConstCoeffIter iter, uint64_t size_kernel, const Modulus &modulus);
         void init_matrix_rand_mod(vector<vector<uint64_t>>& matrix, uint64_t size, uint64_t mod);
         void init_matrix_rotate_partial(vector<vector<uint64_t>> &matrix, uint64_t size_kernel, uint64_t left_rotate, uint64_t start_col, uint64_t start_row, uint64_t scale, const Modulus &modulus);
         void init_matrix_rotate_partial(vector<vector<uint64_t>> &matrix, vector<uint64_t> kernel, uint64_t start_col, uint64_t start_row, const Modulus &modulus);
@@ -143,9 +143,9 @@ namespace seal
         //
 
 
-        void matrix_dot_product_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus);
+        void matrix_dot_matrix_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus);
 
-        void matrix_dot_product_mod_t(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus);
+        void matrix_dot_matrix_mod_t(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus);
 
         //
         // Convolution
@@ -159,14 +159,14 @@ namespace seal
 
         inline void matrix_dot_convedcoeff(vector<vector<uint64_t>> matrix, uint64_t coeff_degree, CoeffIter c, const Modulus &modulus, vector<vector<uint64_t>> &result){
             vector<vector<uint64_t>> A(coeff_degree, vector<uint64_t>(coeff_degree));
-            init_matrix_with_coeff(A, coeff_degree, c, modulus);
-            matrix_dot_product_mod(matrix, A, result, modulus);
+            init_matrix_circ(A, coeff_degree, c, modulus);
+            matrix_dot_matrix_mod(matrix, A, result, modulus);
         }
 
         inline void generate_c1_conv(vector<uint64_t> &kernel, uint64_t coeff_degree, CoeffIter c, const Modulus &modulus, vector<vector<uint64_t>> &new_c1){
             vector<uint64_t> conved_c1(coeff_degree);
             conv_negacyclic(kernel, c, coeff_degree, modulus, conved_c1.data());
-            init_matrix_with_coeff(new_c1, coeff_degree, conved_c1.data(), modulus);
+            init_matrix_circ(new_c1, coeff_degree, conved_c1.data(), modulus);
         }
 
         inline void secret_product_with_matrix_rns(vector<vector<uint64_t>> matrix, uint64_t rns_count, RNSIter c, RNSIter s, ConstModulusIter mod_chain, RNSIter result){

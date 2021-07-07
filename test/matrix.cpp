@@ -1,5 +1,16 @@
 #include "testcommon.h"
 
+TEST(Arithtest, inner_product){
+    vector<uint64_t> left_vec = { 1, 2, 3, 4 };
+    vector<uint64_t> right_vec = { 2, 3, 4, 5 };
+    auto modulus = Modulus(0x7e00001ULL);
+    uint64_t actual = inner_product_coeffmod(left_vec.data(), right_vec.data(), left_vec.size(), modulus);
+    ASSERT_EQ(40, actual);
+    right_vec = { 2, 3, 4, negate_uint_mod(6, modulus) };
+    actual = inner_product_coeffmod(left_vec.data(), right_vec.data(), left_vec.size(), modulus);
+    ASSERT_EQ(negate_uint_mod(4, modulus), actual);
+}
+
 TEST(Matrixtest, init_circulant_matrix){
     uint64_t poly_degree = 10;
     Modulus modulus(23);
@@ -10,7 +21,7 @@ TEST(Matrixtest, init_circulant_matrix){
         coeff[i] = i+1;
     }
 
-    init_matrix_with_coeff(actual, poly_degree, coeff.data(), modulus);
+    init_matrix_circ(actual, poly_degree, coeff.data(), modulus);
     vector<vector<uint64_t>> expected = 
     { 
         { 1, 13, 14, 15, 16, 17, 18, 19, 20, 21},
@@ -67,9 +78,10 @@ TEST(Matrixtest, matrix_dot_vector){
     util::init_matrix_identity(matrix, coeff_degree, 2);
     matrix[0][1] = 1;
 
-    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(result, coeff_degree, pool_);
-    util::matrix_dot_vector(matrix, coeff_degree, arr.data(), modulus, coeff_degree, result);
-    util::print_iter(result, coeff_degree);
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, coeff_degree, pool_);
+    util::matrix_dot_vector(matrix, coeff_degree, arr.data(), modulus, coeff_degree, actual);
+    vector<uint64_t> expected = { 4, 4, 6, 8, 10, 12, 14, 16, 18, 20};
+    ASSERT_ARR(expected, actual, expected.size());
 }
 
 TEST(Matrixtest, matrix_dot_vector_rnd){
@@ -135,7 +147,7 @@ TEST(Matrixtest, packedconv_matrix_dot_vector){
     // actual
     SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, poly_degree, pool_);
     util::matrix_dot_vector(conved_C1, kernel_info[0].kernel_size-1, right_vec.data(), modulus, poly_degree, actual);
-    print_iter(actual, poly_degree);
+    //print_iter(actual, poly_degree);
     CoeffIter actual_toeplitz = actual + kernel_info[0].kernel_size-1;
     util::toeplitz_dot_vector(kernel_info[0].toeplitz, right_vec.data(), block_size, poly_degree, modulus, actual_toeplitz, pool_);
 

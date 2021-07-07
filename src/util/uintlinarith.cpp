@@ -23,7 +23,7 @@ namespace seal
             }
         }
 
-        void init_matrix_rotate(vector<vector<uint64_t>>& matrix, uint64_t size, uint64_t left_rotate, uint64_t scale,const Modulus &modulus){
+        void init_matrix_negate(vector<vector<uint64_t>>& matrix, uint64_t size, uint64_t left_rotate, uint64_t scale,const Modulus &modulus){
             for(auto i = 0U;i < size;i++){
                 uint64_t tmp_scale = scale;
                 uint64_t col_index = i + left_rotate;
@@ -57,15 +57,15 @@ namespace seal
             }
         }
 
-        void init_matrix_with_coeff(vector<vector<uint64_t>>& matrix, uint64_t size, ConstCoeffIter iter, const Modulus &modulus){
+        void init_matrix_circ(vector<vector<uint64_t>>& matrix, uint64_t size, ConstCoeffIter iter, const Modulus &modulus){
             for(uint64_t i = 0;i < size;i++){
-                init_matrix_rotate(matrix, size, i, iter[i], modulus);
+                init_matrix_negate(matrix, size, i, iter[i], modulus);
             }
         }
 
-        void init_matrix_with_coeff(vector<vector<uint64_t>>& matrix, uint64_t size_matrix, ConstCoeffIter iter, uint64_t size_kernel, const Modulus &modulus){
+        void init_matrix_circ(vector<vector<uint64_t>>& matrix, uint64_t size_matrix, ConstCoeffIter iter, uint64_t size_kernel, const Modulus &modulus){
             for(uint64_t i = 0;i < size_kernel;i++){
-                init_matrix_rotate(matrix, size_matrix, i, iter[i], modulus);
+                init_matrix_negate(matrix, size_matrix, i, iter[i], modulus);
             }
         }
 
@@ -247,7 +247,7 @@ namespace seal
         //
         ///////////////////////////////
 
-        void matrix_dot_product_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus){
+        void matrix_dot_matrix_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus){
             auto time_start = chrono::high_resolution_clock::now();
             assert(matrixL[0].size() == matrixR.size());
             for(auto i = 0U;i < matrixL.size();i++){
@@ -268,7 +268,7 @@ namespace seal
             cout << "matrix dot product: " << time_diff.count() << "milliseconds" << endl;
         }
 
-        void matrix_dot_product_mod_t(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus){
+        void matrix_dot_matrix_mod_t(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus){
             auto time_start = chrono::high_resolution_clock::now();
             assert(matrixL[0].size() == matrixtR.size());
             for(auto i = 0U;i < matrixL.size();i++){
