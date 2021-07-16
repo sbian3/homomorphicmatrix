@@ -186,7 +186,7 @@ namespace seal
             }else{
                 wise_prod_len = kernel_L.size() + offset;
             }
-#if TIFS_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == 1
             auto diagonal_begin = chrono::high_resolution_clock::now();
 #endif
             //SEAL_ALLOCATE_GET_COEFF_ITER(wise_prod, wise_prod_len, pool_);
@@ -195,7 +195,7 @@ namespace seal
             vector<uint64_t> wise_prod_index(kernel_L_indexes.size());
             uint64_t index_nonzero = 0;
             //wise_prod_index.reserve(kernel_L_indexes.size());
-#if TIFS_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == 1
             auto mul_start = chrono::high_resolution_clock::now();
 #endif
             for(uint64_t i = 0;i < kernel_L_indexes.size();i++){
@@ -218,7 +218,7 @@ namespace seal
                 }
             }
             wise_prod_index.resize(index_nonzero);
-#if TIFS_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == 1
             auto mul_end = chrono::high_resolution_clock::now();
 #endif
             uint64_t prod_times = colsize_R;
@@ -229,10 +229,10 @@ namespace seal
                 partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[i]], modulus);
                 index_of_index_right++;
             }
-#if TIFS_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == 1
             auto innerp_end = chrono::high_resolution_clock::now();
 #endif
-#if TIFS_DEBUG
+#if HLT_DEBUG_PRINT == 1
             cout << "---------calculating a diagonal-----" << endl;
             cout << "index_of_index: " << index_of_index_right << endl;
             cout << "wise_prod.size: " << wise_prod_len << endl;;
@@ -245,7 +245,7 @@ namespace seal
             uint64_t return_len = wise_prod_len - prod_times + 1;
             // all elements end in first inner prod(constant vector)
             if(index_of_index_right  == wise_prod_index.size() && wise_prod_index[wise_prod_index.size()-1] < prod_times){
-#if TIFS_DEBUG
+#if HLT_DEBUG_PRINT == 1
                 cout << "end in first inner prod: return" << endl;
 #endif
                 diagonalpairlist.push_back(make_pair(partial_sum, return_len));
@@ -266,7 +266,7 @@ namespace seal
                     jump_upper = wise_prod_len - (i + prod_times - 1);
                 }
                 uint64_t jump_len = min(jump_upper, jump_bottom);
-#if TIFS_DEBUG == 1
+#if HLT_DEBUG_PRINT == 1
                 cout << "--loop: i=" << i << "--" << endl;
                 cout << "index_of_index: (" << index_of_index_left << ", " << index_of_index_right << ") " << endl;
                 cout << "windows: (" << i << ", " << i + prod_times - 1 << ")" << endl;
@@ -282,7 +282,7 @@ namespace seal
                 if(jump_len == jump_upper){
                     partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[index_of_index_right]], modulus);
                     if(index_of_index_right == wise_prod_index.size()-1){
-#if TIFS_DEBUG == 1
+#if HLT_DEBUG_PRINT == 1
                         cout << "index_right is edge!" << endl;
 #endif
                         nonzeroleft_over = true;
@@ -297,7 +297,7 @@ namespace seal
                 i = i + jump_len - 1;
             }
             //cout << "pair_num: " << pair_num << endl;
-#if TIFS_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == 1
             auto slide_end = chrono::high_resolution_clock::now();
             auto begin_diff = chrono::duration_cast<chrono::nanoseconds>(mul_start - diagonal_begin);
             auto mul_diff = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
@@ -477,7 +477,7 @@ namespace seal
                 for(;k<static_cast<int64_t>(submat_rowsize);k++){
                     vector<pair<uint64_t, uint64_t>> diagonal_pairs;
                     diagonal_pairs.reserve(kernel_index.size());
-#if TIFS_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == 1
                     auto diagonal_start = chrono::high_resolution_clock::now();
 #endif
                     //vector<uint64_t> diagonal_pairs;
@@ -485,7 +485,7 @@ namespace seal
                     // digaonal_pairs = util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus, diagonal_pairs);
                     //cout << "kernel_index_size: " << kernel_index.size() << endl;
                     //cout << "diagonal_pairs,size = " << diagonal_pairs.size() << endl;
-#if TIFS_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == 1
                     auto diagonal_end = chrono::high_resolution_clock::now();
                     auto diagonal_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_end - diagonal_start);
                     cout << "calc one diagonal vector: " << diagonal_diff.count() << endl;
