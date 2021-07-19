@@ -30,7 +30,7 @@ namespace seal
     namespace util
     {
 
-        vector<uint64_t> create_diagonal_list(vector<uint64_t> kernel, uint64_t colsize, uint64_t rowsize, Modulus &modulus, vector<uint64_t> &diagonal_list);
+        vector<uint64_t> create_diagonal_scalars(const vector<uint64_t> &kernel, const uint64_t colsize, const uint64_t rowsize, const Modulus &modulus, vector<uint64_t> &diagonal_list);
 
         class KernelInfo{
             public:
@@ -38,18 +38,18 @@ namespace seal
                 uint64_t kernel_size;
                 uint64_t block_size;
                 // toeplitz part of multiplied matrix
-                vector<uint64_t> toeplitz;
+                vector<uint64_t> toeplitz_diagonal_scalars;
                 KernelInfo(){
 
                 }
                 KernelInfo(uint64_t input_s, uint64_t block_s, uint64_t st_c,uint64_t  st_r,uint64_t si_c,uint64_t si_r,vector<uint64_t> dat, Modulus mod):
                     input_size(input_s), block_size(block_s), start_col(st_c), start_row(st_r), size_col(si_c), size_row(si_r), data(dat), modulus(mod){
                         kernel_size = dat.size();
-                        diagonal_list = vector<uint64_t>(size_col + size_row - 1);
-                        index = create_diagonal_list(data, size_col, size_row, modulus, diagonal_list);
+                        diagonal_scalars = vector<uint64_t>(size_col + size_row - 1);
+                        index = create_diagonal_scalars(data, size_col, size_row, modulus, diagonal_scalars);
                         //util::print_vector(diagonal_list, diagonal_list.size());
                     }
-                vector<uint64_t> diagonal_list;
+                vector<uint64_t> diagonal_scalars;
                 vector<uint64_t> index;
 
                 uint64_t get_colsize(){
@@ -108,15 +108,15 @@ namespace seal
                     for(uint64_t i = 0;i < toeplitz_len;i++){
                         toeplitz_tmp[i] = pairs[i].back().first;
                     }
-                    toeplitz = toeplitz_tmp;
+                    toeplitz_diagonal_scalars = toeplitz_tmp;
                 }
 
                 void print(){
                     cout << "start col: " << start_col << endl;
                     cout << "start row: " << start_row << endl;
                     cout << "diagonal: ";
-                    for(uint64_t k = 0;k < diagonal_list.size();k++){
-                        cout << diagonal_list[k] << " ";
+                    for(uint64_t k = 0;k < diagonal_scalars.size();k++){
+                        cout << diagonal_scalars[k] << " ";
                     }
                     cout << endl;
                     cout << "index: ";

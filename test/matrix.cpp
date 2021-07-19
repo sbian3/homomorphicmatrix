@@ -149,7 +149,7 @@ TEST(Matrixtest, packedconv_matrix_dot_vector){
     util::matrix_dot_vector(conved_C1, kernel_info[0].kernel_size-1, right_vec.data(), modulus, poly_degree, actual);
     //print_iter(actual, poly_degree);
     CoeffIter actual_toeplitz = actual + kernel_info[0].kernel_size-1;
-    util::toeplitz_dot_vector(kernel_info[0].toeplitz, right_vec.data(), block_size, poly_degree, modulus, actual_toeplitz, pool_);
+    util::toeplitz_dot_vector(kernel_info[0].toeplitz_diagonal_scalars, right_vec.data(), block_size, poly_degree, modulus, actual_toeplitz, pool_);
 
     // expected
     SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(expected, poly_degree, pool_);

@@ -129,8 +129,8 @@ function clean(){
 }
 
 #clean
-directconv_multipoly
-packedconv_multipoly
+#directconv_multipoly
+#packedconv_multipoly
 pc_toeplitz_multipoly
 #directconv_multiinput
 #packedconv_multiinput

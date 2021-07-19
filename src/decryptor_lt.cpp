@@ -211,7 +211,7 @@ void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel
             matrix_dot_vector(matrix_conved, kernel_infos[0].kernel_size-1, get<0>(I), get<1>(I), coeff_count, get<2>(I));
             CoeffIter dest_for_toeplitz = get<2>(I)+kernel_infos[0].kernel_size-1;
             matrix_mid = chrono::high_resolution_clock::now();
-            toeplitz_dot_vector(kernel_infos[0].toeplitz, get<0>(I), kernel_infos[0].input_size, coeff_count, get<1>(I), dest_for_toeplitz, pool);
+            toeplitz_dot_vector(kernel_infos[0].toeplitz_diagonal_scalars, get<0>(I), kernel_infos[0].input_size, coeff_count, get<1>(I), dest_for_toeplitz, pool);
             });
     auto matrix_e = chrono::high_resolution_clock::now();
     // add c0 and c1

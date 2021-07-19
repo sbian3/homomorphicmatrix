@@ -12,7 +12,7 @@ namespace seal
         ////////////////////////////////////////////
 
         // result list is reversed(index is also)
-        vector<uint64_t> create_diagonal_list(vector<uint64_t> kernel, uint64_t colsize, uint64_t rowsize, Modulus &modulus, vector<uint64_t> &diagonal_list){
+        vector<uint64_t> create_diagonal_scalars(const vector<uint64_t> &kernel, const uint64_t colsize, const uint64_t rowsize, const Modulus &modulus, vector<uint64_t> &diagonal_list){
             vector<uint64_t> indexes;
             diagonal_list[colsize-1] = kernel[0];
             for(uint64_t i = 1;i< kernel.size();i++){
@@ -50,6 +50,7 @@ namespace seal
             return ret;
         }
 
+        // WARN: currently not used
         // assume kernel_L is reversed( indexes is also )
         // offset: 0 is center of diagonal
         vector<uint64_t> matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> &kernel_L, vector<uint64_t> &kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus){
@@ -168,6 +169,15 @@ namespace seal
             return diagonal;
         }
         
+        // kernel_L: diagona_scalars
+        // kernel_L_indexes: index of nonezero element in kernel_L
+        // case1: offset > 0
+        //           | -----kernel----|
+        // |-------list_R-----|
+        //
+        // case2: offset < 0
+        // |---kernel---|
+        //       |-----list_R----|
         void matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> &kernel_L, vector<uint64_t> &kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus, vector<pair<uint64_t, uint64_t>> &diagonalpairlist){
             MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
             // assert list_R is larger than kernel
@@ -234,6 +244,7 @@ namespace seal
 #endif
 #if HLT_DEBUG_PRINT == 1
             cout << "---------calculating a diagonal-----" << endl;
+            cout << "offset: " << offset << endl;
             cout << "index_of_index: " << index_of_index_right << endl;
             cout << "wise_prod.size: " << wise_prod_len << endl;;
             for(uint64_t i = 0; i < wise_prod_index.size();i++){
@@ -247,6 +258,13 @@ namespace seal
             if(index_of_index_right  == wise_prod_index.size() && wise_prod_index[wise_prod_index.size()-1] < prod_times){
 #if HLT_DEBUG_PRINT == 1
                 cout << "end in first inner prod: return" << endl;
+#endif
+#if HLT_DEBUG_TIME == 1
+            auto begin_diff = chrono::duration_cast<chrono::nanoseconds>(mul_start - diagonal_begin);
+            auto mul_diff = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
+            auto innerp_diff = chrono::duration_cast<chrono::nanoseconds>(innerp_end - mul_end);
+            cout <<  "begin: " << begin_diff.count() << " mul : " << mul_diff.count() << " innerp: " << innerp_diff.count() << " slide: " << " sum: " << begin_diff.count() + mul_diff.count() + innerp_diff.count() << endl;
+
 #endif
                 diagonalpairlist.push_back(make_pair(partial_sum, return_len));
                 return;
@@ -444,7 +462,7 @@ namespace seal
                 KernelInfo kinfo = kernelinfos[i];
                 // kernel scalar is reversed in default
                 // so, scalar must be reversed again
-                vector<uint64_t> k_scalar = kinfo.diagonal_list;
+                vector<uint64_t> k_scalar = kinfo.diagonal_scalars;
                 reverse(k_scalar.begin(), k_scalar.end());
                 vector<vector<uint64_t>> diagonals = util::scalars_to_diagonallist(k_scalar, kinfo.get_colsize(), kinfo.get_rowsize());
                 util::diagonallist_to_matrix(diagonals, kinfo.get_startcol(), kinfo.get_startrow(), kinfo.get_colsize(), kinfo.get_rowsize(),matrix);
@@ -481,7 +499,7 @@ namespace seal
                     auto diagonal_start = chrono::high_resolution_clock::now();
 #endif
                     //vector<uint64_t> diagonal_pairs;
-                    util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_infos[i].diagonal_list, kernel_index, diagonal_c1, modulus, diagonal_pairs);
+                    util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_infos[i].diagonal_scalars, kernel_index, diagonal_c1, modulus, diagonal_pairs);
                     // digaonal_pairs = util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus, diagonal_pairs);
                     //cout << "kernel_index_size: " << kernel_index.size() << endl;
                     //cout << "diagonal_pairs,size = " << diagonal_pairs.size() << endl;

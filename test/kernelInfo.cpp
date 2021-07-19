@@ -34,6 +34,6 @@ TEST(KernelInfotest, get_toeplitz){
     kernel_infos[0].get_toeplitz(pairs, poly_degree);
     vector<uint64_t> expect = {2, 4, 5, 6, 2};
     for(uint64_t i = 0;i < expect.size();i++){
-        ASSERT_EQ(expect[i], kernel_infos[0].toeplitz[i]);
+        ASSERT_EQ(expect[i], kernel_infos[0].toeplitz_diagonal_scalars[i]);
     }
 }
