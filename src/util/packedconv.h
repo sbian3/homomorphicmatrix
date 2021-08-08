@@ -22,6 +22,7 @@
 #include "uintlinarith.h"
 #include "seal/util/uintarithmod.h"
 #include "seal/memorymanager.h"
+#include "util/uintlinarith.h"
 
 using namespace std;
 
@@ -106,6 +107,9 @@ namespace seal
                     uint64_t toeplitz_len = input_size + poly_degree - 1;
                     vector<uint64_t> toeplitz_tmp(toeplitz_len);
                     for(uint64_t i = 0;i < toeplitz_len;i++){
+                        if(pairs[i].empty()){
+                            throw std::out_of_range("no data in pair");
+                        }
                         toeplitz_tmp[i] = pairs[i].back().first;
                     }
                     toeplitz_diagonal_scalars = toeplitz_tmp;

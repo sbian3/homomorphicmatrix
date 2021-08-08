@@ -511,6 +511,9 @@ namespace seal
                     matrix_product_diagonals[index] = diagonal_pairs;
                     index++;
                 }
+#if HLT_DEBUG_PRINT == 1
+                print_pair_vectors(matrix_product_diagonals);
+#endif
                 kernel_infos[i].get_toeplitz(matrix_product_diagonals, poly_degree);
 
                 // write diagonals to result matrix

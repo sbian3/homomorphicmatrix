@@ -46,6 +46,16 @@ namespace seal
         }
 
         void print_matrix(vector<vector<uint64_t>>& matrix);
+
+        inline void print_matrix(vector<vector<uint64_t>> &matrix, uint64_t start_row, uint64_t start_col, uint64_t rowsize, uint64_t colsize){
+            for(uint64_t i = 0;i < rowsize;i++){
+                for(uint64_t j = 0;j < colsize;j++){
+                    cout << " " << matrix[start_row + i][start_col + j];
+                }
+                cout << endl;
+            }
+        }
+
         void print_iter(CoeffIter operand1, uint64_t coeff_count);
 
         inline void print_iter(RNSIter operand1, uint64_t rns_count){
@@ -62,6 +72,21 @@ namespace seal
                     print_iter(I, rns_count);
                     });
         }
+
+        inline void print_pair_vector(vector<pair<uint64_t, uint64_t>> pairs){
+            for(uint64_t i = 0;i < pairs.size();i++){
+                cout << "(" << pairs[i].first << ", " << pairs[i].second << ")" << " ";
+            }
+            cout << endl;
+        }
+        
+        inline void print_pair_vectors(vector<vector<pair<uint64_t, uint64_t>>> pairs){
+            cout << "print pairs" << endl;
+            for(uint64_t i = 0;i < pairs.size();i++){
+                print_pair_vector(pairs[i]);
+            }
+        }
+
         // 
         // matrix initialization
         // 

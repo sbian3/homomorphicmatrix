@@ -158,13 +158,10 @@ TEST(Matrixtest, packedconv_matrix_dot_vector){
     ASSERT_ARR(expected, actual, poly_degree);
 }
 
-TEST(Matrixtest, matrix_prodct_diagonal){
+TEST(Matrixtest, matrix_product_diagonal){
     auto modulus = Modulus(0x7e00001ULL);
     vector<uint64_t> kernel_L = {1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 1, 9, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    vector<uint64_t> kernel_L_indexes;
-    for(uint64_t i = 0;i < kernel_L.size();i++){
-        if(kernel_L[i] !=0) kernel_L_indexes.push_back(i);
-    }
+    vector<uint64_t> kernel_L_indexes = get_nonzero_indexlist(kernel_L);
     vector<uint64_t> list_R = { 2, 3, 1, 6, 3, 2, 6, 4, 12, 2, 8, 7,9, 2, 12, 7, 5, 2, 1, 13, 10, 4, 2, 4, 3, 1, 2, 8, 6, 12, 7, 3, 5, 11, 2, 6, 4};
     uint64_t colsize_R = 4;
     uint64_t rowsize_R = 7;
@@ -179,21 +176,35 @@ TEST(Matrixtest, matrix_prodct_diagonal){
     vector<pair<uint64_t, uint64_t>> expected = make_pair_vector(values, counts);
     ASSERT_PAIR_VEC(expected, diagonalpairlist);
     // offset < 0
-    // expected: (6, 1), (0, 4), (12, 1), (30, 1), (110, 2), (98, 1), (80, 1), (0, 9)
+    // expected: (6, 1), (0, 4), (12, 1), (30, 1), (110, 2), (98, 1), (80, 1), (0, 7)
     diagonalpairlist.clear();
     offset = -2;
     matrix_product_diagonal(offset, colsize_R, rowsize_R, kernel_L, kernel_L_indexes, list_R, modulus, diagonalpairlist);
     values = {6, 0, 12, 30, 110, 98, 80, 0};
-    counts = {1, 4, 1, 1, 2, 1, 1, 9};
+    counts = {1, 4, 1, 1, 2, 1, 1, 7};
     expected = make_pair_vector(values, counts);
     ASSERT_PAIR_VEC(expected, diagonalpairlist);
+    diagonalpairlist.clear();
+
     // offset > 0
     // expected: (22, 1), (21, 1), (9, 1), (0, 4), (9, 1), (27, 1), (147, 2), (138, 1), (120, 1), (0, 9)
-    diagonalpairlist.clear();
     offset = 2;
     matrix_product_diagonal(offset, colsize_R, rowsize_R, kernel_L, kernel_L_indexes, list_R, modulus, diagonalpairlist);
     values = {22, 21, 9, 0, 9, 27, 147, 138, 120, 0};
     counts = {1, 1, 1, 4, 1, 1, 2, 1, 1, 9};
     expected = make_pair_vector(values, counts);
     ASSERT_PAIR_VEC(expected, diagonalpairlist);
+    diagonalpairlist.clear();
+
+    //kernel_L = {1, 2, 3, 0, 0, 0};
+    //kernel_L_indexes = get_nonzero_indexlist(kernel_L);
+    offset = -10;
+    matrix_product_diagonal(offset, 15, rowsize_R, kernel_L, kernel_L_indexes, list_R, modulus, diagonalpairlist);
+    expected = {make_pair(39, 1)};
+    ASSERT_PAIR_VEC(expected, diagonalpairlist);
+    diagonalpairlist.clear();
+
+    offset = 10;
+    matrix_product_diagonal(offset, 15, rowsize_R, kernel_L, kernel_L_indexes, list_R, modulus, diagonalpairlist);
+    print_pair_vector(diagonalpairlist);
 }

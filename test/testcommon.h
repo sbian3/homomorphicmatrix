@@ -16,6 +16,20 @@ using namespace std;
 using namespace seal;
 using namespace seal::util;
 
+inline vector<uint64_t> get_nonzero_indexlist(vector<uint64_t> &input){
+    if(input.empty()){
+        cerr << "no data in input!" << endl;
+    }
+    vector<uint64_t> nonzero_index;
+    for(uint64_t i = 0;i < input.size();i++){
+        if(input[i] != 0){
+            nonzero_index.push_back(i);
+        }
+    }
+    return nonzero_index;
+}
+
+
 inline vector<pair<uint64_t, uint64_t>> make_pair_vector(vector<uint64_t> values, vector<uint64_t> counts){
     assert(values.size() == counts.size());
     vector<pair<uint64_t, uint64_t>> pair_vector(values.size());
