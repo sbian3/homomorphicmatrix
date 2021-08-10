@@ -8,7 +8,7 @@ poly_degrees=(1024 2048 4096 8192)
 poly_degree=2048
 poly_degree_multikernel=1024
 pack_num=1
-inputdim_multipoly=64
+inputdim_multipoly=16
 err=hlt_result/err.log
 
 # calculate input dimensions (n^2)
@@ -129,7 +129,7 @@ function clean(){
 }
 
 #clean
-#directconv_multipoly
+directconv_multipoly
 #packedconv_multipoly
 pc_toeplitz_multipoly
 #directconv_multiinput

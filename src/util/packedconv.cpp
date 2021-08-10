@@ -172,21 +172,43 @@ namespace seal
         // kernel_L: diagona_scalars
         // kernel_L_indexes: index of nonezero element in kernel_L
         // case1: offset > 0
-        //           | -----kernel----|
-        // |-------list_R-----|
+        //           | -----kernel-------|
+        // |-------list_R------------|
+        //           |-----product---|
         //
         // case2: offset < 0
-        // |---kernel---|
-        //       |-----list_R----|
+        // |---kernel---------|
+        //       |-----list_R--------|
+        //       |---product--|
         void matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> &kernel_L, vector<uint64_t> &kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus, vector<pair<uint64_t, uint64_t>> &diagonalpairlist){
-            MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
             // assert list_R is larger than kernel
             assert(kernel_L_indexes.size() <= list_R.size());
+            //assert(colsize_R <= kernel_L.size());
         
+#if HLT_DEBUG_PRINT == 1
+            cout << "---------calculating a diagonal-----" << endl;
+            cout << "kernel: " << endl;
+            print_vector(kernel_L, kernel_L.size());
+            cout << "list_R:"  << endl;
+            print_vector(list_R, list_R.size());
+            cout << "offset: " << offset << endl;
+#endif
             // calculate element wise product
             // optimize complexity remembering kernel nonzero elements
             //uint64_t wise_prod_len = kernel_L.size() <= list_R.size()? kernel_L.size(): list_R.size();
+#if HLT_DEBUG_TIME == 1
+            auto diagonal_begin = chrono::high_resolution_clock::now();
+#endif
+#if HLT_DEBUG_TIME == 1
+            auto mul_start = chrono::high_resolution_clock::now();
+#endif
+#if HLT_DEBUG_TIME == 1
+            auto mul_end = chrono::high_resolution_clock::now();
+#endif
             uint64_t wise_prod_len;
+            uint64_t innerp_size = colsize_R;
+            uint64_t first_right_edge;
+            bool end_in_firstinner = false;
             if(offset >= 0){
                 if(offset + kernel_L.size() > list_R.size()){
                     wise_prod_len = list_R.size() - offset;
@@ -196,66 +218,55 @@ namespace seal
             }else{
                 wise_prod_len = kernel_L.size() + offset;
             }
-#if HLT_DEBUG_TIME == 1
-            auto diagonal_begin = chrono::high_resolution_clock::now();
-#endif
-            //SEAL_ALLOCATE_GET_COEFF_ITER(wise_prod, wise_prod_len, pool_);
-            vector<uint64_t> wise_prod(wise_prod_len);
-            // non-zero index list of wise_prod
-            vector<uint64_t> wise_prod_index(kernel_L_indexes.size());
-            uint64_t index_nonzero = 0;
-            //wise_prod_index.reserve(kernel_L_indexes.size());
-#if HLT_DEBUG_TIME == 1
-            auto mul_start = chrono::high_resolution_clock::now();
-#endif
-            for(uint64_t i = 0;i < kernel_L_indexes.size();i++){
+            if (wise_prod_len >= innerp_size) {
+              first_right_edge = innerp_size;
+            } else {
+              cout << "end in first inner" << endl;
+              first_right_edge = wise_prod_len;
+              end_in_firstinner = true;
+            }
+            if(offset < 0){
+                first_right_edge -= offset;
+            }
+            uint64_t partial_sum = 0;
+            uint64_t index_iterator_right = 0;
+            uint64_t index_iterator_left = 0;
+            // calculate first inner prod
+            for(uint64_t i = 0; i < kernel_L_indexes.size() && kernel_L_indexes[i] < first_right_edge;i++){
                 uint64_t prod;
                 if(offset >= 0){
-                    // boarder check and mul
-                    if(kernel_L_indexes[i]+offset >= list_R.size() || kernel_L_indexes[i] >= kernel_L.size()) break;
                     prod = util::multiply_uint_mod(kernel_L[kernel_L_indexes[i]], list_R[kernel_L_indexes[i]+offset], modulus);
-                    wise_prod[kernel_L_indexes[i]] = prod;
-                    wise_prod_index[index_nonzero] = kernel_L_indexes[i];
-                    index_nonzero++;
                 }else{
                     // boarder check and mul
-                    if(kernel_L_indexes[i] <= -offset-1) continue;
-                    if(kernel_L_indexes[i] >= kernel_L.size() || kernel_L_indexes[i]+offset >= list_R.size()) break;
+                    if(kernel_L_indexes[i] <= -offset-1){
+                      index_iterator_right++;
+                      index_iterator_left++;
+                      continue;
+                    }
                     prod = util::multiply_uint_mod(kernel_L[kernel_L_indexes[i]], list_R[kernel_L_indexes[i]+offset], modulus);
-                    wise_prod[kernel_L_indexes[i]+offset] = prod;
-                    wise_prod_index[index_nonzero] = kernel_L_indexes[i] + offset;
-                    index_nonzero++;
                 }
-            }
-            wise_prod_index.resize(index_nonzero);
-#if HLT_DEBUG_TIME == 1
-            auto mul_end = chrono::high_resolution_clock::now();
-#endif
-            uint64_t prod_times = colsize_R;
-            uint64_t partial_sum = 0;
-            uint64_t index_of_index_right = 0;
-            // calculate first inner prod
-            for(uint64_t i = 0; i < wise_prod_index.size() && wise_prod_index[i] < prod_times;i++){
-                partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[i]], modulus);
-                index_of_index_right++;
+                partial_sum = util::add_uint_mod(partial_sum, prod, modulus);
+                index_iterator_right++;
             }
 #if HLT_DEBUG_TIME == 1
             auto innerp_end = chrono::high_resolution_clock::now();
 #endif
 #if HLT_DEBUG_PRINT == 1
-            cout << "---------calculating a diagonal-----" << endl;
-            cout << "offset: " << offset << endl;
-            cout << "index_of_index: " << index_of_index_right << endl;
-            cout << "wise_prod.size: " << wise_prod_len << endl;;
-            for(uint64_t i = 0; i < wise_prod_index.size();i++){
-                cout << "index " << wise_prod_index[i] << ": " << wise_prod[wise_prod_index[i]] << endl;;
-            }
-            cout << "prod_times: " << prod_times << endl;
-            cout << "end index of nonzero wise_prod: " << wise_prod_index[wise_prod_index.size()- 1] << endl;
+            cout << "index_iterator_right: " << index_iterator_right << endl;
+            cout << "wise_prod_len: " << wise_prod_len << endl;;
+            //for(uint64_t i = 0; i < wise_prod_index.size();i++){
+            //    cout << "index " << wise_prod_index[i] << ": " << wise_prod[wise_prod_index[i]] << endl;;
+            //}
+            cout << "prod_times: " << innerp_size << endl;
+            //cout << "end index of nonzero wise_prod: " << wise_prod_index[wise_prod_index.size()- 1] << endl;
 #endif
-            uint64_t return_len = wise_prod_len - prod_times + 1;
+            uint64_t return_len = wise_prod_len - innerp_size + 1;
             // all elements end in first inner prod(constant vector)
-            if(index_of_index_right  == wise_prod_index.size() && wise_prod_index[wise_prod_index.size()-1] < prod_times){
+            //if(index_of_index_right  == wise_prod_index.size() && wise_prod_index[wise_prod_index.size()-1] < prod_times){
+            //if(index_iterator_right == kernel_L_indexes.size()){
+            //    end_in_firstinner = true;
+            //}
+            if(end_in_firstinner){
 #if HLT_DEBUG_PRINT == 1
                 cout << "end in first inner prod: return" << endl;
 #endif
@@ -269,48 +280,87 @@ namespace seal
                 diagonalpairlist.push_back(make_pair(partial_sum, return_len));
                 return;
             }
-            uint64_t index_of_index_left = 0;
             // slide window
             // we need O(1) to calc a next diagonal element
-            uint64_t jump_upper;
-            uint64_t jump_bottom;
-            bool nonzeroleft_over = false;
+            uint64_t jump_right;
+            uint64_t jump_left;
+            bool is_right_edge = false;
+            bool is_left_edge = false;
             uint64_t pair_num = 0;
-            for(uint64_t i = 0;i < wise_prod_len - prod_times+1;i++){
+            uint64_t i;
+            if(offset < 0){
+                i = -offset;
+                wise_prod_len += i;
+            }else{
+                i = 0;
+            }
+            for (; i + innerp_size - 1 < wise_prod_len; i++) {
                 // how many index should we jump to calc next partial_sum?
-                jump_upper = wise_prod_index[index_of_index_right] - (i+prod_times-1);
-                jump_bottom = wise_prod_index[index_of_index_left] - i + 1;
-                if(nonzeroleft_over){
-                    jump_upper = wise_prod_len - (i + prod_times - 1);
+                uint64_t window_left = i;
+                uint64_t window_right = i + innerp_size - 1;
+                jump_right =
+                    kernel_L_indexes[index_iterator_right] - window_right;
+                jump_left = kernel_L_indexes[index_iterator_left] - window_left + 1;
+                if (is_right_edge) {
+                    jump_right = wise_prod_len - window_right;
                 }
-                uint64_t jump_len = min(jump_upper, jump_bottom);
+                if(is_left_edge){
+                    jump_left = wise_prod_len - window_left;
+                }
+                uint64_t jump_len = min(jump_right, jump_left);
 #if HLT_DEBUG_PRINT == 1
                 cout << "--loop: i=" << i << "--" << endl;
-                cout << "index_of_index: (" << index_of_index_left << ", " << index_of_index_right << ") " << endl;
-                cout << "windows: (" << i << ", " << i + prod_times - 1 << ")" << endl;
-                cout << "jump_upper: " << jump_upper << endl;
-                cout << "jump_bottom: " << jump_bottom << endl;
+                cout << "iterator_of_index: (" << index_iterator_left << ", "
+                    << index_iterator_right << ") " << endl;
+                cout << "kernel indexes: ("
+                    << kernel_L_indexes[index_iterator_left] << ", "
+                    << kernel_L_indexes[index_iterator_right] << ") " << endl;
+                cout << "windows: (" << i << ", " << i + innerp_size - 1 << ")"
+                    << endl;
+                cout << "jump_right: " << jump_right << endl;
+                cout << "jump_left: " << jump_left << endl;
                 cout << "jump_len: " << jump_len << endl;
                 cout << "partial_sum: " << partial_sum << endl;
                 cout << "make pair: " << partial_sum << ", " << jump_len << endl;
+                cout << endl;
 #endif
+                // make pair
                 auto pair = make_pair(partial_sum, jump_len);
                 diagonalpairlist.push_back(pair);
                 pair_num++;
-                if(jump_len == jump_upper){
-                    partial_sum = util::add_uint_mod(partial_sum, wise_prod[wise_prod_index[index_of_index_right]], modulus);
-                    if(index_of_index_right == wise_prod_index.size()-1){
+
+                // update partial sum
+                if (jump_len == jump_right) {
+                    uint64_t list_R_coeff = list_R[kernel_L_indexes[index_iterator_right] + offset];
+                    auto coeff_prod = util::multiply_uint_mod(
+                            kernel_L[kernel_L_indexes[index_iterator_right]],
+                            list_R_coeff, modulus);
+                    partial_sum =
+                        util::add_uint_mod(partial_sum, coeff_prod, modulus);
+                    if (index_iterator_right == kernel_L_indexes.size() - 1) {
 #if HLT_DEBUG_PRINT == 1
                         cout << "index_right is edge!" << endl;
 #endif
-                        nonzeroleft_over = true;
-                    }else{
-                        index_of_index_right++;
+                        is_right_edge = true;
+                    } else {
+                        index_iterator_right++;
                     }
                 }
-                if(jump_len == jump_bottom){
-                    partial_sum = util::sub_uint_mod(partial_sum, wise_prod[wise_prod_index[index_of_index_left]], modulus);
-                    index_of_index_left++;
+                if (jump_len == jump_left) {
+                    uint64_t list_R_coeff = list_R[kernel_L_indexes[index_iterator_left] + offset];
+                    auto coeff_prod = util::multiply_uint_mod(
+                            kernel_L[kernel_L_indexes[index_iterator_left]],
+                            list_R_coeff, modulus);
+                    partial_sum =
+                        util::sub_uint_mod(partial_sum, coeff_prod, modulus);
+                    if (index_iterator_left == kernel_L_indexes.size() - 1) {
+#if HLT_DEBUG_PRINT == 1
+                        cout << "index_left is edge!" << endl;
+#endif
+                        is_left_edge = true;
+                    } else {
+                        index_iterator_left++;
+                    }
                 }
                 i = i + jump_len - 1;
             }
@@ -531,5 +581,5 @@ namespace seal
         }
 
 
+        }
     }
-}
