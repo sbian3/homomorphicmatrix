@@ -32,7 +32,7 @@ if(HLT_FETCH_THIRDPARTY)
     FetchContent_Declare(
         seal
         GIT_REPOSITORY https://github.com/microsoft/SEAL.git
-        GIT_TAG 0b058d99b7f18a00e5ebb2b80caee593804b0500 # 3.6.4
+        GIT_TAG 6bfac481aae4057ea887d42eb0f24371e9b4c4f9 # 3.7.1
         )
     FetchContent_GetProperties(seal)
     if(NOT seal_POPULATED)
