@@ -30,6 +30,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     }
 
     // generate encryption helper
+    auto keygen_start = chrono::high_resolution_clock::now();
     KeyGenerator keygen(context);
     SecretKey secret_key = keygen.secret_key();
     PublicKey public_key;
@@ -37,6 +38,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor_LT decryptor(context, secret_key);
+    auto keygen_end = chrono::high_resolution_clock::now();
 
     // generate plaintext x
     uint64_t block_size = get_blocksize(input[0].size(), kernel[0].size(), 0);
@@ -54,8 +56,10 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     pack_kernel_to_matrix(kernelinfos, matrix);
 
     // encrypt x
+    auto enc_start = chrono::high_resolution_clock::now();
     Ciphertext x_encrypted;
     encryptor.encrypt(x_plain, x_encrypted);
+    auto enc_end = chrono::high_resolution_clock::now();
     if(print_data){
         cout << "----Encrypt x_plain to x_encrypted.----" << endl;
         //cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
@@ -80,11 +84,15 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     auto dec_end = chrono::high_resolution_clock::now();
 
     // time result
+    auto keygen_diff = chrono::duration_cast<chrono::microseconds>(keygen_end - keygen_start);
+    auto enc_diff = chrono::duration_cast<chrono::microseconds>(enc_end - enc_start);
     auto lt_diff = chrono::duration_cast<chrono::microseconds>(lt_end - lt_start);
     auto lt_c0 = chrono::duration_cast<chrono::microseconds>(lt_end - lt_half);
     auto dec_diff = chrono::duration_cast<chrono::microseconds>(dec_end - dec_start);
     latency_lt = lt_diff.count();
     latency_dec = dec_diff.count();
+    cout << "keygen: " << keygen_diff.count() << US << endl;
+    cout << "encrypt: " << enc_diff.count() << US << endl;
     cout << "c0 matrix_vector product: " << lt_c0.count() << US << endl;
     if(print_data){
         cout << TIME_LABEL_LT << lt_diff.count() << US << endl;
