@@ -260,26 +260,7 @@ namespace seal
             cout << "prod_times: " << innerp_size << endl;
             //cout << "end index of nonzero wise_prod: " << wise_prod_index[wise_prod_index.size()- 1] << endl;
 #endif
-            uint64_t return_len = wise_prod_len - innerp_size + 1;
-            // all elements end in first inner prod(constant vector)
-            //if(index_of_index_right  == wise_prod_index.size() && wise_prod_index[wise_prod_index.size()-1] < prod_times){
-            //if(index_iterator_right == kernel_L_indexes.size()){
-            //    end_in_firstinner = true;
-            //}
-            if(end_in_firstinner){
-#if HLT_DEBUG_PRINT == 1
-                cout << "end in first inner prod: return" << endl;
-#endif
-#if HLT_DEBUG_TIME == 1
-            auto begin_diff = chrono::duration_cast<chrono::nanoseconds>(mul_start - diagonal_begin);
-            auto mul_diff = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
-            auto innerp_diff = chrono::duration_cast<chrono::nanoseconds>(innerp_end - mul_end);
-            cout <<  "begin: " << begin_diff.count() << " mul : " << mul_diff.count() << " innerp: " << innerp_diff.count() << " slide: " << " sum: " << begin_diff.count() + mul_diff.count() + innerp_diff.count() << endl;
 
-#endif
-                diagonalpairlist.push_back(make_pair(partial_sum, return_len));
-                return;
-            }
             // slide window
             // we need O(1) to calc a next diagonal element
             uint64_t jump_right;
@@ -339,7 +320,7 @@ namespace seal
                         util::add_uint_mod(partial_sum, coeff_prod, modulus);
                     if (index_iterator_right == kernel_L_indexes.size() - 1) {
 #if HLT_DEBUG_PRINT == 1
-                        cout << "index_right is edge!" << endl;
+                        cout << "index_right is on edge!" << endl;
 #endif
                         is_right_edge = true;
                     } else {
@@ -355,7 +336,7 @@ namespace seal
                         util::sub_uint_mod(partial_sum, coeff_prod, modulus);
                     if (index_iterator_left == kernel_L_indexes.size() - 1) {
 #if HLT_DEBUG_PRINT == 1
-                        cout << "index_left is edge!" << endl;
+                        cout << "index_left is on edge!" << endl;
 #endif
                         is_left_edge = true;
                     } else {
@@ -364,7 +345,6 @@ namespace seal
                 }
                 i = i + jump_len - 1;
             }
-            //cout << "pair_num: " << pair_num << endl;
 #if HLT_DEBUG_TIME == 1
             auto slide_end = chrono::high_resolution_clock::now();
             auto begin_diff = chrono::duration_cast<chrono::nanoseconds>(mul_start - diagonal_begin);
@@ -542,6 +522,7 @@ namespace seal
                 uint64_t index = 0;
                 int64_t k = static_cast<int64_t>(colsize_K);
                 k = -k+1;
+                auto diagonal_start = chrono::high_resolution_clock::now();
                 for(;k<static_cast<int64_t>(submat_rowsize);k++){
                     vector<pair<uint64_t, uint64_t>> diagonal_pairs;
                     diagonal_pairs.reserve(kernel_index.size());
@@ -564,10 +545,20 @@ namespace seal
 #if HLT_DEBUG_PRINT == 1
                 print_pair_vectors(matrix_product_diagonals);
 #endif
+
+                auto get_toeplitz_start = chrono::high_resolution_clock::now();
                 kernel_infos[i].get_toeplitz(matrix_product_diagonals, poly_degree);
 
                 // write diagonals to result matrix
+                //auto write_matrix_start = chrono::high_resolution_clock::now();
                 util::diagonallist_to_matrix(matrix_product_diagonals, submat_startcol, submat_startrow, colsize_K, submat_rowsize, result);
+                //auto write_matrix_end = chrono::high_resolution_clock::now();
+                //auto diagonal_diff = chrono::duration_cast<chrono::microseconds>(get_toeplitz_start - diagonal_start);
+                //auto toeplitz_diff = chrono::duration_cast<chrono::microseconds>(write_matrix_start - get_toeplitz_start);
+                //auto write_diff = chrono::duration_cast<chrono::microseconds>(write_matrix_end - write_matrix_start);
+                //cout << "diagonal: " << diagonal_diff.count() << "us" << endl;
+                //cout << "get toeplitz: " << toeplitz_diff.count() << "us" << endl;
+                //cout << "write: " << write_diff.count() << "us" << endl;
             }
         }
 
