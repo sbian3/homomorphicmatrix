@@ -47,6 +47,25 @@ TEST(NTTtest, multiply_poly_negacyclic){
     ASSERT_EQ(17, result[1]);
 }
 
+TEST(NTTtest, ntt_negacyclic){
+    MemoryPoolHandle pool = MemoryPoolHandle::Global();
+    uint64_t poly_degree = 4;
+    uint64_t coeff_count_power = get_power_of_two(poly_degree);
+    Modulus modulus(40961);
+    NTTTables tables(coeff_count_power, modulus, pool);
+    auto poly(allocate_poly(poly_degree, 1, pool));
+    poly[0] = 1;
+    poly[1] = 2;
+    poly[2] = 3;
+    poly[3] = 4;
+    ntt_negacyclic_harvey(poly.get(), tables);
+    std::cout << "negacyclic sample" << std::endl;
+    for(uint64_t i = 0;i < poly_degree;i++){
+        std::cout << poly[i] << ", ";
+    }
+    std::cout << std::endl;
+}
+
 
 TEST(NTTtest, poweroftwo){
     auto actual = get_bigger_poweroftwo(63);
