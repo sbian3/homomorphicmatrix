@@ -11,17 +11,18 @@ kernel_dims = [2, 4, 8, 16, 32, 64, 128]
 input_dims = [16, 32, 64, 128, 256, 512, 1024]
 
 # for order reference
-ref_nsq = []
-ref_scale=10/(2048*2048)
-ref_n15 = []
-ref_n1 = []
-scale_n15 = 10/pow(2048, 1.5)
-scale_n1 = 10/2048
-for poly_degree in poly_degrees:
-    ref_nsq.append(poly_degree * poly_degree * ref_scale)
-    ref_n15.append(pow(poly_degree, 1.5) * scale_n15)
-    ref_n1.append(poly_degree * scale_n1)
-
+def generate_order_reference(poly_degrees):
+    ref_nsq = []
+    ref_scale=10/(2048*2048)
+    ref_n15 = []
+    ref_n1 = []
+    scale_n15 = 10/pow(2048, 1.5)
+    scale_n1 = 10/2048
+    for poly_degree in poly_degrees:
+        ref_nsq.append(poly_degree * poly_degree * ref_scale)
+        ref_n15.append(pow(poly_degree, 1.5) * scale_n15)
+        ref_n1.append(poly_degree * scale_n1)
+    return ref_nsq, ref_n15, ref_n1
 
 class BenchType(Enum):
     multi_poly="multipoly"
@@ -51,7 +52,12 @@ def read_latency(filepath):
             time_dec = float(line[1])
     return time_lt, time_dec
 
-# read bench data from /home/work/kazumasita/relu/SEAL/tifs_result
+def join_path(result_dirname, algorithm_name, benchtype, param_bench):
+    slash = "/"
+    filepath = "../" + result_dirname + slash + algorithm_name + slash + benchtype.value + slash + str(param_bench) + ".txt"
+    return filepath
+
+# read bench data from ../hlt_result
 def read_bench(prefix, benchtype, kernel_dim=0):
     bench_lt = []
     if(benchtype == BenchType.multi_poly):
