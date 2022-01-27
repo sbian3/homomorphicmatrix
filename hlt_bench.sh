@@ -120,7 +120,7 @@ function general_lt_multipoly(){
     do
         echo "General Linear Transformation: (input, kernel, poly_degree) = ($input_dim, $kernel_dim, $poly_degree)"
         output_path="hlt_result/general_lt/multipoly/general_lt$poly_degree.txt"
-        env build/bin/direct_conv $input_dim $kernel_dim $poly_degree 2>$err  > $output_path
+        env build/bin/general_lt $input_dim $kernel_dim $poly_degree 2>$err  > $output_path
     done
 }
 
@@ -136,4 +136,4 @@ pc_toeplitz_multipoly
 #packedconv_multiinput
 #directconv_multikernel
 #packedconv_multikernel
-#general_lt
+general_lt_multipoly
