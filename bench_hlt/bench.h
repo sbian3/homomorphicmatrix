@@ -31,6 +31,7 @@
 #define BENCHTIMES_DIRECT 10
 #define MS " ms "
 #define US " us "
+#define NS " ns "
 
 using namespace std;
 using namespace seal;
