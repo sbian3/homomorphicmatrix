@@ -26,7 +26,7 @@ class Decryptor_LT
 
         Decryptor_LT(const SEALContext &context, const SecretKey &secret_key);
 
-        void linear_trans(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> lt_matrix, Ciphertext &lt_cipher);
+        void linear_trans(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &lt_matrix, Ciphertext &lt_cipher);
 
         void lt_packedconv(Ciphertext &encrypted, std::vector<util::KernelInfo> kernel_infos, Ciphertext &lt_cipher);
 
@@ -37,7 +37,7 @@ class Decryptor_LT
     private:
         void dot_product_with_secret_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool);
 
-        void dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool);
+        void dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool);
 
         MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
 

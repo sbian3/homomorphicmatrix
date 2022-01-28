@@ -247,7 +247,7 @@ namespace seal
         //
         ///////////////////////////////
 
-        void matrix_dot_matrix_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus){
+        void matrix_dot_matrix_mod(vector<vector<uint64_t>> &matrixL, vector<vector<uint64_t>>& matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus){
             auto time_start = chrono::high_resolution_clock::now();
             assert(matrixL[0].size() == matrixR.size());
             for(auto i = 0U;i < matrixL.size();i++){
@@ -268,7 +268,7 @@ namespace seal
             cout << "matrix dot product: " << time_diff.count() << "milliseconds" << endl;
         }
 
-        void matrix_dot_matrix_mod_t(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus){
+        void matrix_dot_matrix_mod_t(vector<vector<uint64_t>> &matrixL, vector<vector<uint64_t>> &matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus){
             auto time_start = chrono::high_resolution_clock::now();
             assert(matrixL[0].size() == matrixtR.size());
             for(auto i = 0U;i < matrixL.size();i++){

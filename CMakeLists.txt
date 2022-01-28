@@ -79,7 +79,7 @@ else()
     target_include_directories(seal_lt PUBLIC ${CMAKE_INSTALL_PREFIX}/include/SEAL-3.6)
 endif()
 
-add_subdirectory(bench_hlt)
+add_subdirectory(bench)
 option(HLT_BUILD_TEST "build test" OFF)
 if(HLT_BUILD_TEST)
     add_subdirectory(test)

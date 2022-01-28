@@ -4,7 +4,8 @@ if(HLT_FETCH_THIRDPARTY)
     FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG        703bd9caab50b139428cea1aaff9974ebee5742e # 1.10.0
+        GIT_TAG        0b7798b2fba340969a0cf83698e5c0a2e25b7dbc #1.11.0
+
         )
     FetchContent_GetProperties(googletest)
 

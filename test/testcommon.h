@@ -53,6 +53,13 @@ inline void ASSERT_ARR(ConstCoeffIter expected, ConstCoeffIter actual, uint64_t 
     }
 }
 
+inline void ASSERT_ARR(ConstRNSIter expected, ConstRNSIter actual, uint64_t rns_size){
+    auto coeff_size = expected.poly_modulus_degree();
+    SEAL_ITERATE(iter(expected, actual), rns_size, [&](auto I){
+            ASSERT_ARR(get<0>(I), get<1>(I), coeff_size);
+            });
+}
+
 inline void ASSERT_MATRIX(vector<vector<uint64_t>>& expected, vector<vector<uint64_t>>& actual){
     for(uint64_t i = 0;i < expected.size();i++){
         for(uint64_t j = 0;j < expected[i].size();j++){

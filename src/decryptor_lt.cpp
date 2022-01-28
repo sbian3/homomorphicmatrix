@@ -180,7 +180,7 @@ void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector
 }
 
 // for linear transformation
-void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool){
+void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool){
     auto &context_data = *context_.get_context_data(encrypted.parms_id());
     auto &parms = context_data.parms();
     auto &coeff_modulus = parms.coeff_modulus();
@@ -199,7 +199,8 @@ void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel
     //compute_secret_key_array(encrypted_size - 1);
     SEAL_ALLOCATE_GET_RNS_ITER(secret_key_array, coeff_count, coeff_modulus_size, pool);
     set_poly(secret_key_array_.get(), coeff_count, coeff_modulus_size, secret_key_array);
-    // transform secret key array into non-NTT form
+    // secret_key_array is in NTT form
+    // transform secret_key_array into non-NTT form
     inverse_ntt_negacyclic_harvey(secret_key_array, coeff_modulus_size, ntt_tables);
 
     PolyIter cipher_polyiter(encrypted);
@@ -207,6 +208,7 @@ void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s, coeff_count,coeff_modulus_size, pool);
     auto matrix_s = chrono::high_resolution_clock::now();
     auto matrix_mid = chrono::high_resolution_clock::now();
+    // TODO: multi kernels
     SEAL_ITERATE(iter(secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
             matrix_dot_vector(matrix_conved, kernel_infos[0].kernel_size-1, get<0>(I), get<1>(I), coeff_count, get<2>(I));
             CoeffIter dest_for_toeplitz = get<2>(I)+kernel_infos[0].kernel_size-1;
@@ -225,7 +227,7 @@ void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel
     cout << "decrypt: matrix_toeplitz: " << matrix_toeplitz.count() << " us" << endl;
 }
 
-void Decryptor_LT::linear_trans(Ciphertext &encrypted, vector<std::vector<uint64_t>> lt_matrix, Ciphertext &lt_cipher){
+void Decryptor_LT::linear_trans(Ciphertext &encrypted, vector<std::vector<uint64_t>> &lt_matrix, Ciphertext &lt_cipher){
     auto &context_data = *context_.get_context_data(encrypted.parms_id());
     auto &parms = context_data.parms();
     auto &coeff_modulus = parms.coeff_modulus();

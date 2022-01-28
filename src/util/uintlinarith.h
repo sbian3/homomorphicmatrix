@@ -163,14 +163,30 @@ namespace seal
                     });
         }
 
+        inline void matrix_dot_vector(vector<vector<uint64_t>> &matrix, CoeffIter vector_iter, uint64_t coeff_size, uint64_t begin_index, uint64_t range, CoeffIter destination, const Modulus &modulus){
+            if(begin_index + range > coeff_size){
+                throw std::invalid_argument("matrix_dot_vector: range is too large");
+            }
+            for(uint64_t i = begin_index;i < begin_index+range;i++){
+                destination[i] = inner_product_coeffmod(matrix[i].data(), vector_iter, coeff_size, modulus);
+            }
+        }
+
+        inline void matrix_dot_vector(vector<vector<uint64_t>> &matrix, RNSIter vector_rns, uint64_t rns_degree, uint64_t begin_index, uint64_t range, RNSIter destination, ConstModulusIter mod_chain){
+            uint64_t coeff_size = vector_rns.poly_modulus_degree();
+            SEAL_ITERATE(iter(vector_rns, destination, mod_chain), rns_degree, [&](auto I){
+                    matrix_dot_vector(matrix, get<0>(I), coeff_size, begin_index, range, get<1>(I), get<2>(I));
+                    });
+        }
+
         //
         // matrix and matrix arithmetic
         //
 
 
-        void matrix_dot_matrix_mod(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus);
+        void matrix_dot_matrix_mod(vector<vector<uint64_t>> &matrixL, vector<vector<uint64_t>> &matrixR, vector<vector<uint64_t>>& result,const Modulus &modulus);
 
-        void matrix_dot_matrix_mod_t(vector<vector<uint64_t>> matrixL, vector<vector<uint64_t>> matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus);
+        void matrix_dot_matrix_mod_t(vector<vector<uint64_t>> &matrixL, vector<vector<uint64_t>> &matrixtR, vector<vector<uint64_t>>& result, Modulus &modulus);
 
         //
         // Convolution
@@ -182,7 +198,7 @@ namespace seal
         //
 
 
-        inline void matrix_dot_convedcoeff(vector<vector<uint64_t>> matrix, uint64_t coeff_degree, CoeffIter c, const Modulus &modulus, vector<vector<uint64_t>> &result){
+        inline void matrix_dot_convedcoeff(vector<vector<uint64_t>> &matrix, uint64_t coeff_degree, CoeffIter c, const Modulus &modulus, vector<vector<uint64_t>> &result){
             vector<vector<uint64_t>> A(coeff_degree, vector<uint64_t>(coeff_degree));
             init_matrix_circ(A, coeff_degree, c, modulus);
             matrix_dot_matrix_mod(matrix, A, result, modulus);
@@ -194,7 +210,7 @@ namespace seal
             init_matrix_circ(new_c1, coeff_degree, conved_c1.data(), modulus);
         }
 
-        inline void secret_product_with_matrix_rns(vector<vector<uint64_t>> matrix, uint64_t rns_count, RNSIter c, RNSIter s, ConstModulusIter mod_chain, RNSIter result){
+        inline void secret_product_with_matrix_rns(vector<vector<uint64_t>> &matrix, uint64_t rns_count, RNSIter c, RNSIter s, ConstModulusIter mod_chain, RNSIter result){
             uint64_t coeff_degree = c.poly_modulus_degree();
             SEAL_ITERATE(iter(c, s, mod_chain, result), rns_count, [&](auto I){
                     auto time_start = chrono::high_resolution_clock::now();

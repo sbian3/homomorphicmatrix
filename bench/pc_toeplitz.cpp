@@ -94,6 +94,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     cout << "keygen: " << keygen_diff.count() << US << endl;
     cout << "encrypt: " << enc_diff.count() << US << endl;
     cout << "c0 matrix_vector product: " << lt_c0.count() << US << endl;
+    cout << "Decryption: " << latency_dec << US << endl;
     if(print_data){
         cout << TIME_LABEL_LT << lt_diff.count() << US << endl;
         cout << TIME_LABEL_DEC << dec_diff.count() << US << endl;

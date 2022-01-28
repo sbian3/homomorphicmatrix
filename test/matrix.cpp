@@ -1,4 +1,5 @@
 #include "testcommon.h"
+#include <cstdint>
 
 TEST(Arithtest, inner_product){
     vector<uint64_t> left_vec = { 1, 2, 3, 4 };
@@ -82,6 +83,49 @@ TEST(Matrixtest, matrix_dot_vector){
     util::matrix_dot_vector(matrix, coeff_degree, arr.data(), modulus, coeff_degree, actual);
     vector<uint64_t> expected = { 4, 4, 6, 8, 10, 12, 14, 16, 18, 20};
     ASSERT_ARR(expected, actual, expected.size());
+}
+
+TEST(Matrixtest, matrix_dot_vector_with_range){
+    MemoryPoolHandle pool_ = MemoryPoolHandle::Global();
+    uint64_t array_size = 10;
+    uint64_t coeff_degree = array_size;
+    auto modulus = Modulus(0x7e00001ULL);
+    vector<std::uint64_t> arr(array_size);
+    vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
+
+    for(uint64_t i = 0;i < array_size;i++){
+        arr[i] = i+1;
+    }
+    util::init_matrix_identity(matrix, coeff_degree, 2);
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, coeff_degree, pool_);
+    uint64_t begin_index = 2;
+    uint64_t range       = 5;
+    util::matrix_dot_vector(matrix, arr.data(), coeff_degree, begin_index, range, actual, modulus);
+    vector<uint64_t> expected = {0, 0, 6, 8, 10, 12, 14, 0, 0, 0};
+    ASSERT_ARR(expected, actual, expected.size());
+}
+
+TEST(Matrixtest, matrix_dot_vector_with_range_rns){
+    MemoryPoolHandle pool_ = MemoryPoolHandle::Global();
+    uint64_t array_size = 10;
+    uint64_t coeff_degree = array_size;
+    vector<Modulus> modulus_chain = {Modulus(0x7e00001ULL)};
+    vector<std::uint64_t> arr(array_size);
+    vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
+
+    for(uint64_t i = 0;i < array_size;i++){
+        arr[i] = i+1;
+    }
+    auto vector_rns = RNSIter(arr.data(), coeff_degree);
+    util::init_matrix_identity(matrix, coeff_degree, 2);
+    uint64_t rns_degree = 1;
+    SEAL_ALLOCATE_ZERO_GET_RNS_ITER(actual, rns_degree, coeff_degree, pool_);
+    uint64_t begin_index = 2;
+    uint64_t range       = 5;
+    util::matrix_dot_vector(matrix, vector_rns, rns_degree, begin_index, range, actual, modulus_chain.data());
+    vector<uint64_t> expected = {0, 0, 6, 8, 10, 12, 14, 0, 0, 0};
+    auto expected_rns = RNSIter(expected.data(), coeff_degree);
+    ASSERT_ARR(expected_rns, actual, rns_degree);
 }
 
 TEST(Matrixtest, matrix_dot_vector_rnd){
@@ -172,7 +216,7 @@ TEST(Matrixtest, matrix_dot_matrix_toeplitz_mod){
     vector<vector<uint64_t>> actual(poly_degree, vector<uint64_t>(poly_degree));
     // actual
     matrix_dot_matrix_toeplitz_mod(kernel_info, c1.data(), poly_degree, actual, modulus);
-    print_matrix(actual);
+    //print_matrix(actual);
 
     // expected
     vector<vector<uint64_t>> expected(poly_degree, vector<uint64_t>(poly_degree));
@@ -183,7 +227,7 @@ TEST(Matrixtest, matrix_dot_matrix_toeplitz_mod){
     vector<vector<uint64_t>> C1(poly_degree, vector<uint64_t>(poly_degree));
     init_matrix_circ(C1, poly_degree, c1.data(), modulus);
     matrix_dot_matrix_mod(kernel_circ_matrix, C1, expected, modulus);
-    print_matrix(expected);
+    //print_matrix(expected);
 
     ASSERT_MATRIX(expected, actual);
 }
