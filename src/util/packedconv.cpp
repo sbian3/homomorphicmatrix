@@ -523,7 +523,9 @@ namespace seal
                 int64_t k = static_cast<int64_t>(colsize_K);
                 k = -k+1;
 #if HLT_DEBUG_TIME == 1
+                vector<uint64_t> times_diagonal_calc(submat_rowsize + colsize_K+1);
                 auto diagonal_all_start = chrono::high_resolution_clock::now();
+                int iter_diagonal = 0;
 #endif
                 for(;k<static_cast<int64_t>(submat_rowsize);k++){
                     vector<pair<uint64_t, uint64_t>> diagonal_pairs;
@@ -539,6 +541,8 @@ namespace seal
 #if HLT_DEBUG_TIME == 1
                     auto diagonal_end = chrono::high_resolution_clock::now();
                     auto diagonal_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_end - diagonal_start);
+                    times_diagonal_calc[iter_diagonal] = diagonal_diff.count();
+                    iter_diagonal++;
                     //cout << "calc one diagonal vector: " << diagonal_diff.count() << "ns"  << endl;
 #endif
                     matrix_product_diagonals[index] = diagonal_pairs;
@@ -565,6 +569,9 @@ namespace seal
                 cout << "all diagonal: " << diagonal_diff.count() << "us" << endl;
                 cout << "get toeplitz: " << toeplitz_diff.count() << "us" << endl;
                 cout << "write matrix: " << write_diff.count()    << "us" << endl;
+                for(int i = 0;i < times_diagonal_calc.size();i++){
+                    cout << "diagonal time[" << i << "]: " << times_diagonal_calc[i] << "ns" << endl;
+                }
 #endif
             }
         }
