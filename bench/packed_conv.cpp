@@ -83,6 +83,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     auto lt_diff  = chrono::duration_cast<chrono::microseconds>(lt_end - lt_start);
     auto lt_c0    = chrono::duration_cast<chrono::microseconds>(lt_end - lt_half);
     auto dec_diff = chrono::duration_cast<chrono::microseconds>(dec_end - dec_start);
+    cout << "LT: matrix dot vector: " << lt_c0.count() << "us" << endl;
     latency_lt    = lt_diff.count();
     latency_dec   = dec_diff.count();
     //cout << "c0 matrix_vector product: " << lt_c0.count() << US << endl;

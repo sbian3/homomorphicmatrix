@@ -503,6 +503,9 @@ namespace seal
         void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> &kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<uint64_t>> &result,Modulus &modulus){
             // for each block
             for(uint64_t i = 0;i < kernel_infos.size();i++){
+#if HLT_DEBUG_TIME == 1
+                auto first_settings_begin = chrono::high_resolution_clock::now();
+#endif
                 // get diagonal lists for kernel
                 KernelInfo kinfo = kernel_infos[i];
                 vector<uint64_t> kernel_index = kinfo.index;
@@ -514,6 +517,7 @@ namespace seal
                 submat_startrow = 0;
                 kinfo.getParamsforSubmatrix(submat_startcol, submat_colsize);
                 vector<uint64_t> diagonal_c1 = util::create_diagonal_from_submatrix(c1, poly_degree , submat_startcol, submat_colsize, modulus);
+                //vector<uint64_t> diagonal_scalars = kernel_infos[i].diagonal_scalars;
 
                 // calc diagonal of product
                 // pair(value, value_len)
@@ -522,19 +526,23 @@ namespace seal
                 uint64_t index = 0;
                 int64_t k = static_cast<int64_t>(colsize_K);
                 k = -k+1;
+                uint64_t diagonal_element_size = kernel_index.size();
 #if HLT_DEBUG_TIME == 1
+                auto diagonal_all_start = chrono::high_resolution_clock::now();
+#endif
+#if HLT_DEBUG_TIME == DEBUG_TIME_SUM_DIAGONAL
                 vector<uint64_t> times_diagonal_calc(submat_rowsize + colsize_K+1);
                 vector<uint64_t> times_prepare_vector(submat_rowsize + colsize_K+1);
-                auto diagonal_all_start = chrono::high_resolution_clock::now();
                 int iter_diagonal = 0;
 #endif
                 for(;k<static_cast<int64_t>(submat_rowsize);k++){
-#if HLT_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == DEBUG_TIME_SUM_DIAGONAL
+                    //cout << "alloc " << kernel_index.size() << "pairs" << endl;
                     auto prepare_vector = chrono::high_resolution_clock::now();
 #endif
                     vector<pair<uint64_t, uint64_t>> diagonal_pairs;
-                    diagonal_pairs.reserve(kernel_index.size());
-#if HLT_DEBUG_TIME == 1
+                    diagonal_pairs.reserve(diagonal_element_size);
+#if HLT_DEBUG_TIME == DEBUG_TIME_SUM_DIAGONAL
                     auto diagonal_start = chrono::high_resolution_clock::now();
 #endif
                     //vector<uint64_t> diagonal_pairs;
@@ -542,11 +550,10 @@ namespace seal
                     // digaonal_pairs = util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus, diagonal_pairs);
                     //cout << "kernel_index_size: " << kernel_index.size() << endl;
                     //cout << "diagonal_pairs,size = " << diagonal_pairs.size() << endl;
-#if HLT_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == DEBUG_TIME_SUM_DIAGONAL
                     auto diagonal_end = chrono::high_resolution_clock::now();
                     auto diagonal_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_end - diagonal_start);
                     auto alloc_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_start- prepare_vector);
-
                     times_diagonal_calc[iter_diagonal] = diagonal_diff.count();
                     times_prepare_vector[iter_diagonal] = alloc_diff.count();
                     iter_diagonal++;
@@ -569,13 +576,17 @@ namespace seal
 #endif
                 util::diagonallist_to_matrix(matrix_product_diagonals, submat_startcol, submat_startrow, colsize_K, submat_rowsize, result);
 #if HLT_DEBUG_TIME == 1
+                auto first_settings_diff = chrono::duration_cast<chrono::microseconds>(diagonal_all_start - first_settings_begin);
                 auto write_matrix_end = chrono::high_resolution_clock::now();
                 auto write_diff = chrono::duration_cast<chrono::microseconds>(write_matrix_end - write_matrix_start);
                 auto diagonal_diff = chrono::duration_cast<chrono::microseconds>(get_toeplitz_start - diagonal_all_start);
                 auto toeplitz_diff = chrono::duration_cast<chrono::microseconds>(write_matrix_start - get_toeplitz_start);
+                cout << "first settings: " << first_settings_diff.count() << "us" << endl;
                 cout << "all diagonal: " << diagonal_diff.count() << "us" << endl;
                 cout << "get toeplitz: " << toeplitz_diff.count() << "us" << endl;
                 cout << "write matrix: " << write_diff.count()    << "us" << endl;
+#endif
+#if HLT_DEBUG_TIME == DEBUG_TIME_SUM_DIAGONAL
                 uint64_t sum_diagonal_time = 0;
                 uint64_t sum_prepare_time = 0;
                 for(int i = 0;i < times_diagonal_calc.size();i++){

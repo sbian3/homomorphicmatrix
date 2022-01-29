@@ -162,7 +162,7 @@ bool pass_test_packedconv_1pack(){
 /////////////////
 int main(int argc, char* argv[]){
     //test_toeplitz_dot_vector();
-    uint64_t bench_times = 5;
+    uint64_t bench_times = 100;
     if(!pass_test_packedconv()){
         cerr << "test failed!" << endl;
         return 1;
