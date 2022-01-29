@@ -80,11 +80,11 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     auto dec_end = chrono::high_resolution_clock::now();
 
     // time result
-    auto lt_diff = chrono::duration_cast<chrono::microseconds>(lt_end - lt_start);
-    auto lt_c0 = chrono::duration_cast<chrono::microseconds>(lt_end - lt_half);
+    auto lt_diff  = chrono::duration_cast<chrono::microseconds>(lt_end - lt_start);
+    auto lt_c0    = chrono::duration_cast<chrono::microseconds>(lt_end - lt_half);
     auto dec_diff = chrono::duration_cast<chrono::microseconds>(dec_end - dec_start);
-    latency_lt = lt_diff.count();
-    latency_dec = dec_diff.count();
+    latency_lt    = lt_diff.count();
+    latency_dec   = dec_diff.count();
     //cout << "c0 matrix_vector product: " << lt_c0.count() << US << endl;
     if(print_data){
         cout << TIME_LABEL_LT << lt_diff.count() << US << endl;
