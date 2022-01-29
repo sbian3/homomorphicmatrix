@@ -346,11 +346,11 @@ namespace seal
                 i = i + jump_len - 1;
             }
 #if HLT_DEBUG_TIME == 1
-            auto slide_end = chrono::high_resolution_clock::now();
-            auto begin_diff = chrono::duration_cast<chrono::nanoseconds>(mul_start - diagonal_begin);
-            auto mul_diff = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
+            auto slide_end   = chrono::high_resolution_clock::now();
+            auto begin_diff  = chrono::duration_cast<chrono::nanoseconds>(mul_start - diagonal_begin);
+            auto mul_diff    = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
             auto innerp_diff = chrono::duration_cast<chrono::nanoseconds>(innerp_end - mul_end);
-            auto slide_diff = chrono::duration_cast<chrono::nanoseconds>(slide_end - innerp_end);
+            auto slide_diff  = chrono::duration_cast<chrono::nanoseconds>(slide_end - innerp_end);
             cout <<  "begin: " << begin_diff.count() << " mul : " << mul_diff.count() << " innerp: " << innerp_diff.count() << " slide: " << slide_diff.count() << " sum: " << begin_diff.count() + mul_diff.count() + innerp_diff.count() + slide_diff.count() << endl;
 #endif
         }
@@ -522,7 +522,9 @@ namespace seal
                 uint64_t index = 0;
                 int64_t k = static_cast<int64_t>(colsize_K);
                 k = -k+1;
-                auto diagonal_start = chrono::high_resolution_clock::now();
+#if HLT_DEBUG_TIME == 1
+                auto diagonal_all_start = chrono::high_resolution_clock::now();
+#endif
                 for(;k<static_cast<int64_t>(submat_rowsize);k++){
                     vector<pair<uint64_t, uint64_t>> diagonal_pairs;
                     diagonal_pairs.reserve(kernel_index.size());
@@ -537,7 +539,7 @@ namespace seal
 #if HLT_DEBUG_TIME == 1
                     auto diagonal_end = chrono::high_resolution_clock::now();
                     auto diagonal_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_end - diagonal_start);
-                    cout << "calc one diagonal vector: " << diagonal_diff.count() << endl;
+                    //cout << "calc one diagonal vector: " << diagonal_diff.count() << "ns"  << endl;
 #endif
                     matrix_product_diagonals[index] = diagonal_pairs;
                     index++;
@@ -546,19 +548,24 @@ namespace seal
                 print_pair_vectors(matrix_product_diagonals);
 #endif
 
+#if HLT_DEBUG_TIME == 1
                 auto get_toeplitz_start = chrono::high_resolution_clock::now();
+#endif
                 kernel_infos[i].get_toeplitz(matrix_product_diagonals, poly_degree);
-
+#if HLT_DEBUG_TIME == 1
                 // write diagonals to result matrix
-                //auto write_matrix_start = chrono::high_resolution_clock::now();
+                auto write_matrix_start = chrono::high_resolution_clock::now();
+#endif
                 util::diagonallist_to_matrix(matrix_product_diagonals, submat_startcol, submat_startrow, colsize_K, submat_rowsize, result);
-                //auto write_matrix_end = chrono::high_resolution_clock::now();
-                //auto diagonal_diff = chrono::duration_cast<chrono::microseconds>(get_toeplitz_start - diagonal_start);
-                //auto toeplitz_diff = chrono::duration_cast<chrono::microseconds>(write_matrix_start - get_toeplitz_start);
-                //auto write_diff = chrono::duration_cast<chrono::microseconds>(write_matrix_end - write_matrix_start);
-                //cout << "diagonal: " << diagonal_diff.count() << "us" << endl;
-                //cout << "get toeplitz: " << toeplitz_diff.count() << "us" << endl;
-                //cout << "write: " << write_diff.count() << "us" << endl;
+#if HLT_DEBUG_TIME == 1
+                auto write_matrix_end = chrono::high_resolution_clock::now();
+                auto write_diff = chrono::duration_cast<chrono::microseconds>(write_matrix_end - write_matrix_start);
+                auto diagonal_diff = chrono::duration_cast<chrono::microseconds>(get_toeplitz_start - diagonal_all_start);
+                auto toeplitz_diff = chrono::duration_cast<chrono::microseconds>(write_matrix_start - get_toeplitz_start);
+                cout << "all diagonal: " << diagonal_diff.count() << "us" << endl;
+                cout << "get toeplitz: " << toeplitz_diff.count() << "us" << endl;
+                cout << "write matrix: " << write_diff.count()    << "us" << endl;
+#endif
             }
         }
 
