@@ -110,7 +110,12 @@ namespace seal
                         if(pairs[i].empty()){
                             throw std::out_of_range("no data in pair");
                         }
-                        toeplitz_tmp[i] = pairs[i].back().first;
+                        for(uint64_t j = pairs[i].size()-1;j >=0;j++){
+                            if(pairs[i][j].first != 0 && pairs[i][j].second != 0){
+                                toeplitz_tmp[i] = pairs[i][j].first;
+                                break;
+                            }
+                        }
                     }
                     toeplitz_diagonal_scalars = toeplitz_tmp;
                 }
@@ -143,7 +148,7 @@ namespace seal
 
         //vector<uint64_t> matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> &kernel_L, vector<uint64_t> &kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus);
 
-        inline void matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> &kernel_L, vector<uint64_t> &kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus, vector<pair<uint64_t, uint64_t>> &diagonalpairlist){
+        inline void matrix_product_diagonal(int64_t offset, uint64_t colsize_R, uint64_t rowsize_R, vector<uint64_t> &kernel_L, vector<uint64_t> &kernel_L_indexes, vector<uint64_t> &list_R, Modulus & modulus, vector<vector<pair<uint64_t, uint64_t>>> &diagonalpairlist, uint64_t index_pairlist){
             // assert list_R is larger than kernel
             assert(kernel_L_indexes.size() <= list_R.size());
             //assert(colsize_R <= kernel_L.size());
@@ -270,7 +275,7 @@ namespace seal
 #endif
                 // make pair
                 auto pair = make_pair(partial_sum, jump_len);
-                diagonalpairlist.push_back(pair);
+                diagonalpairlist[index_pairlist].push_back(pair);
                 pair_num++;
 
                 // update partial sum
@@ -308,6 +313,7 @@ namespace seal
                 }
                 i = i + jump_len - 1;
             }
+            //cout << "pair_num: " << pair_num << endl;
 #if HLT_DEBUG_TIME == 1
             auto slide_end   = chrono::high_resolution_clock::now();
             auto begin_diff  = chrono::duration_cast<chrono::nanoseconds>(mul_start - diagonal_begin);

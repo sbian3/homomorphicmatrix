@@ -397,6 +397,7 @@ namespace seal
                     auto pair = diagonallist[i][j];
                     auto pair_value = pair.first;
                     auto pair_valuelen = pair.second;
+                    if(pair_value == 0 && pair_valuelen == 0) break;
                     for(uint64_t k = 0;k < pair_valuelen;k++){
                         if(start_col + colsize - 1 -i + index_resultdiagonal >= result.size() || start_row + index_resultdiagonal >= result[0].size()){
                             cerr << "Error: diagonallist_to_matrix: out of range" << endl;
@@ -415,6 +416,7 @@ namespace seal
                     auto pair = diagonallist[i][j];
                     auto pair_value = pair.first;
                     auto pair_valuelen = pair.second;
+                    if(pair_value == 0 && pair_valuelen == 0) break;
                     for(uint64_t k = 0;k < pair_valuelen;k++){
                         if(start_col + index_resultdiagonal >= result.size() || start_row + (i-colsize+1)+ index_resultdiagonal >= result[0].size()){
                             cerr << "Error: diagonallist_to_matrix: out of range" << endl;
@@ -521,18 +523,24 @@ namespace seal
 
                 // calc diagonal of product
                 // pair(value, value_len)
-                vector<vector<pair<uint64_t, uint64_t>>> matrix_product_diagonals(colsize_K + submat_rowsize - 1);
+                uint64_t diagonal_vector_size = colsize_K + submat_rowsize - 1;
+                uint64_t diagonal_element_size = kernel_infos[i].kernel_size;
+                vector<vector<pair<uint64_t, uint64_t>>> matrix_product_diagonals(diagonal_vector_size);
+                //cout << "diagonal element_size: " << diagonal_element_size << endl;
+                for(int i = 0;i < diagonal_vector_size;i++){
+                    matrix_product_diagonals[i].reserve(diagonal_element_size);
+                }
                 //vector<vector<uint64_t>> matrix_product_diagonals(colsize_K + submat_rowsize - 1);
                 uint64_t index = 0;
                 int64_t k = static_cast<int64_t>(colsize_K);
                 k = -k+1;
-                uint64_t diagonal_element_size = kernel_index.size();
 #if HLT_DEBUG_TIME == 1
                 auto diagonal_all_start = chrono::high_resolution_clock::now();
 #endif
 #if HLT_DEBUG_TIME == DEBUG_TIME_SUM_DIAGONAL
                 vector<uint64_t> times_diagonal_calc(submat_rowsize + colsize_K+1);
                 vector<uint64_t> times_prepare_vector(submat_rowsize + colsize_K+1);
+                vector<uint64_t> times_save_vector(submat_rowsize + colsize_K+1);
                 int iter_diagonal = 0;
 #endif
                 for(;k<static_cast<int64_t>(submat_rowsize);k++){
@@ -540,27 +548,32 @@ namespace seal
                     //cout << "alloc " << kernel_index.size() << "pairs" << endl;
                     auto prepare_vector = chrono::high_resolution_clock::now();
 #endif
-                    vector<pair<uint64_t, uint64_t>> diagonal_pairs;
-                    diagonal_pairs.reserve(diagonal_element_size);
+                    //matrix_product_diagonals[index].reserve(diagonal_element_size);
 #if HLT_DEBUG_TIME == DEBUG_TIME_SUM_DIAGONAL
                     auto diagonal_start = chrono::high_resolution_clock::now();
 #endif
                     //vector<uint64_t> diagonal_pairs;
-                    util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_infos[i].diagonal_scalars, kernel_index, diagonal_c1, modulus, diagonal_pairs);
+                    util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_infos[i].diagonal_scalars, kernel_index, diagonal_c1, modulus, matrix_product_diagonals, index);
                     // digaonal_pairs = util::matrix_product_diagonal(k, submat_colsize, submat_rowsize, kernel_diagonal_list, kernel_index, diagonal_c1, modulus, diagonal_pairs);
                     //cout << "kernel_index_size: " << kernel_index.size() << endl;
                     //cout << "diagonal_pairs,size = " << diagonal_pairs.size() << endl;
 #if HLT_DEBUG_TIME == DEBUG_TIME_SUM_DIAGONAL
+                    auto save_start = chrono::high_resolution_clock::now();
+#endif
+                    //matrix_product_diagonals[index] = diagonal_pairs;
+                    index++;
+#if HLT_DEBUG_TIME == DEBUG_TIME_SUM_DIAGONAL
                     auto diagonal_end = chrono::high_resolution_clock::now();
+
                     auto diagonal_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_end - diagonal_start);
                     auto alloc_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_start- prepare_vector);
+                    auto save_diff = chrono::duration_cast<chrono::nanoseconds>(diagonal_end- save_start);
                     times_diagonal_calc[iter_diagonal] = diagonal_diff.count();
                     times_prepare_vector[iter_diagonal] = alloc_diff.count();
+                    times_save_vector[iter_diagonal] = save_diff.count();
                     iter_diagonal++;
                     //cout << "calc one diagonal vector: " << diagonal_diff.count() << "ns"  << endl;
 #endif
-                    matrix_product_diagonals[index] = diagonal_pairs;
-                    index++;
                 }
 #if HLT_DEBUG_PRINT == 1
                 print_pair_vectors(matrix_product_diagonals);
@@ -575,6 +588,9 @@ namespace seal
                 auto write_matrix_start = chrono::high_resolution_clock::now();
 #endif
                 util::diagonallist_to_matrix(matrix_product_diagonals, submat_startcol, submat_startrow, colsize_K, submat_rowsize, result);
+#if HLT_DEBUG_PRINT
+                util::print_matrix(result, 0, 0, 20, 20);
+#endif
 #if HLT_DEBUG_TIME == 1
                 auto first_settings_diff = chrono::duration_cast<chrono::microseconds>(diagonal_all_start - first_settings_begin);
                 auto write_matrix_end = chrono::high_resolution_clock::now();
@@ -589,6 +605,7 @@ namespace seal
 #if HLT_DEBUG_TIME == DEBUG_TIME_SUM_DIAGONAL
                 uint64_t sum_diagonal_time = 0;
                 uint64_t sum_prepare_time = 0;
+                uint64_t sum_save_time = 0;
                 for(int i = 0;i < times_diagonal_calc.size();i++){
                     //cout << "diagonal time[" << i << "]: " << times_diagonal_calc[i] << "ns" << endl;
                     sum_diagonal_time += times_diagonal_calc[i];
@@ -597,8 +614,12 @@ namespace seal
                     //cout << "diagonal time[" << i << "]: " << times_diagonal_calc[i] << "ns" << endl;
                     sum_prepare_time += times_prepare_vector[i];
                 }
+                for(int i = 0;i < times_save_vector.size();i++){
+                    sum_save_time    += times_save_vector[i];
+                }
                 cout << "sum diagonal time: " << sum_diagonal_time/1000 << "us" << endl;
                 cout << "sum prepare time: "  << sum_prepare_time/1000 << "us" << endl;
+                cout << "sum save time: "  << sum_save_time/1000 << "us" << endl;
 #endif
             }
         }

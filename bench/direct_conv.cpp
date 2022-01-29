@@ -119,7 +119,7 @@ void test_2dconv_helix(){
 }
 
 int main(int argc, char* argv[]){
-    uint64_t bench_times = 10;
+    uint64_t bench_times = 100;
     if(!pass_test_directconv()){
         cerr << "test failed!" << endl;
         return 1;
