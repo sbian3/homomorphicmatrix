@@ -571,6 +571,17 @@ namespace seal
             return sum;
         }
 
+        void packedconv_matrix_dot_vector(vector<vector<uint64_t>> &matrix_multed, vector<KernelInfo> kernelinfos, CoeffIter vector_iter, uint64_t poly_degree, CoeffIter destination, const Modulus &modulus, MemoryPoolHandle pool_){
+            uint64_t offset_begin = 0;
+            for(uint64_t i = 0;i < kernelinfos.size();i++){
+                uint64_t kernel_range = kernelinfos[i].kernel_size-1;
+                uint64_t block_size = kernelinfos[i].block_size;
+                matrix_dot_vector(matrix_multed, vector_iter, poly_degree, offset_begin, kernel_range, destination, modulus);
+                CoeffIter dest_toeplitz_begin = destination + offset_begin + kernel_range;
+                toeplitz_dot_vector(kernelinfos[i].toeplitz_diagonal_scalars, vector_iter, kernelinfos[i].input_size, poly_degree, modulus, dest_toeplitz_begin, pool_);
+                offset_begin += block_size;
+            }
+        }
 
         }
     }

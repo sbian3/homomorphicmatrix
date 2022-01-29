@@ -85,6 +85,26 @@ TEST(Matrixtest, matrix_dot_vector){
     ASSERT_ARR(expected, actual, expected.size());
 }
 
+TEST(Matrixtest, matrix_dot_vector_small){
+    MemoryPoolHandle pool_ = MemoryPoolHandle::Global();
+    uint64_t array_size = 4;
+    uint64_t coeff_degree = array_size;
+    auto modulus = Modulus(13ULL);
+    vector<std::uint64_t> arr(array_size);
+    vector<vector<uint64_t>> matrix(coeff_degree, vector<uint64_t>(coeff_degree));
+
+    for(uint64_t i = 0;i < array_size;i++){
+        arr[i] = i+1;
+    }
+    util::init_matrix_rand_mod(matrix, coeff_degree, modulus.value());
+    print_matrix(matrix);
+
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, coeff_degree, pool_);
+    util::matrix_dot_vector(matrix, coeff_degree, arr.data(), modulus, coeff_degree, actual);
+    cout << "result" << endl;
+    print_iter(actual, coeff_degree);
+}
+
 TEST(Matrixtest, matrix_dot_vector_with_range){
     MemoryPoolHandle pool_ = MemoryPoolHandle::Global();
     uint64_t array_size = 10;
@@ -172,32 +192,78 @@ TEST(Matrixtest, matrix_dot_vector_time){
     cout << "time: " << time_diff.count() << " us" << endl;
 }
 
-TEST(Matrixtest, packedconv_matrix_dot_vector){
+
+TEST(Matrixtest, packedconv_matrix_dot_vector0){
     MemoryPoolHandle pool_ = MemoryPoolHandle::Global();
     uint64_t poly_degree = 16; // should be power of two
     auto modulus = Modulus(0x7e00001ULL);
     vector<vector<uint64_t>> kernels = { {3, 1, 2}};
+    uint64_t input_dim = 4;
+    uint64_t block_size = get_blocksize(input_dim, kernels[0].size(), 0);
+    vector<uint64_t> c1(poly_degree);
+    vector<vector<uint64_t>> conved_C1(poly_degree, vector<uint64_t>(poly_degree));
+    vector<uint64_t> right_vec(poly_degree);
+
+    sample_rn(c1.data(), c1.size(), modulus);
+    vector<KernelInfo> kernel_info = pack_kernel(kernels, input_dim, modulus);
+    matrix_dot_matrix_toeplitz_mod(kernel_info, c1.data(), poly_degree, conved_C1, modulus);
+    sample_rn(right_vec.data(), right_vec.size(), modulus);
+    ASSERT_EQ(poly_degree, right_vec.size());
+    print_matrix(conved_C1);
+
+    // actual
+    uint64_t offset_size = kernel_info[0].kernel_size-1;
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, poly_degree, pool_);
+    util::matrix_dot_vector(conved_C1, kernel_info[0].kernel_size-1, right_vec.data(), modulus, poly_degree, actual);
+    print_iter(actual, poly_degree);
+    CoeffIter actual_toeplitz = actual + offset_size;
+    // Don't know why this works
+    // argument: right_vec.data() should right_vec.data() + kernel_range-1;
+    toeplitz_dot_vector(kernel_info[0].toeplitz_diagonal_scalars, right_vec.data(), input_dim, poly_degree, modulus, actual_toeplitz, pool_);
+    print_iter(actual, poly_degree);
+
+    auto toeplitz_matrix = toeplitz_to_matrix(kernel_info[0].toeplitz_diagonal_scalars, input_dim, poly_degree);
+    cout << "toeplitz matrix from kernelinfo" << endl;
+    print_matrix(toeplitz_matrix);
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(expected_2, input_dim, pool_);
+    matrix_dot_vector(toeplitz_matrix, input_dim, right_vec.data(), modulus, poly_degree, expected_2);
+    print_iter(expected_2, input_dim);
+
+
+    // expected
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(expected, poly_degree, pool_);
+    util::matrix_dot_vector(conved_C1, poly_degree, right_vec.data(), modulus, poly_degree, expected);
+    print_iter(expected, poly_degree);
+
+    ASSERT_ARR(expected, actual, poly_degree);
+}
+
+TEST(Matrixtest, packedconv_matrix_dot_vector){
+    MemoryPoolHandle pool_ = MemoryPoolHandle::Global();
+    uint64_t poly_degree = 32; // should be power of two
+    auto modulus = Modulus(0x7e00001ULL);
+    vector<vector<uint64_t>> kernels = { {3, 1, 2}, {4, 6, 2}};
     uint64_t input_dim = 7;
     uint64_t block_size = get_blocksize(input_dim, kernels[0].size(), 0);
     vector<uint64_t> c1(poly_degree);
     sample_rn(c1.data(), c1.size(), modulus);
-    vector<KernelInfo> kernel_info = pack_kernel(kernels, block_size, modulus);
+    vector<KernelInfo> kernel_info = pack_kernel(kernels, input_dim, modulus);
     vector<vector<uint64_t>> conved_C1(poly_degree, vector<uint64_t>(poly_degree));
     matrix_dot_matrix_toeplitz_mod(kernel_info, c1.data(), poly_degree, conved_C1, modulus);
+    print_matrix(conved_C1);
     vector<uint64_t> right_vec(poly_degree);
     sample_rn(right_vec.data(), right_vec.size(), modulus);
     ASSERT_EQ(poly_degree, right_vec.size());
 
     // actual
     SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, poly_degree, pool_);
-    util::matrix_dot_vector(conved_C1, kernel_info[0].kernel_size-1, right_vec.data(), modulus, poly_degree, actual);
-    //print_iter(actual, poly_degree);
-    CoeffIter actual_toeplitz = actual + kernel_info[0].kernel_size-1;
-    util::toeplitz_dot_vector(kernel_info[0].toeplitz_diagonal_scalars, right_vec.data(), block_size, poly_degree, modulus, actual_toeplitz, pool_);
+    util::packedconv_matrix_dot_vector(conved_C1, kernel_info, right_vec.data(), poly_degree, actual, modulus, pool_);
+    print_iter(actual, poly_degree);
 
     // expected
     SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(expected, poly_degree, pool_);
     util::matrix_dot_vector(conved_C1, poly_degree, right_vec.data(), modulus, poly_degree, expected);
+    print_iter(expected, poly_degree);
 
     ASSERT_ARR(expected, actual, poly_degree);
 }
@@ -216,7 +282,7 @@ TEST(Matrixtest, matrix_dot_matrix_toeplitz_mod){
     vector<vector<uint64_t>> actual(poly_degree, vector<uint64_t>(poly_degree));
     // actual
     matrix_dot_matrix_toeplitz_mod(kernel_info, c1.data(), poly_degree, actual, modulus);
-    //print_matrix(actual);
+    print_matrix(actual);
 
     // expected
     vector<vector<uint64_t>> expected(poly_degree, vector<uint64_t>(poly_degree));
@@ -227,7 +293,7 @@ TEST(Matrixtest, matrix_dot_matrix_toeplitz_mod){
     vector<vector<uint64_t>> C1(poly_degree, vector<uint64_t>(poly_degree));
     init_matrix_circ(C1, poly_degree, c1.data(), modulus);
     matrix_dot_matrix_mod(kernel_circ_matrix, C1, expected, modulus);
-    //print_matrix(expected);
+    print_matrix(expected);
 
     ASSERT_MATRIX(expected, actual);
 }

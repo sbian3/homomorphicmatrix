@@ -131,22 +131,22 @@ namespace seal
 
         vector<vector<uint64_t>> toeplitz_to_matrix(vector<uint64_t> toeplitz, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize);
 
-        inline void matrix_dot_vector(ConstRNSIter matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
-            // TODO: parameter validation
+        //inline void matrix_dot_vector(ConstRNSIter matrix, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t coeff_count, CoeffIter result){
+        //    // TODO: parameter validation
 
-            SEAL_ITERATE(iter(matrix, result), coeff_count, [&](auto I){
-                    get<1>(I) = inner_product_coeffmod(get<0>(I), poly_vector, coeff_count, modulus);
-                    });
-        }
+        //    SEAL_ITERATE(iter(matrix, result), coeff_count, [&](auto I){
+        //            get<1>(I) = inner_product_coeffmod(get<0>(I), poly_vector, coeff_count, modulus);
+        //            });
+        //}
 
-        inline void matrix_dot_vector(ConstRNSIter matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
-            // parameter validation
-            // TODO: size check
-            uint64_t coeff_count = poly_rns.poly_modulus_degree();
-            SEAL_ITERATE(iter(poly_rns, mod_chain, result), coeff_modulus_size, [&](auto I){
-                    matrix_dot_vector(matrix, get<0>(I), get<1>(I), coeff_count, get<2>(I));
-                    });
-        }
+        //inline void matrix_dot_vector(ConstRNSIter matrix, uint64_t coeff_modulus_size, ConstRNSIter poly_rns, ConstModulusIter mod_chain, RNSIter result){
+        //    // parameter validation
+        //    // TODO: size check
+        //    uint64_t coeff_count = poly_rns.poly_modulus_degree();
+        //    SEAL_ITERATE(iter(poly_rns, mod_chain, result), coeff_modulus_size, [&](auto I){
+        //            matrix_dot_vector(matrix, get<0>(I), get<1>(I), coeff_count, get<2>(I));
+        //            });
+        //}
 
         inline void matrix_dot_vector(vector<vector<uint64_t>>& matrix,uint64_t validrowsize, ConstCoeffIter poly_vector, const Modulus& modulus, uint64_t colsize, CoeffIter destination){
             // TODO: parameter validation

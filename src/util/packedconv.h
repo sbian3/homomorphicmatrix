@@ -193,5 +193,14 @@ namespace seal
             util::matrix_dot_matrix_toeplitz_mod(kernel_infos, **cipher_poly, poly_degree, result, modulus);
         }
 
+        void packedconv_matrix_dot_vector(vector<vector<uint64_t>> &matrix_multed, vector<KernelInfo> kernelinfos, CoeffIter vector_iter, uint64_t vector_size, CoeffIter destination, const Modulus &modulus, MemoryPoolHandle pool_);
+
+        inline void packedconv_matrix_dot_vector(vector<vector<uint64_t>> &matrix_multed, vector<KernelInfo> kernelinfos, RNSIter vector_rns, uint64_t rns_len, RNSIter destination, ConstModulusIter mod_chain, MemoryPoolHandle pool_){
+            auto poly_degree = vector_rns.poly_modulus_degree();
+            SEAL_ITERATE(iter(vector_rns, destination, mod_chain), rns_len, [&](auto I){
+                    packedconv_matrix_dot_vector(matrix_multed, kernelinfos, get<0>(I), poly_degree, get<1>(I), get<2>(I), pool_);
+                    });
+        }
+
     }
 }

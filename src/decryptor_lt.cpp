@@ -206,15 +206,16 @@ void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel
     PolyIter cipher_polyiter(encrypted);
     set_poly(cipher_polyiter, coeff_count, coeff_modulus_size, destination);
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s, coeff_count,coeff_modulus_size, pool);
+    SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s_ans, coeff_count,coeff_modulus_size, pool);
     auto matrix_s = chrono::high_resolution_clock::now();
     auto matrix_mid = chrono::high_resolution_clock::now();
-    // TODO: multi kernels
-    SEAL_ITERATE(iter(secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
-            matrix_dot_vector(matrix_conved, kernel_infos[0].kernel_size-1, get<0>(I), get<1>(I), coeff_count, get<2>(I));
-            CoeffIter dest_for_toeplitz = get<2>(I)+kernel_infos[0].kernel_size-1;
-            matrix_mid = chrono::high_resolution_clock::now();
-            toeplitz_dot_vector(kernel_infos[0].toeplitz_diagonal_scalars, get<0>(I), kernel_infos[0].input_size, coeff_count, get<1>(I), dest_for_toeplitz, pool);
-            });
+    packedconv_matrix_dot_vector(matrix_conved, kernel_infos, secret_key_array,coeff_modulus_size, C1_s, coeff_modulus, pool);
+    //SEAL_ITERATE(iter(secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
+    //        matrix_dot_vector(matrix_conved, kernel_infos[0].kernel_size-1, get<0>(I), get<1>(I), coeff_count, get<2>(I));
+    //        CoeffIter dest_for_toeplitz = get<2>(I)+kernel_infos[0].kernel_size-1;
+    //        matrix_mid = chrono::high_resolution_clock::now();
+    //        toeplitz_dot_vector(kernel_infos[0].toeplitz_diagonal_scalars, get<0>(I), kernel_infos[0].input_size, coeff_count, get<1>(I), dest_for_toeplitz, pool);
+    //});
     auto matrix_e = chrono::high_resolution_clock::now();
     // add c0 and c1
     add_poly_coeffmod(destination, C1_s, coeff_modulus_size, coeff_modulus, destination);
