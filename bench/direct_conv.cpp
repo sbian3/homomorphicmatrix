@@ -3,8 +3,7 @@
 using namespace std;
 using namespace seal;
 
-
-void conv_cipher_direct(vector<uint64_t> input, vector<uint64_t> kernel, uint64_t poly_modulus_degree, vector<uint64_t> &decrypted, int64_t &latency_lt, int64_t &latency_dec){
+uint64_t conv_cipher_direct(vector<uint64_t> input, vector<uint64_t> kernel, uint64_t poly_modulus_degree, vector<uint64_t> &decrypted, int64_t &latency_lt, int64_t &latency_dec){
 
     bool print_data = false;
     // parameter setting
@@ -79,6 +78,7 @@ void conv_cipher_direct(vector<uint64_t> input, vector<uint64_t> kernel, uint64_
         print_plain(x_conved_decrypted, input.size() + kernel.size() - 1);
     }
     decrypted.assign(x_conved_decrypted.data(), x_conved_decrypted.data() + output_dim);
+    return decrypted[0];
 }
 
 bool pass_test_directconv(){
@@ -142,12 +142,11 @@ int main(int argc, char* argv[]){
     uint64_t dummy_sum = 0;
 
     for(uint64_t i = 0;i < bench_times;i++){
-        Modulus sample_mod(7);
+        Modulus sample_mod(43);
         vector<uint64_t> input = sample_rn(input_dim, sample_mod);
         vector<uint64_t> kernel = sample_rn(kernel_dim, sample_mod);
         int64_t latency_lt, latency_dec;
-        conv_cipher_direct(input, kernel, poly_degree, decrypted, latency_lt, latency_dec);
-        dummy_sum += decrypted[0];
+        dummy_sum += conv_cipher_direct(input, kernel, poly_degree, decrypted, latency_lt, latency_dec);
         latency_lt_sum += static_cast<uint64_t>(latency_lt);
         latency_dec_sum += static_cast<uint64_t>(latency_dec);
     }

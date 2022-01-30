@@ -27,10 +27,15 @@
 using namespace std;
 using namespace seal;
 
+inline uint64_t rand_hlt(Modulus modulus){
+    std::random_device rand_dev;
+    return rand_dev() % modulus.value();
+}
+
 inline vector<uint64_t> sample_rn(uint64_t size, Modulus modulus){
     vector<uint64_t> ret(size);
     for(uint64_t i = 0;i < size;i++){
-        ret[i] = rand() % modulus.value();
+        ret[i] = rand_hlt(modulus);
         if(ret[i] == 0){
             i--;
         }
