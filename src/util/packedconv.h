@@ -23,6 +23,7 @@
 #include "seal/util/uintarithmod.h"
 #include "seal/memorymanager.h"
 #include "util/uintlinarith.h"
+#include "util/define_tifs.h"
 
 using namespace std;
 
@@ -164,13 +165,13 @@ namespace seal
             // calculate element wise product
             // optimize complexity remembering kernel nonzero elements
             //uint64_t wise_prod_len = kernel_L.size() <= list_R.size()? kernel_L.size(): list_R.size();
-#if HLT_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == DEBUG_TIME_ONE_DIAGONAL
             auto diagonal_begin = chrono::high_resolution_clock::now();
 #endif
-#if HLT_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == DEBUG_TIME_ONE_DIAGONAL
             auto mul_start = chrono::high_resolution_clock::now();
 #endif
-#if HLT_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == DEBUG_TIME_ONE_DIAGONAL
             auto mul_end = chrono::high_resolution_clock::now();
 #endif
             uint64_t wise_prod_len;
@@ -216,7 +217,7 @@ namespace seal
                 partial_sum = util::add_uint_mod(partial_sum, prod, modulus);
                 index_iterator_right++;
             }
-#if HLT_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == DEBUG_TIME_ONE_DIAGONAL
             auto innerp_end = chrono::high_resolution_clock::now();
 #endif
 #if HLT_DEBUG_PRINT == 1
@@ -314,7 +315,7 @@ namespace seal
                 i = i + jump_len - 1;
             }
             //cout << "pair_num: " << pair_num << endl;
-#if HLT_DEBUG_TIME == 1
+#if HLT_DEBUG_TIME == DEBUG_TIME_ONE_DIAGONAL
             auto slide_end   = chrono::high_resolution_clock::now();
             auto begin_diff  = chrono::duration_cast<chrono::nanoseconds>(mul_start - diagonal_begin);
             auto mul_diff    = chrono::duration_cast<chrono::nanoseconds>(mul_end - mul_start);
@@ -376,7 +377,15 @@ namespace seal
         inline void make_packedconv_matrixproduct(vector<KernelInfo> &kernel_infos, Ciphertext &encrypted, uint64_t poly_degree, vector<vector<vector<pair<uint64_t, uint64_t>>>> &result, Modulus modulus){
             PolyIter cipher_poly(encrypted);
             cipher_poly++;
+#if HLT_DEBUG_TIME == 1
+            auto diagonal_start = chrono::high_resolution_clock::now();
+#endif
             util::matrix_dot_matrix_toeplitz_mod(kernel_infos, **cipher_poly, poly_degree, result, modulus);
+#if HLT_DEBUG_TIME == 1
+            auto diagonal_end = chrono::high_resolution_clock::now();
+            auto diagonal_diff = chrono::duration_cast<chrono::microseconds>(diagonal_end - diagonal_start);
+            cout << "diff inside: " << diagonal_diff.count() << "us" << endl;
+#endif
         }
 
         void packedconv_matrix_dot_vector(vector<vector<uint64_t>> &matrix_multed, vector<KernelInfo> kernelinfos, CoeffIter vector_iter, uint64_t vector_size, CoeffIter destination, const Modulus &modulus, MemoryPoolHandle pool_);
