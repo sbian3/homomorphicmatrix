@@ -40,16 +40,11 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     Decryptor_LT decryptor(context, secret_key);
     auto keygen_end = chrono::high_resolution_clock::now();
 
-    // generate plaintext x
-    uint64_t block_size = get_blocksize(input[0].size(), kernel[0].size(), 0);
-    if(block_size * pack_num > poly_modulus_degree){
-        throw invalid_argument("polynomial degree is too small");
-    }
     // pack kernels
     vector<KernelInfo> kernelinfos = pack_kernel(kernel, input, parms.coeff_modulus()[0], poly_modulus_degree);
-
     vector<uint64_t> packed_input = pack_input(input, kernelinfos, poly_modulus_degree);
     Plaintext x_plain(packed_input);
+    uint64_t result_len_packed = kernelinfos.back().get_startcol() + kernelinfos.back().get_colsize();
 
 
     // generate transform matrix
@@ -103,11 +98,11 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     // plaintext check
     if(print_data){
         cout << "----Decryption---- " << endl;
-        print_plain(x_decrypted, block_size * pack_num);
+        print_plain(x_decrypted, result_len_packed);
     }
 
     // put decrypted result to vector
-    decrypted.assign(x_decrypted.data(), x_decrypted.data() + block_size * pack_num);
+    decrypted.assign(x_decrypted.data(), x_decrypted.data() + result_len_packed);
 }
 
 bool pass_test_packedconv(){

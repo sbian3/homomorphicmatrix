@@ -38,16 +38,11 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     Evaluator evaluator(context);
     Decryptor_LT decryptor(context, secret_key);
 
-    // generate plaintext x
-    uint64_t block_size = get_blocksize(input[0].size(), kernel[0].size(), 0);
-    if(block_size * pack_num > poly_modulus_degree){
-        throw invalid_argument("polynomial degree is too small");
-    }
-
     // pack kernels
     vector<KernelInfo> kernelinfos = pack_kernel(kernel, input, parms.coeff_modulus()[0], poly_modulus_degree);
     vector<uint64_t> packed_input = pack_input(input, kernelinfos, poly_modulus_degree);
     Plaintext x_plain(packed_input);
+    uint64_t result_len_packed = kernelinfos.back().get_startcol() + kernelinfos.back().get_colsize();
 
     // generate transform matrix
     vector<vector<uint64_t>> matrix(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
@@ -75,7 +70,6 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     // decrypt
     Plaintext x_decrypted;
     auto dec_start = chrono::high_resolution_clock::now();
-    //decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, block_size * pack_num, x_decrypted);
     decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, poly_modulus_degree, x_decrypted);
     auto dec_end = chrono::high_resolution_clock::now();
 
@@ -95,11 +89,11 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     // plaintext check
     if(print_data){
         cout << "----Decryption---- " << endl;
-        print_plain(x_decrypted, block_size * pack_num);
+        print_plain(x_decrypted, result_len_packed);
     }
 
     // put decrypted result to vector
-    decrypted.assign(x_decrypted.data(), x_decrypted.data() + block_size * pack_num);
+    decrypted.assign(x_decrypted.data(), x_decrypted.data() + result_len_packed);
 }
 
 bool pass_test_packedconv(){
@@ -108,7 +102,7 @@ bool pass_test_packedconv(){
     uint64_t poly_degree = 1024;
     vector<vector<uint64_t>> input = { {1, 4, 2}, {5, 1, 3} };
     vector<vector<uint64_t>> kernel = { {3, 2, 1}, {3, 2, 5} };
-    vector<uint64_t> decrypted(10);
+    vector<uint64_t> decrypted(12);
     int64_t time_lt, time_dec;
     bench_packed_conv(input, kernel, pack_num, poly_degree , decrypted, time_lt, time_dec, false);
 
