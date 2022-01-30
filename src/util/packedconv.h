@@ -348,7 +348,7 @@ namespace seal
 
         void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> &kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus &modulus);
 
-
+        void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> &kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<vector<pair<uint64_t, uint64_t>>>> &result, Modulus &modulus);
         
         uint64_t kernel_innerprod(vector<pair<uint64_t, uint64_t>> rowinfo, CoeffIter coeff_vec, Modulus modulus);
 
@@ -373,7 +373,7 @@ namespace seal
                     });
         }
 
-        inline void make_packedconv_matrixproduct(vector<KernelInfo> &kernel_infos, Ciphertext &encrypted, uint64_t poly_degree, vector<vector<uint64_t>> &result, Modulus modulus){
+        inline void make_packedconv_matrixproduct(vector<KernelInfo> &kernel_infos, Ciphertext &encrypted, uint64_t poly_degree, vector<vector<vector<pair<uint64_t, uint64_t>>>> &result, Modulus modulus){
             PolyIter cipher_poly(encrypted);
             cipher_poly++;
             util::matrix_dot_matrix_toeplitz_mod(kernel_infos, **cipher_poly, poly_degree, result, modulus);

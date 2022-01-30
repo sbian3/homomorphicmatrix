@@ -8,7 +8,7 @@ void print_input_kernel(vector<vector<uint64_t>> input, vector<vector<uint64_t>>
 }
 
 // Benchmark
-void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> kernel, uint64_t pack_num, uint64_t poly_modulus_degree, vector<uint64_t> &decrypted, int64_t &latency_lt, int64_t &latency_dec, bool print_data){
+void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> kernel, uint64_t poly_modulus_degree, vector<uint64_t> &decrypted, int64_t &latency_lt, int64_t &latency_dec, bool print_data){
     if(print_data){
         print_input_kernel(input, kernel);
     }
@@ -40,11 +40,22 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
 
     // pack kernels
     vector<KernelInfo> kernelinfos = pack_kernel(kernel, input, parms.coeff_modulus()[0], poly_modulus_degree);
+    uint64_t num_packing = kernelinfos.size();
     vector<uint64_t> packed_input = pack_input(input, kernelinfos, poly_modulus_degree);
     Plaintext x_plain(packed_input);
     uint64_t result_len_packed = kernelinfos.back().get_startcol() + kernelinfos.back().get_colsize();
 
     // generate transform matrix
+    vector<vector<vector<pair<uint64_t, uint64_t>>>> diagonal_vectors_packing(num_packing);
+    for(uint64_t i = 0;i < num_packing;i++){
+        uint64_t colsize_resultmatrix = kernelinfos[i].get_colsize();
+        uint64_t rowsize_resultmatrix = poly_modulus_degree;
+        uint64_t diagonal_vectors_size = colsize_resultmatrix + rowsize_resultmatrix-1;
+        diagonal_vectors_packing[i].resize(diagonal_vectors_size);
+        for(uint64_t j = 0;j < diagonal_vectors_size;j++){
+            diagonal_vectors_packing[i][j].reserve(kernelinfos[i].kernel_size);
+        }
+    }
     vector<vector<uint64_t>> matrix(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
     pack_kernel_to_matrix(kernelinfos, matrix);
 
@@ -56,16 +67,24 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
         //cout << "noise budget in ciphertext: " << decryptor.invariant_noise_budget(x_encrypted) << " bits" << endl;
     }
 
-    // lt
+    // linear transformation
     Ciphertext x_enc_lin(x_encrypted);
     util::set_zero_poly(poly_modulus_degree, x_encrypted.coeff_modulus_size(), x_enc_lin.data());
     vector<vector<uint64_t>> matrix_conved(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
     //cout << "decryption of x_encrypted: ";
     auto lt_start = chrono::high_resolution_clock::now();
-    make_packedconv_matrixproduct(kernelinfos, x_encrypted, poly_modulus_degree, matrix_conved, parms.coeff_modulus()[0]);
+    make_packedconv_matrixproduct(kernelinfos, x_encrypted, poly_modulus_degree, diagonal_vectors_packing, parms.coeff_modulus()[0]);
     auto lt_half = chrono::high_resolution_clock::now();
     decryptor.lt_packedconv(x_encrypted, kernelinfos, x_enc_lin);
     auto lt_end = chrono::high_resolution_clock::now();
+
+    // data type change
+    // get toeplitz
+    for(uint64_t i = 0;i < num_packing;i++){
+        kernelinfos[i].get_toeplitz(diagonal_vectors_packing[i], poly_modulus_degree);
+    }
+    // write to matrix
+    util::diagonallist_to_matrix(diagonal_vectors_packing, kernelinfos, poly_modulus_degree, matrix_conved);
 
     // decrypt
     Plaintext x_decrypted;
@@ -104,7 +123,7 @@ bool pass_test_packedconv(){
     vector<vector<uint64_t>> kernel = { {3, 2, 1}, {3, 2, 5} };
     vector<uint64_t> decrypted(12);
     int64_t time_lt, time_dec;
-    bench_packed_conv(input, kernel, pack_num, poly_degree , decrypted, time_lt, time_dec, false);
+    bench_packed_conv(input, kernel, poly_degree , decrypted, time_lt, time_dec, false);
 
     // decrypted shold be [3, 0, 1, 1, 2, 1, 6, 1, 4, 1]
     vector<uint64_t> expect = {3, 0, 1, 1, 2, 1, 6, 1, 4, 1};
@@ -155,7 +174,7 @@ int main(int argc, char* argv[]){
         vector<vector<uint64_t>> input = sample_rn(pack_num, input_dim, sample_mod);
         vector<vector<uint64_t>> kernel = sample_rn(pack_num, kernel_dim, sample_mod);
         int64_t latency_lt, latency_dec;
-        bench_packed_conv(input, kernel, pack_num, poly_degree, decrypted, latency_lt, latency_dec, false);
+        bench_packed_conv(input, kernel, poly_degree, decrypted, latency_lt, latency_dec, false);
         latency_lt_sum += static_cast<uint64_t>(latency_lt);
         latency_dec_sum += static_cast<uint64_t>(latency_dec);
     }
