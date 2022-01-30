@@ -20,15 +20,15 @@ TEST(KernelInfotest, get_toeplitz){
     vector<KernelInfo> kernel_infos = pack_kernel(kernels, input_size, modulus);
     uint64_t poly_degree = 3;
     vector<vector<pair<uint64_t, uint64_t>>> pairs = 
-    { { make_pair(1, 1), make_pair(2, 2) },
-        { make_pair(3, 3), make_pair(4, 1) },
-        {make_pair(2,2), make_pair(5, 2)},
-        {make_pair(6, 2), make_pair(6,8)},
-        {make_pair(4, 6), make_pair(2,2)},
-        {make_pair(2,1)},
+       {{make_pair(1, 1), make_pair(2, 2), make_pair(0, 0)},
+        {make_pair(3, 3), make_pair(4, 1)},
+        {make_pair(2, 2), make_pair(5, 2), make_pair(0, 0)},
+        {make_pair(6, 2), make_pair(6, 8)},
+        {make_pair(4, 6), make_pair(2, 2)},
+        {make_pair(2, 1)},
         {make_pair(4, 9)},
-        {make_pair(4,4)},
-        {make_pair(2,3)},
+        {make_pair(4, 4)},
+        {make_pair(2, 3)},
         {make_pair(4, 9)}
     };
     kernel_infos[0].get_toeplitz(pairs, poly_degree);

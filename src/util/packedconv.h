@@ -110,7 +110,7 @@ namespace seal
                         if(pairs[i].empty()){
                             throw std::out_of_range("no data in pair");
                         }
-                        for(uint64_t j = pairs[i].size()-1;j >=0;j++){
+                        for(uint64_t j = pairs[i].size()-1;j >=0;j--){
                             if(pairs[i][j].first != 0 && pairs[i][j].second != 0){
                                 toeplitz_tmp[i] = pairs[i][j].first;
                                 break;
