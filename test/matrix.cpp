@@ -199,13 +199,14 @@ TEST(Matrixtest, packedconv_matrix_dot_vector0){
     auto modulus = Modulus(0x7e00001ULL);
     vector<vector<uint64_t>> kernels = { {3, 1, 2}};
     uint64_t input_dim = 4;
+    auto inputs = sample_rn(kernels.size(), input_dim, modulus);
     uint64_t block_size = get_blocksize(input_dim, kernels[0].size(), 0);
     vector<uint64_t> c1(poly_degree);
     vector<vector<uint64_t>> conved_C1(poly_degree, vector<uint64_t>(poly_degree));
     vector<uint64_t> right_vec(poly_degree);
 
     sample_rn(c1.data(), c1.size(), modulus);
-    vector<KernelInfo> kernel_info = pack_kernel(kernels, input_dim, modulus);
+    vector<KernelInfo> kernel_info = pack_kernel(kernels, inputs, modulus, poly_degree);
     matrix_dot_matrix_toeplitz_mod(kernel_info, c1.data(), poly_degree, conved_C1, modulus);
     sample_rn(right_vec.data(), right_vec.size(), modulus);
     ASSERT_EQ(poly_degree, right_vec.size());
@@ -244,10 +245,10 @@ TEST(Matrixtest, packedconv_matrix_dot_vector){
     auto modulus = Modulus(0x7e00001ULL);
     vector<vector<uint64_t>> kernels = { {3, 1, 2}, {4, 6, 2}};
     uint64_t input_dim = 7;
-    uint64_t block_size = get_blocksize(input_dim, kernels[0].size(), 0);
+    vector<vector<uint64_t>> inputs = sample_rn(kernels.size(), input_dim, modulus);
     vector<uint64_t> c1(poly_degree);
     sample_rn(c1.data(), c1.size(), modulus);
-    vector<KernelInfo> kernel_info = pack_kernel(kernels, input_dim, modulus);
+    vector<KernelInfo> kernel_info = pack_kernel(kernels, inputs, modulus, poly_degree);
     vector<vector<uint64_t>> conved_C1(poly_degree, vector<uint64_t>(poly_degree));
     matrix_dot_matrix_toeplitz_mod(kernel_info, c1.data(), poly_degree, conved_C1, modulus);
     print_matrix(conved_C1);
@@ -274,11 +275,12 @@ TEST(Matrixtest, matrix_dot_matrix_toeplitz_mod){
     //auto modulus = Modulus(0x7e00001ULL);
     auto modulus = Modulus(13);
     vector<vector<uint64_t>> kernels = { {3, 1, 2}};
+
     uint64_t input_dim = 7;
-    uint64_t block_size = get_blocksize(input_dim, kernels[0].size(), 0);
+    vector<vector<uint64_t>> inputs = sample_rn(kernels.size(), input_dim, modulus);
     vector<uint64_t> c1(poly_degree);
     sample_rn(c1.data(), c1.size(), modulus);
-    vector<KernelInfo> kernel_info = pack_kernel(kernels, input_dim, modulus);
+    vector<KernelInfo> kernel_info = pack_kernel(kernels, inputs, modulus, poly_degree);
     vector<vector<uint64_t>> actual(poly_degree, vector<uint64_t>(poly_degree));
     // actual
     matrix_dot_matrix_toeplitz_mod(kernel_info, c1.data(), poly_degree, actual, modulus);
@@ -287,7 +289,7 @@ TEST(Matrixtest, matrix_dot_matrix_toeplitz_mod){
     // expected
     vector<vector<uint64_t>> expected(poly_degree, vector<uint64_t>(poly_degree));
     reverse(kernel_info[0].diagonal_scalars.begin(), kernel_info[0].diagonal_scalars.end());
-    auto kernel_circ_matrix_small = toeplitz_to_matrix(kernel_info[0].diagonal_scalars, block_size, block_size);
+    auto kernel_circ_matrix_small = toeplitz_to_matrix(kernel_info[0].diagonal_scalars, kernel_info[0].block_size, kernel_info[0].block_size);
     vector<vector<uint64_t>> kernel_circ_matrix(poly_degree, vector<uint64_t>(poly_degree));
     copy_matrix(kernel_circ_matrix, kernel_circ_matrix_small, 0, 0);
     vector<vector<uint64_t>> C1(poly_degree, vector<uint64_t>(poly_degree));

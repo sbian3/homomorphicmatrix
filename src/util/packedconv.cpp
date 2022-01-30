@@ -460,11 +460,10 @@ namespace seal
         }
 
 
-        vector<uint64_t> pack_input(const vector<vector<uint64_t>> input, uint64_t block_size, uint64_t poly_size){
-            assert(input.size() * block_size <= poly_size);
+        vector<uint64_t> pack_input(const vector<vector<uint64_t>> &input, vector<KernelInfo> &kernel_infos, uint64_t poly_size){
             vector<uint64_t> packed_input(poly_size);
-            for(uint64_t i = 0;i < input.size();i++){
-                uint64_t input_start = block_size * i;
+            for(uint64_t i = 0;i < kernel_infos.size();i++){
+                uint64_t input_start =  kernel_infos[i].get_startcol();
                 for(uint64_t j = 0;j < input[i].size();j++){
                     packed_input[input_start + j] = input[i][j];
                 }
@@ -474,19 +473,24 @@ namespace seal
 
         // kernel: vectors of filter weights.
         // block_size: size of 1d convolution result
-        vector<KernelInfo> pack_kernel(vector<vector<uint64_t>> kernels, uint64_t input_size, Modulus modulus){
+        vector<KernelInfo> pack_kernel(vector<vector<uint64_t>> &kernels, vector<vector<uint64_t>> &inputs, Modulus modulus, uint64_t poly_degree){
+            assert(kernels.size() == inputs.size());
             uint64_t packing_num = kernels.size();
-            vector<KernelInfo> kernel_info(packing_num);
+            vector<KernelInfo> kernel_infos(packing_num);
             uint64_t start_col = 0;
             uint64_t start_row = 0;
+            uint64_t block_size;
             for(uint64_t i = 0;i < packing_num;i++){
-                uint64_t block_size = get_blocksize(input_size, kernels[i].size(), 0 );
-                KernelInfo kinfo(input_size, block_size, start_col, start_row, block_size, block_size, kernels[i], modulus);
-                kernel_info[i] = kinfo;
+                block_size = get_blocksize(inputs[i].size(), kernels[i].size(), 0 );
+                KernelInfo kinfo(inputs[i].size(), block_size, start_col, start_row, block_size, block_size, kernels[i], modulus);
+                kernel_infos[i] = kinfo;
                 start_col += block_size;
                 start_row += block_size;
             }
-            return kernel_info;
+            if(start_col > poly_degree){
+                throw std::invalid_argument("conv result oversized poly_degree");
+            }
+            return kernel_infos;
         }
 
         void pack_kernel_to_matrix(vector<KernelInfo> kernelinfos, vector<vector<uint64_t>> &matrix){
@@ -503,7 +507,7 @@ namespace seal
 
         // matrix dot matrix product using toeplitz algorithm
         void matrix_dot_matrix_toeplitz_mod(vector<KernelInfo> &kernel_infos, CoeffIter c1, uint64_t poly_degree, vector<vector<uint64_t>> &result,Modulus &modulus){
-            // for each block
+            // for each packing
             for(uint64_t i = 0;i < kernel_infos.size();i++){
 #if HLT_DEBUG_TIME == 1
                 auto first_settings_begin = chrono::high_resolution_clock::now();
@@ -518,6 +522,7 @@ namespace seal
                 submat_rowsize = poly_degree;
                 submat_startrow = 0;
                 kinfo.getParamsforSubmatrix(submat_startcol, submat_colsize);
+                assert(colsize_K == submat_colsize);
                 vector<uint64_t> diagonal_c1 = util::create_diagonal_from_submatrix(c1, poly_degree , submat_startcol, submat_colsize, modulus);
                 //vector<uint64_t> diagonal_scalars = kernel_infos[i].diagonal_scalars;
 

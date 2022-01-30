@@ -333,9 +333,9 @@ namespace seal
             return input_dim + kernel_dim - 1 + padding;
         }
 
-        vector<uint64_t> pack_input(const vector<vector<uint64_t>> input, uint64_t block_size, uint64_t poly_size);
+        vector<uint64_t> pack_input(const vector<vector<uint64_t>> &input, vector<KernelInfo> &kernel_infos, uint64_t poly_size);
 
-        vector<KernelInfo> pack_kernel(vector<vector<uint64_t>> kernels, uint64_t input_size, Modulus modulus);
+        vector<KernelInfo> pack_kernel(vector<vector<uint64_t>> &kernels, vector<vector<uint64_t>> &inputs, Modulus modulus, uint64_t poly_degree);
 
         void pack_kernel_to_matrix(vector<KernelInfo> kernelinfos, vector<vector<uint64_t>> &matrix);
 
