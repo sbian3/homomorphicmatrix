@@ -300,6 +300,87 @@ TEST(Matrixtest, matrix_dot_matrix_toeplitz_mod){
     ASSERT_MATRIX(expected, actual);
 }
 
+TEST(Matrixtest, diagonallist_to_matrix){
+    uint64_t size_matrix = 4;
+
+    // submatrix to write
+    uint64_t start_col   = 0;
+    uint64_t start_row   = 0;
+    uint64_t colsize     = 3;
+    uint64_t rowsize     = size_matrix;
+    vector<vector<pair<uint64_t, uint64_t>>> diagonal_vectors = 
+    {
+        // pair(value, value_len)
+        {make_pair(1, 1)},
+        {make_pair(2, 2), make_pair(0, 0)},
+        {make_pair(3, 3)},
+        {make_pair(4, 3)},
+        {make_pair(5, 2), make_pair(0, 0), make_pair(0, 0)},
+        {make_pair(6, 1)}
+    };
+    vector<vector<uint64_t>> actual(size_matrix, vector<uint64_t>(size_matrix));
+    diagonallist_to_matrix(diagonal_vectors, start_col, start_row, colsize, rowsize, actual);
+    vector<vector<uint64_t>> expected = 
+    {
+        {3, 4, 5, 6},
+        {2, 3, 4, 5},
+        {1, 2, 3, 4},
+        {0, 0, 0, 0}
+    };
+    ASSERT_MATRIX(expected, actual);
+}
+
+TEST(Matrixtest, multiple_packing_diagonalvector_to_matrix){
+    uint64_t size_matrix = 6;
+
+    // submatrix to write
+    uint64_t start_col   = 0;
+    uint64_t start_row   = 0;
+    uint64_t colsize     = 3;
+    uint64_t rowsize     = size_matrix;
+    Modulus modulus(23);
+    uint64_t poly_degree = 6;
+    vector<vector<uint64_t>> inputs  = sample_rn(2, 2, modulus);
+    vector<vector<uint64_t>> kernels = sample_rn(2, 2, modulus);
+    auto kernel_infos = pack_kernel(kernels, inputs, modulus, poly_degree);
+    vector<vector<vector<pair<uint64_t, uint64_t>>>> diagonal_vectors = 
+    {
+        // pair(value, value_len)
+        {
+            {make_pair(1, 1)},
+            {make_pair(2, 2), make_pair(0, 0)},
+            {make_pair(3, 3)},
+            {make_pair(4, 3)},
+            {make_pair(5, 3), make_pair(0, 0), make_pair(0, 0)},
+            {make_pair(6, 3)},
+            {make_pair(7, 2)},
+            {make_pair(8, 1)}
+        },
+        {
+            {make_pair(9, 1)},
+            {make_pair(10, 2), make_pair(0, 0)},
+            {make_pair(11, 3)},
+            {make_pair(12, 3)},
+            {make_pair(13, 3), make_pair(0, 0), make_pair(0, 0)},
+            {make_pair(14, 3)},
+            {make_pair(15, 2)},
+            {make_pair(16, 1)}
+        }
+    };
+    vector<vector<uint64_t>> actual(size_matrix, vector<uint64_t>(size_matrix));
+    diagonallist_to_matrix(diagonal_vectors, kernel_infos, poly_degree, actual);
+    vector<vector<uint64_t>> expected = 
+    {
+        { 3,  4,  5,  6,  7,  8},
+        { 2,  3,  4,  5,  6,  7},
+        { 1,  2,  3,  4,  5,  6},
+        {11, 12, 13, 14, 15, 16},
+        {10, 11, 12, 13, 14, 15},
+        { 9, 10, 11, 12, 13, 14}
+    };
+    ASSERT_MATRIX(expected, actual);
+}
+
 //TEST(Matrixtest, matrix_product_diagonal){
 //    auto modulus = Modulus(0x7e00001ULL);
 //    vector<uint64_t> kernel_L = {1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 1, 9, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};

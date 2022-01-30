@@ -328,6 +328,13 @@ namespace seal
 
         void diagonallist_to_matrix(vector<vector<pair<uint64_t, uint64_t>>> &diagonallist, uint64_t start_col, uint64_t start_row , uint64_t colsize, uint64_t rowsize, vector<vector<uint64_t>> &result);
 
+        inline void diagonallist_to_matrix(vector<vector<vector<pair<uint64_t, uint64_t>>>> &diagonallist_packed, vector<KernelInfo> kernel_infos, uint64_t poly_degree, vector<vector<uint64_t>> &dest_matrix){
+            uint64_t start_row = 0;
+            for(uint64_t i = 0;i < kernel_infos.size();i++){
+                diagonallist_to_matrix(diagonallist_packed[i], kernel_infos[i].get_startcol(), start_row, kernel_infos[i].get_colsize(), poly_degree, dest_matrix);
+            }
+        }
+
         vector<vector<uint64_t>> scalars_to_diagonallist(vector<uint64_t> scalars, uint64_t colsize, uint64_t rowsize);
         inline uint64_t get_blocksize(uint64_t input_dim, uint64_t kernel_dim, uint64_t padding){
             return input_dim + kernel_dim - 1 + padding;
