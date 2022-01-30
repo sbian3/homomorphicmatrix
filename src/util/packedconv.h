@@ -276,7 +276,7 @@ namespace seal
 #endif
                 // make pair
                 auto pair = make_pair(partial_sum, jump_len);
-                diagonalpairlist[index_pairlist].push_back(pair);
+                diagonalpairlist[index_pairlist][pair_num] = pair;
                 pair_num++;
 
                 // update partial sum

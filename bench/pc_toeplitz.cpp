@@ -56,7 +56,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
         uint64_t diagonal_vectors_size = colsize_resultmatrix + rowsize_resultmatrix-1;
         diagonal_vectors_packing[i].resize(diagonal_vectors_size);
         for(uint64_t j = 0;j < diagonal_vectors_size;j++){
-            diagonal_vectors_packing[i][j].reserve(kernelinfos[i].kernel_size);
+            diagonal_vectors_packing[i][j].resize(kernelinfos[i].kernel_size);
         }
     }
     vector<vector<uint64_t>> matrix(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
