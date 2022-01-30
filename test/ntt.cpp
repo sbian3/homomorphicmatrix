@@ -135,15 +135,15 @@ TEST(NTTtest, toeplitz_dot_midvector){
 
     sample_rn(toeplitz.data(), toeplitz.size(), modulus);
     sample_rn(right_vec.data(), right_vec.size(), modulus);
-    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, toeplitz_rowsize, pool_);
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, toeplitz_rowsize+offset, pool_);
 
     // actual
-    toeplitz_dot_vector(toeplitz, right_vec.data()+2, toeplitz_rowsize, toeplitz_colsize, modulus, actual+2, pool_);
+    toeplitz_dot_vector(toeplitz, right_vec.data(), toeplitz_rowsize, toeplitz_colsize, modulus, actual+offset, pool_);
 
     // expect
     auto toeplitz_matrix = toeplitz_to_matrix(toeplitz, toeplitz_rowsize, toeplitz_colsize);
     SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(expected, toeplitz_rowsize, pool_);
-    matrix_dot_vector(toeplitz_matrix, toeplitz_rowsize, right_vec.data()+2, modulus, toeplitz_colsize, expected);
+    matrix_dot_vector(toeplitz_matrix, toeplitz_rowsize, right_vec.data(), modulus, toeplitz_colsize, expected);
 
-    ASSERT_ARR(expected, actual+2, toeplitz_rowsize);
+    ASSERT_ARR(expected, actual+offset, toeplitz_rowsize);
 }
