@@ -119,7 +119,7 @@ void test_2dconv_helix(){
 }
 
 int main(int argc, char* argv[]){
-    uint64_t bench_times = 100;
+    uint64_t bench_times = 1;
     if(!pass_test_directconv()){
         cerr << "test failed!" << endl;
         return 1;
@@ -139,6 +139,7 @@ int main(int argc, char* argv[]){
     vector<uint64_t> decrypted(input_dim + kernel_dim - 1);
     uint64_t latency_lt_sum = 0;
     uint64_t latency_dec_sum = 0;
+    uint64_t dummy_sum = 0;
 
     for(uint64_t i = 0;i < bench_times;i++){
         Modulus sample_mod(7);
@@ -146,9 +147,11 @@ int main(int argc, char* argv[]){
         vector<uint64_t> kernel = sample_rn(kernel_dim, sample_mod);
         int64_t latency_lt, latency_dec;
         conv_cipher_direct(input, kernel, poly_degree, decrypted, latency_lt, latency_dec);
+        dummy_sum += decrypted[0];
         latency_lt_sum += static_cast<uint64_t>(latency_lt);
         latency_dec_sum += static_cast<uint64_t>(latency_dec);
     }
+    cout << "dummy sum: " << dummy_sum << endl;;
     double latency_lt = latency_lt_sum/static_cast<double>(bench_times);
     double latency_dec = latency_dec_sum/static_cast<double>(bench_times);
     cout << TIME_LABEL_LT << latency_lt << US << endl;
