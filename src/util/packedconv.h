@@ -388,12 +388,12 @@ namespace seal
 #endif
         }
 
-        void packedconv_matrix_dot_vector(vector<vector<uint64_t>> &matrix_multed, vector<KernelInfo> kernelinfos, CoeffIter vector_iter, uint64_t vector_size, CoeffIter destination, const Modulus &modulus, MemoryPoolHandle pool_, NTTTables &ntt_tables_dec);
+        void packedconv_matrix_dot_vector(vector<vector<uint64_t>> &matrix_multed, vector<KernelInfo> kernelinfos, CoeffIter vector_iter, CoeffIter vector_double_ntted, uint64_t vector_size, CoeffIter destination, const Modulus &modulus, MemoryPoolHandle pool_, NTTTables &ntt_tables_dec);
 
-        inline void packedconv_matrix_dot_vector(vector<vector<uint64_t>> &matrix_multed, vector<KernelInfo> kernelinfos, RNSIter vector_rns, uint64_t rns_len, RNSIter destination, ConstModulusIter mod_chain, MemoryPoolHandle pool_, NTTTables &ntt_tables_dec){
+        inline void packedconv_matrix_dot_vector(vector<vector<uint64_t>> &matrix_multed, vector<KernelInfo> kernelinfos, RNSIter vector_rns, CoeffIter vector_double_ntted, uint64_t rns_len, RNSIter destination, ConstModulusIter mod_chain, MemoryPoolHandle pool_, NTTTables &ntt_tables_dec){
             auto poly_degree = vector_rns.poly_modulus_degree();
             SEAL_ITERATE(iter(vector_rns, destination, mod_chain), rns_len, [&](auto I){
-                    packedconv_matrix_dot_vector(matrix_multed, kernelinfos, get<0>(I), poly_degree, get<1>(I), get<2>(I), pool_, ntt_tables_dec);
+                    packedconv_matrix_dot_vector(matrix_multed, kernelinfos, get<0>(I), vector_double_ntted, poly_degree, get<1>(I), get<2>(I), pool_, ntt_tables_dec);
                     });
         }
 

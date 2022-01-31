@@ -25,6 +25,47 @@ Decryptor_LT::Decryptor_LT(const SEALContext &context, const SecretKey &secret_k
         secret_key_array_size_ = 1;
 }
 
+// secret_key_array is in NTT form
+// transform secret_key_array into non-NTT form
+void Decryptor_LT::generate_secret_intt(Ciphertext &encrypted){
+    auto &context_data = *context_.get_context_data(encrypted.parms_id());
+    auto &parms = context_data.parms();
+    auto &coeff_modulus = parms.coeff_modulus();
+    size_t coeff_count = parms.poly_modulus_degree();
+    size_t coeff_modulus_size = coeff_modulus.size();
+    size_t key_coeff_modulus_size = context_.key_context_data()->parms().coeff_modulus().size();
+    size_t encrypted_size = encrypted.size();
+    auto is_ntt_form = encrypted.is_ntt_form();
+
+    auto ntt_tables = context_data.small_ntt_tables();
+    SEAL_ALLOCATE_ZERO_GET_RNS_ITER(secret_key_array, coeff_count, coeff_modulus_size, pool_);
+    set_poly(secret_key_array_.get(), coeff_count, coeff_modulus_size, secret_key_array);
+    inverse_ntt_negacyclic_harvey(secret_key_array, coeff_modulus_size, ntt_tables);
+    secret_key_intt_ = allocate_poly(coeff_count, coeff_modulus_size, pool_);
+    set_poly(secret_key_array, coeff_count, coeff_modulus_size, secret_key_intt_.get());
+    secret_key_intt_generated = true;
+}
+
+void Decryptor_LT::generate_secret_ntt_dec(Ciphertext &encrypted, uint64_t circ_size, NTTTables &ntt_tables_dec){
+    auto &context_data = *context_.get_context_data(encrypted.parms_id());
+    auto &parms = context_data.parms();
+    auto &coeff_modulus = parms.coeff_modulus();
+    size_t coeff_count = parms.poly_modulus_degree();
+    size_t coeff_modulus_size = coeff_modulus.size();
+    size_t key_coeff_modulus_size = context_.key_context_data()->parms().coeff_modulus().size();
+    size_t encrypted_size = encrypted.size();
+    auto is_ntt_form = encrypted.is_ntt_form();
+    auto ntt_tables = context_data.small_ntt_tables();
+
+    assert(coeff_modulus_size == 1);
+    SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(secret_key_array, coeff_count*2, pool_);
+    set_poly(secret_key_intt_.get(), coeff_count, 1, secret_key_array);
+    ntt_negacyclic_harvey(secret_key_array, ntt_tables_dec);
+    secret_key_toeplitz_ = allocate_poly(coeff_count*2, coeff_modulus_size, pool_);
+    set_poly(secret_key_array, coeff_count*2, coeff_modulus_size, secret_key_toeplitz_.get());
+    secret_key_toeplitz_generated = true;
+}
+
 // Decrypt linear transformed ciphertext
 void Decryptor_LT::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, Plaintext &destination){
     // Verify that encrypted is valid.
@@ -204,22 +245,27 @@ void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel
         throw invalid_argument("encrypted_size must be 2");
     }
 
-    //compute_secret_key_array(encrypted_size - 1);
+    // encrypted_size must be 2
+    // compute_secret_key_array(encrypted_size - 1);
+    if(!secret_key_intt_generated){
+        cout << "warn: generate secret_key_intt_" << endl;
+        generate_secret_intt(encrypted);
+    }
     SEAL_ALLOCATE_GET_RNS_ITER(secret_key_array, coeff_count, coeff_modulus_size, pool);
-    set_poly(secret_key_array_.get(), coeff_count, coeff_modulus_size, secret_key_array);
-    // secret_key_array is in NTT form
-    // transform secret_key_array into non-NTT form
-    inverse_ntt_negacyclic_harvey(secret_key_array, coeff_modulus_size, ntt_tables);
+    set_poly(secret_key_intt_.get(), coeff_count, coeff_modulus_size, secret_key_array);
 
     PolyIter cipher_polyiter(encrypted);
     set_poly(cipher_polyiter, coeff_count, coeff_modulus_size, destination);
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s, coeff_count,coeff_modulus_size, pool);
     SEAL_ALLOCATE_ZERO_GET_RNS_ITER(C1_s_ans, coeff_count,coeff_modulus_size, pool);
+    if(!secret_key_toeplitz_generated){
+        throw std::invalid_argument("secret key ntted is not generated");
+    }
 #if HLT_DEBUG_TIME == DEBUG_TIME_DEC
     auto matrix_s = chrono::high_resolution_clock::now();
     auto matrix_mid = chrono::high_resolution_clock::now();
 #endif
-    packedconv_matrix_dot_vector(matrix_conved, kernel_infos, secret_key_array,coeff_modulus_size, C1_s, coeff_modulus, pool, ntt_tables_dec);
+    packedconv_matrix_dot_vector(matrix_conved, kernel_infos, secret_key_array, secret_key_toeplitz_, coeff_modulus_size, C1_s, coeff_modulus, pool, ntt_tables_dec);
 #if HLT_DEBUG_TIME == DEBUG_TIME_DEC
     auto matrix_e = chrono::high_resolution_clock::now();
 #endif

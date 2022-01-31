@@ -712,7 +712,7 @@ namespace seal
             return sum;
         }
 
-        void packedconv_matrix_dot_vector(vector<vector<uint64_t>> &matrix_multed, vector<KernelInfo> kernelinfos, CoeffIter vector_iter, uint64_t poly_degree, CoeffIter destination, const Modulus &modulus, MemoryPoolHandle pool_, NTTTables &ntt_tables_dec){
+        void packedconv_matrix_dot_vector(vector<vector<uint64_t>> &matrix_multed, vector<KernelInfo> kernelinfos, CoeffIter vector_iter, CoeffIter vector_double_ntted, uint64_t poly_degree, CoeffIter destination, const Modulus &modulus, MemoryPoolHandle pool_, NTTTables &ntt_tables_dec){
             uint64_t offset_begin = 0;
             for(uint64_t i = 0;i < kernelinfos.size();i++){
                 uint64_t kernel_range = kernelinfos[i].kernel_size-1;
@@ -725,7 +725,7 @@ namespace seal
                 auto toeplitz_begin = chrono::high_resolution_clock::now();
 #endif
                 CoeffIter dest_toeplitz_begin = destination + offset_begin + kernel_range;
-                toeplitz_dot_vector(kernelinfos[i].toeplitz_diagonal_scalars, vector_iter, kernelinfos[i].input_size, poly_degree, modulus, dest_toeplitz_begin, pool_, ntt_tables_dec);
+                toeplitz_dot_vector(kernelinfos[i].toeplitz_diagonal_scalars, vector_double_ntted, kernelinfos[i].input_size, poly_degree, modulus, dest_toeplitz_begin, pool_, ntt_tables_dec);
                 offset_begin += block_size;
 #if HLT_DEBUG_TIME == DEBUG_TIME_DEC
                 auto toeplitz_end  = chrono::high_resolution_clock::now();

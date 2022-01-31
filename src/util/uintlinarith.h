@@ -130,7 +130,7 @@ namespace seal
 
         void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, const Modulus &modulus, CoeffIter destination, MemoryPoolHandle pool_);
 
-        inline void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_coeff, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, const Modulus &modulus, CoeffIter destination, MemoryPoolHandle pool_, NTTTables &ntt_tables){
+        inline void toeplitz_dot_vector(vector<uint64_t> &toeplitz, CoeffIter right_vec_double_ntted, uint64_t toeplitz_rowsize, uint64_t toeplitz_colsize, const Modulus &modulus, CoeffIter destination, MemoryPoolHandle pool_, NTTTables &ntt_tables){
             uint64_t right_vec_coeff_size = toeplitz_colsize;
             uint64_t circ_size = get_bigger_poweroftwo(toeplitz_colsize) * 2;
             uint64_t coeff_count_power = get_power_of_two(circ_size);
@@ -139,23 +139,19 @@ namespace seal
 #if HLT_DEBUG_TIME == DEBUG_TIME_DEC_NTT
             auto prepare_begin = chrono::high_resolution_clock::now();
 #endif
-            SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(right_vec, circ_size, pool_);
-            util::set_poly(right_vec_coeff, right_vec_coeff_size, 1, right_vec);
             SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(circ, circ_size, pool_);
             SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(dest_tmp, circ_size, pool_);
+            toeplitz_to_circ(toeplitz, toeplitz_rowsize, toeplitz_colsize, circ, modulus);
+            //assert(circ.size() == right_vec.size());
 #if HLT_DEBUG_TIME == DEBUG_TIME_DEC_NTT
             auto prepare_end = chrono::high_resolution_clock::now();
 #endif
-            toeplitz_to_circ(toeplitz, toeplitz_rowsize, toeplitz_colsize, circ, modulus);
-            //assert(circ.size() == right_vec.size());
-
 #if HLT_DEBUG_TIME == DEBUG_TIME_DEC_NTT
             auto ntt_begin = chrono::high_resolution_clock::now();
 #endif
             // multiply circ and right_vec
             ntt_negacyclic_harvey(circ, ntt_tables);
-            ntt_negacyclic_harvey(right_vec, ntt_tables);
-            dyadic_product_coeffmod(circ, right_vec, circ_size, modulus, dest_tmp);
+            dyadic_product_coeffmod(circ, right_vec_double_ntted, circ_size, modulus, dest_tmp);
             inverse_ntt_negacyclic_harvey(dest_tmp, ntt_tables);
             util::set_poly(dest_tmp, toeplitz_rowsize, 1, destination);
 #if HLT_DEBUG_TIME == DEBUG_TIME_DEC_NTT

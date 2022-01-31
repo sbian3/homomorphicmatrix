@@ -35,6 +35,10 @@ class Decryptor_LT
 
         void decrypt_bfv_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, Plaintext &destination, NTTTables &ntt_tables_dec);
 
+        void generate_secret_ntt_dec(Ciphertext &encrypted, uint64_t circ_size, NTTTables &ntt_tables_dec);
+
+        void generate_secret_intt(Ciphertext &encrypted);
+
     private:
         void dot_product_with_secret_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool);
 
@@ -47,4 +51,11 @@ class Decryptor_LT
         std::size_t secret_key_array_size_ = 0;
 
         util::Pointer<std::uint64_t> secret_key_array_;
+
+        util::Pointer<std::uint64_t> secret_key_toeplitz_;
+
+        util::Pointer<std::uint64_t> secret_key_intt_;
+        
+        bool secret_key_intt_generated = false;
+        bool secret_key_toeplitz_generated = false;
 };

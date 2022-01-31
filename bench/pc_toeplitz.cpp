@@ -97,6 +97,8 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     uint64_t coeff_count_power_of_two = get_power_of_two(circ_size);
     Pointer<NTTTables> ntt_tables = allocate<NTTTables>(pool_, coeff_count_power_of_two, parms.coeff_modulus()[0], pool_);
     Plaintext x_decrypted;
+    decryptor.generate_secret_intt(x_enc_lin);
+    decryptor.generate_secret_ntt_dec(x_enc_lin, circ_size, *ntt_tables);
     auto dec_start = chrono::high_resolution_clock::now();
     decryptor.decrypt_bfv_lt_toeplitz(kernelinfos, x_enc_lin, matrix_conved, poly_modulus_degree, x_decrypted, *ntt_tables);
     auto dec_end = chrono::high_resolution_clock::now();
