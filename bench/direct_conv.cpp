@@ -17,7 +17,7 @@ uint64_t conv_cipher_direct(vector<uint64_t> input, vector<uint64_t> kernel, uin
     //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
     vector<Modulus> mod_chain =  select_modchain(poly_modulus_degree);
     parms.set_coeff_modulus(mod_chain);
-    uint64_t plaintext_modulus = 43;
+    uint64_t plaintext_modulus = 256;
     parms.set_plain_modulus(plaintext_modulus);
     SEALContext context(parms);
     if(print_data){
@@ -27,6 +27,7 @@ uint64_t conv_cipher_direct(vector<uint64_t> input, vector<uint64_t> kernel, uin
     }
 
     // generate encryption helper
+    auto keygen_start = chrono::high_resolution_clock::now();
     KeyGenerator keygen(context);
     SecretKey secret_key = keygen.secret_key();
     PublicKey public_key;
@@ -34,6 +35,7 @@ uint64_t conv_cipher_direct(vector<uint64_t> input, vector<uint64_t> kernel, uin
     Encryptor encryptor(context, public_key);
     Evaluator evaluator(context);
     Decryptor decryptor(context, secret_key);
+    auto keygen_end = chrono::high_resolution_clock::now();
 
     // plaintext x
     Plaintext x_plain(input);
@@ -42,8 +44,10 @@ uint64_t conv_cipher_direct(vector<uint64_t> input, vector<uint64_t> kernel, uin
     }
 
     // encrypt x
+    auto enc_start = chrono::high_resolution_clock::now();
     Ciphertext x_encrypted;
     encryptor.encrypt(x_plain, x_encrypted);
+    auto enc_end = chrono::high_resolution_clock::now();
     if(print_data){
         cout << "----Encrypt x_plain to x_encrypted.----" << endl;
         cout << "Coeff modulus size: " << x_encrypted.coeff_modulus_size() << endl;
@@ -67,10 +71,14 @@ uint64_t conv_cipher_direct(vector<uint64_t> input, vector<uint64_t> kernel, uin
     auto dec_end = chrono::high_resolution_clock::now();
 
     // time result
+    auto keygen_diff = chrono::duration_cast<chrono::microseconds>(keygen_end - keygen_start);
+    auto enc_diff = chrono::duration_cast<chrono::microseconds>(enc_end - enc_start);
     auto lt_diff = chrono::duration_cast<chrono::microseconds>(lt_end - lt_start);
     auto dec_diff = chrono::duration_cast<chrono::microseconds>(dec_end - dec_start);
     latency_lt = lt_diff.count();
     latency_dec = dec_diff.count();
+    cout << "keygen: " << keygen_diff.count() << US << endl;
+    cout << "encrypt: " << enc_diff.count() << US << endl;
 
     if(print_data){
         cout << TIME_LABEL_LT << lt_diff.count() << US << endl;
@@ -147,6 +155,8 @@ int main(int argc, char* argv[]){
         vector<uint64_t> kernel = sample_rn(kernel_dim, sample_mod);
         int64_t latency_lt, latency_dec;
         dummy_sum += conv_cipher_direct(input, kernel, poly_degree, decrypted, latency_lt, latency_dec);
+        //cout << "LT time: " << latency_lt << endl;;
+        //cout << "DEC time: " << latency_dec << endl;
         latency_lt_sum += static_cast<uint64_t>(latency_lt);
         latency_dec_sum += static_cast<uint64_t>(latency_dec);
     }

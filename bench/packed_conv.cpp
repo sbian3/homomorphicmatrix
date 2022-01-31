@@ -19,7 +19,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
     vector<Modulus> mod_chain =  select_modchain(poly_modulus_degree);
     parms.set_coeff_modulus(mod_chain);
-    uint64_t plaintext_modulus = 7;
+    uint64_t plaintext_modulus = 256;
     parms.set_plain_modulus(plaintext_modulus);
     SEALContext context(parms);
     if(print_data){
@@ -89,7 +89,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     // decrypt
     Plaintext x_decrypted;
     auto dec_start = chrono::high_resolution_clock::now();
-    decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, poly_modulus_degree, x_decrypted);
+    decryptor.decrypt_bfv_lt(x_enc_lin, matrix_conved, result_len_packed, x_decrypted);
     auto dec_end = chrono::high_resolution_clock::now();
 
     // time result
@@ -125,8 +125,7 @@ bool pass_test_packedconv(){
     int64_t time_lt, time_dec;
     bench_packed_conv(input, kernel, poly_degree , decrypted, time_lt, time_dec, false);
 
-    // decrypted shold be [3, 0, 1, 1, 2, 1, 6, 1, 4, 1]
-    vector<uint64_t> expect = {3, 0, 1, 1, 2, 1, 6, 1, 4, 1};
+    vector<uint64_t> expect = {3, 14, 15, 8, 2, 15, 13, 36, 11, 15};
     for(uint64_t i = 0;i < expect.size();i++){
         if(expect[i] != decrypted[i]){
             cerr << "test failed: " << i << "th number" << endl;

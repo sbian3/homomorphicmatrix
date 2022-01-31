@@ -19,7 +19,7 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     //vector<Modulus> mod_chain = CoeffModulus::BFVDefault(poly_modulus_degree);
     vector<Modulus> mod_chain =  select_modchain(poly_modulus_degree);
     parms.set_coeff_modulus(mod_chain);
-    uint64_t plaintext_modulus = 7;
+    uint64_t plaintext_modulus = 256;
     parms.set_plain_modulus(plaintext_modulus);
     SEALContext context(parms);
     if(print_data){
@@ -140,8 +140,7 @@ bool pass_test_packedconv(){
     int64_t time_lt, time_dec;
     bench_packed_conv(input, kernel, pack_num, poly_degree , decrypted, time_lt, time_dec, false);
 
-    // decrypted shold be     [3, 0, 1, 1, 2, 1, 6, 1, 4, 1]
-    vector<uint64_t> expect = {3, 0, 1, 1, 2, 1, 6, 1, 4, 1};
+    vector<uint64_t> expect = {3, 14, 15, 8, 2, 15, 13, 36, 11, 15};
     for(uint64_t i = 0;i < expect.size();i++){
         if(expect[i] != decrypted[i]){
             print_iter(decrypted, decrypted.size());
