@@ -14,6 +14,7 @@
 #include "seal/util/ntt.h"
 #include "seal/util/rns.h"
 #include "util/packedconv.h"
+#include "util/define_tifs.h"
 #include <memory>
 #include <vector>
 

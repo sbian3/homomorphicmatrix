@@ -717,12 +717,25 @@ namespace seal
             for(uint64_t i = 0;i < kernelinfos.size();i++){
                 uint64_t kernel_range = kernelinfos[i].kernel_size-1;
                 uint64_t block_size = kernelinfos[i].block_size;
+#if HLT_DEBUG_TIME == DEBUG_TIME_DEC
+                auto legacy_mult_begin = chrono::high_resolution_clock::now();
+#endif
                 matrix_dot_vector(matrix_multed, vector_iter, poly_degree, offset_begin, kernel_range, destination, modulus);
+#if HLT_DEBUG_TIME == DEBUG_TIME_DEC
+                auto toeplitz_begin = chrono::high_resolution_clock::now();
+#endif
                 CoeffIter dest_toeplitz_begin = destination + offset_begin + kernel_range;
                 toeplitz_dot_vector(kernelinfos[i].toeplitz_diagonal_scalars, vector_iter, kernelinfos[i].input_size, poly_degree, modulus, dest_toeplitz_begin, pool_);
                 offset_begin += block_size;
+#if HLT_DEBUG_TIME == DEBUG_TIME_DEC
+                auto toeplitz_end  = chrono::high_resolution_clock::now();
+                auto toeplitz_time = chrono::duration_cast<chrono::microseconds>(toeplitz_end - toeplitz_begin);
+                auto legacy_time   = chrono::duration_cast<chrono::microseconds>(toeplitz_begin - legacy_mult_begin);
+                cout << "legacy mult: " << legacy_time.count() << "us" << endl;
+                cout << "toeplitz mult: " << toeplitz_time.count() << "us" << endl;
+#endif
             }
         }
 
-        }
     }
+}

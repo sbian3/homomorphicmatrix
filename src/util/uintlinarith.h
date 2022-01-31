@@ -9,6 +9,7 @@
 #include "seal/util/polyarithsmallmod.h"
 #include "convolution.h"
 #include "seal/ciphertext.h"
+#include "util/define_tifs.h"
 #include <algorithm>
 #include <cstdint>
 #include <cstring>

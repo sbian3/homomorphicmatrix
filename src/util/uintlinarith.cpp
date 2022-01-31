@@ -224,21 +224,38 @@ namespace seal
             uint64_t right_vec_coeff_size = toeplitz_colsize;
             uint64_t circ_size = get_bigger_poweroftwo(toeplitz_colsize) * 2;
             uint64_t coeff_count_power = get_power_of_two(circ_size);
+#if HLT_DEBUG_PRINT == DEBUG_PRINT_DEC
+#endif
+#if HLT_DEBUG_TIME == DEBUG_TIME_DEC_NTT
+            auto prepare_begin = chrono::high_resolution_clock::now();
+#endif
             Pointer<NTTTables> ntt_tables = allocate<NTTTables>(pool_, coeff_count_power, modulus, pool_);
             SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(circ, circ_size, pool_);
             SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(right_vec, circ_size, pool_);
             util::set_poly(right_vec_coeff, right_vec_coeff_size, 1, right_vec);
             SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(dest_tmp, circ_size, pool_);
-
+#if HLT_DEBUG_TIME == DEBUG_TIME_DEC_NTT
+            auto prepare_end = chrono::high_resolution_clock::now();
+#endif
             toeplitz_to_circ(toeplitz, toeplitz_rowsize, toeplitz_colsize, circ, modulus);
             //assert(circ.size() == right_vec.size());
 
+#if HLT_DEBUG_TIME == DEBUG_TIME_DEC_NTT
+            auto ntt_begin = chrono::high_resolution_clock::now();
+#endif
             // multiply circ and right_vec
             ntt_negacyclic_harvey(circ, *ntt_tables);
             ntt_negacyclic_harvey(right_vec, *ntt_tables);
             dyadic_product_coeffmod(circ, right_vec, circ_size, modulus, dest_tmp);
             inverse_ntt_negacyclic_harvey(dest_tmp, *ntt_tables);
             util::set_poly(dest_tmp, toeplitz_rowsize, 1, destination);
+#if HLT_DEBUG_TIME == DEBUG_TIME_DEC_NTT
+            auto ntt_end = chrono::high_resolution_clock::now();
+            auto ntt_time = chrono::duration_cast<chrono::microseconds>(ntt_end - ntt_begin);
+            auto prepare_time = chrono::duration_cast<chrono::microseconds>(prepare_end - prepare_begin);
+            cout << "prepare time: " << prepare_time.count() << "us" << endl;
+            cout << "ntt time: " << ntt_time.count() << "us" << endl;
+#endif
         }
 
         ///////////////////////////////
