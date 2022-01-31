@@ -47,6 +47,9 @@ namespace seal
                 KernelInfo(uint64_t input_s, uint64_t block_s, uint64_t st_c,uint64_t  st_r,uint64_t si_c,uint64_t si_r,vector<uint64_t> dat, Modulus mod):
                     input_size(input_s), block_size(block_s), start_col(st_c), start_row(st_r), size_col(si_c), size_row(si_r), data(dat), modulus(mod){
                         kernel_size = dat.size();
+                        if(kernel_size == 1){
+                            return;
+                        }
                         diagonal_scalars = vector<uint64_t>(size_col + size_row - 1);
                         index = create_diagonal_scalars(data, size_col, size_row, modulus, diagonal_scalars);
                         //util::print_vector(diagonal_list, diagonal_list.size());
@@ -68,6 +71,13 @@ namespace seal
 
                 uint64_t get_startrow(){
                     return start_row;
+                }
+
+                uint64_t get_data(uint64_t index){
+                    if(index >= kernel_size){
+                        throw invalid_argument("index is too large");
+                    }
+                    return data[index];
                 }
 
                 void getParamsforSubmatrix(uint64_t &submat_startcol, uint64_t &submat_colsize){
@@ -332,6 +342,9 @@ namespace seal
         inline void diagonallist_to_matrix(vector<vector<vector<pair<uint64_t, uint64_t>>>> &diagonallist_packed, vector<KernelInfo> kernel_infos, uint64_t poly_degree, vector<vector<uint64_t>> &dest_matrix){
             uint64_t start_row = 0;
             for(uint64_t i = 0;i < kernel_infos.size();i++){
+                if(kernel_infos[i].kernel_size == 1){
+                    continue;
+                }
                 diagonallist_to_matrix(diagonallist_packed[i], kernel_infos[i].get_startcol(), start_row, kernel_infos[i].get_colsize(), poly_degree, dest_matrix);
             }
         }

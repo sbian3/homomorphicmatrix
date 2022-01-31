@@ -56,8 +56,6 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
             diagonal_vectors_packing[i][j].resize(kernelinfos[i].kernel_size);
         }
     }
-    vector<vector<uint64_t>> matrix(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
-    pack_kernel_to_matrix(kernelinfos, matrix);
 
     // encrypt x
     Ciphertext x_encrypted;

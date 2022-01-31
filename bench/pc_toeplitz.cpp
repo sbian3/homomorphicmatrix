@@ -59,8 +59,6 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
             diagonal_vectors_packing[i][j].resize(kernelinfos[i].kernel_size);
         }
     }
-    vector<vector<uint64_t>> matrix(poly_modulus_degree, vector<uint64_t>(poly_modulus_degree));
-    pack_kernel_to_matrix(kernelinfos, matrix);
 
     // encrypt x
     auto enc_start = chrono::high_resolution_clock::now();
@@ -134,13 +132,13 @@ bool pass_test_packedconv(){
     cout << "packedconv test" << endl;
     uint64_t pack_num = 2;
     uint64_t poly_degree = 1024;
-    vector<vector<uint64_t>> input = { {1, 4, 2}, {5, 1, 3}};
-    vector<vector<uint64_t>> kernel = { {3, 2, 1}, {3, 2, 5}};
+    vector<vector<uint64_t>> input = { {1, 4, 2}, {5, 1, 3}, {1, 2, 4}};
+    vector<vector<uint64_t>> kernel = { {3, 2, 1}, {3, 2, 5}, {2}};
     vector<uint64_t> decrypted(10);
     int64_t time_lt, time_dec;
     bench_packed_conv(input, kernel, pack_num, poly_degree , decrypted, time_lt, time_dec, false);
 
-    vector<uint64_t> expect = {3, 14, 15, 8, 2, 15, 13, 36, 11, 15};
+    vector<uint64_t> expect = {3, 14, 15, 8, 2, 15, 13, 36, 11, 15, 2, 4, 8};
     for(uint64_t i = 0;i < expect.size();i++){
         if(expect[i] != decrypted[i]){
             print_iter(decrypted, decrypted.size());

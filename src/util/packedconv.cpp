@@ -496,6 +496,9 @@ namespace seal
         void pack_kernel_to_matrix(vector<KernelInfo> kernelinfos, vector<vector<uint64_t>> &matrix){
             for(uint64_t i = 0;i < kernelinfos.size();i++){
                 KernelInfo kinfo = kernelinfos[i];
+                if(kinfo.kernel_size == 1){
+                    throw invalid_argument("kernel size is 1");
+                }
                 // kernel scalar is reversed in default
                 // so, scalar must be reversed again
                 vector<uint64_t> k_scalar = kinfo.diagonal_scalars;
@@ -647,6 +650,13 @@ namespace seal
                 kinfo.getParamsforSubmatrix(submat_startcol, submat_colsize);
                 assert(colsize_K == submat_colsize);
                 vector<uint64_t> diagonal_c1 = util::create_diagonal_from_submatrix(c1, poly_degree , submat_startcol, submat_colsize, modulus);
+                if(kernel_infos[i].kernel_size == 1){
+                    for(uint64_t k = 0;k < diagonal_c1.size();k++){
+                        diagonal_c1[k] = util::multiply_uint_mod(diagonal_c1[k], kernel_infos[i].get_data(0), modulus);
+                    }
+                    kernel_infos[i].toeplitz_diagonal_scalars = diagonal_c1;
+                    continue;
+                }
 
                 uint64_t index = 0;
                 int64_t k = static_cast<int64_t>(colsize_K);
