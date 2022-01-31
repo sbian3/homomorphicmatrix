@@ -79,7 +79,7 @@ void Decryptor_LT::decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector
 }
 
 // Decrypt linear transformed ciphertext
-void Decryptor_LT::decrypt_bfv_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, Plaintext &destination){
+void Decryptor_LT::decrypt_bfv_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, Plaintext &destination, NTTTables &ntt_tables_dec){
     // Verify that encrypted is valid.
     if (!is_valid_for(encrypted, context_))
     {
@@ -118,7 +118,7 @@ void Decryptor_LT::decrypt_bfv_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciph
 #if HLT_DEBUG_TIME == DEBUG_TIME_DEC
     auto dot_s = chrono::high_resolution_clock::now();
 #endif
-    dot_product_with_secret_lt_toeplitz(kernel_infos, encrypted, matrix_conved, validrowsize, tmp_dest_modq, pool_);
+    dot_product_with_secret_lt_toeplitz(kernel_infos, encrypted, matrix_conved, validrowsize, tmp_dest_modq, pool_, ntt_tables_dec);
 #if HLT_DEBUG_TIME == DEBUG_TIME_DEC
     auto dot_e = chrono::high_resolution_clock::now();
     auto dot_diff = chrono::duration_cast<chrono::microseconds>(dot_e - dot_s);
@@ -188,7 +188,7 @@ void Decryptor_LT::dot_product_with_secret_lt(Ciphertext &encrypted, std::vector
 }
 
 // for linear transformation
-void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool){
+void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool,NTTTables &ntt_tables_dec){
     auto &context_data = *context_.get_context_data(encrypted.parms_id());
     auto &parms = context_data.parms();
     auto &coeff_modulus = parms.coeff_modulus();
@@ -219,13 +219,7 @@ void Decryptor_LT::dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel
     auto matrix_s = chrono::high_resolution_clock::now();
     auto matrix_mid = chrono::high_resolution_clock::now();
 #endif
-    packedconv_matrix_dot_vector(matrix_conved, kernel_infos, secret_key_array,coeff_modulus_size, C1_s, coeff_modulus, pool);
-    //SEAL_ITERATE(iter(secret_key_array, coeff_modulus, C1_s), coeff_modulus_size, [&](auto I){
-    //        matrix_dot_vector(matrix_conved, kernel_infos[0].kernel_size-1, get<0>(I), get<1>(I), coeff_count, get<2>(I));
-    //        CoeffIter dest_for_toeplitz = get<2>(I)+kernel_infos[0].kernel_size-1;
-    //        matrix_mid = chrono::high_resolution_clock::now();
-    //        toeplitz_dot_vector(kernel_infos[0].toeplitz_diagonal_scalars, get<0>(I), kernel_infos[0].input_size, coeff_count, get<1>(I), dest_for_toeplitz, pool);
-    //});
+    packedconv_matrix_dot_vector(matrix_conved, kernel_infos, secret_key_array,coeff_modulus_size, C1_s, coeff_modulus, pool, ntt_tables_dec);
 #if HLT_DEBUG_TIME == DEBUG_TIME_DEC
     auto matrix_e = chrono::high_resolution_clock::now();
 #endif

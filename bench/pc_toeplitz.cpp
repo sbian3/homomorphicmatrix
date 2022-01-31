@@ -92,9 +92,13 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
     util::diagonallist_to_matrix(diagonal_vectors_packing, kernelinfos, poly_modulus_degree, matrix_conved);
 
     // decrypt
+    MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
+    uint64_t circ_size = get_bigger_poweroftwo(poly_modulus_degree) * 2;
+    uint64_t coeff_count_power_of_two = get_power_of_two(circ_size);
+    Pointer<NTTTables> ntt_tables = allocate<NTTTables>(pool_, coeff_count_power_of_two, parms.coeff_modulus()[0], pool_);
     Plaintext x_decrypted;
     auto dec_start = chrono::high_resolution_clock::now();
-    decryptor.decrypt_bfv_lt_toeplitz(kernelinfos, x_enc_lin, matrix_conved, poly_modulus_degree, x_decrypted);
+    decryptor.decrypt_bfv_lt_toeplitz(kernelinfos, x_enc_lin, matrix_conved, poly_modulus_degree, x_decrypted, *ntt_tables);
     auto dec_end = chrono::high_resolution_clock::now();
 
     // time result

@@ -230,13 +230,13 @@ namespace seal
             auto prepare_begin = chrono::high_resolution_clock::now();
 #endif
             Pointer<NTTTables> ntt_tables = allocate<NTTTables>(pool_, coeff_count_power, modulus, pool_);
-            SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(circ, circ_size, pool_);
-            SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(right_vec, circ_size, pool_);
-            util::set_poly(right_vec_coeff, right_vec_coeff_size, 1, right_vec);
-            SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(dest_tmp, circ_size, pool_);
 #if HLT_DEBUG_TIME == DEBUG_TIME_DEC_NTT
             auto prepare_end = chrono::high_resolution_clock::now();
 #endif
+            SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(right_vec, circ_size, pool_);
+            util::set_poly(right_vec_coeff, right_vec_coeff_size, 1, right_vec);
+            SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(circ, circ_size, pool_);
+            SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(dest_tmp, circ_size, pool_);
             toeplitz_to_circ(toeplitz, toeplitz_rowsize, toeplitz_colsize, circ, modulus);
             //assert(circ.size() == right_vec.size());
 

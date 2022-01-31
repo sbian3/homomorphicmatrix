@@ -258,7 +258,7 @@ TEST(Matrixtest, packedconv_matrix_dot_vector){
 
     // actual
     SEAL_ALLOCATE_ZERO_GET_COEFF_ITER(actual, poly_degree, pool_);
-    util::packedconv_matrix_dot_vector(conved_C1, kernel_info, right_vec.data(), poly_degree, actual, modulus, pool_);
+    //util::packedconv_matrix_dot_vector(conved_C1, kernel_info, right_vec.data(), poly_degree, actual, modulus, pool_);
     print_iter(actual, poly_degree);
 
     // expected

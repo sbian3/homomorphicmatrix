@@ -33,12 +33,12 @@ class Decryptor_LT
 
         void decrypt_bfv_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, Plaintext &destination);
 
-        void decrypt_bfv_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, Plaintext &destination);
+        void decrypt_bfv_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, Plaintext &destination, NTTTables &ntt_tables_dec);
 
     private:
         void dot_product_with_secret_lt(Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool);
 
-        void dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool);
+        void dot_product_with_secret_lt_toeplitz(vector<KernelInfo> kernel_infos, Ciphertext &encrypted, std::vector<std::vector<uint64_t>> &matrix_conved, uint64_t validrowsize, util::RNSIter destination, MemoryPoolHandle pool, NTTTables &ntt_tables_dec);
 
         MemoryPoolHandle pool_ = MemoryManager::GetPool(mm_prof_opt::mm_force_new, true);
 
