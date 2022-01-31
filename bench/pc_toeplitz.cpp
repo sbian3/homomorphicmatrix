@@ -83,7 +83,10 @@ void bench_packed_conv(vector<vector<uint64_t>> input, vector<vector<uint64_t>> 
 
     // data type change
     // get toeplitz
-    for(uint64_t i = 0;i < num_packing;i++){
+    for(uint64_t i = 0;i < kernelinfos.size();i++){
+        if(kernelinfos[i].kernel_size == 1){
+            continue;
+        }
         kernelinfos[i].get_toeplitz(diagonal_vectors_packing[i], poly_modulus_degree);
     }
     // write to matrix
