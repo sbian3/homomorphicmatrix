@@ -19,6 +19,53 @@ do
     input_dims=("${input_dims[@]}" $nn)
 done
 
+
+function directconv_loop(){
+    bench_times=$1
+    dirname=$dirname_result_root/direct_conv/testing
+    mkdir -p $dirname
+    output_path="$dirname/direct_conv_loop.txt"
+    echo "start loop" > output_path
+    for i in `seq 1 $bench_times`
+    do
+        env build/bin/direct_conv 16 4 1024 2>$err >> $output_path
+        sleep 5s
+    done
+}
+
+function compare_direct_pack(){
+    inputs=(25 64 256 784)
+    kernels=(1 9 25)
+    bench_times=10
+    poly=1024
+    dirname_direct=$dirname_result_root/compare/direct_conv
+    dirname_packing=$dirname_result_root/compare/packed_conv
+    mkdir -p $dirname_direct
+    mkdir -p $dirname_packing
+    for input in ${inputs[@]}
+    do
+        for kernel in ${kernels[@]}
+        do
+            echo "input: $input, kernel: $kernel, packing:$pack_num"
+            pack_num=$(($poly/$(($input + $kernel - 1))))
+            output_path="$dirname_direct/${input}_${kernel}.txt"
+            echo "start measure" > $output_path
+            for i in `seq 1 $bench_times`
+            do
+                env build/bin/direct_conv $input $kernel $poly 2>$err  >> $output_path
+                sleep 2s
+            done
+            output_path="$dirname_packing/${input}_${kernel}.txt"
+            echo "start measure" > $output_path
+            for i in `seq 1 $bench_times`
+            do
+                env build/bin/pc_toeplitz $input $kernel $poly $pack_num 2>$err >> $output_path
+                sleep 2s
+            done
+        done
+    done
+}
+
 # assume executable file is build/bin/direct_conv
 function directconv_multiinput(){
     dirname=$dirname_result_root/direct_conv/multiinput/k$kernel_dim
@@ -131,9 +178,11 @@ function clean(){
 }
 
 #clean
-directconv_multipoly
+#directconv_multipoly
+#directconv_loop 10
+compare_direct_pack
 #packedconv_multipoly
-pc_toeplitz_multipoly
+#pc_toeplitz_multipoly
 #directconv_multiinput
 #packedconv_multiinput
 #directconv_multikernel
